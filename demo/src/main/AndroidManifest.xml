@@ -1,0 +1,102 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <application>
+    <activity
+        android:name=".MainActivity"
+        android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
+
+    <activity
+        android:name=".ProductActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".LazyListStressActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".AnimationStressActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".DeepNestingStressActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".SharedStateStressActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".FlowStateActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".KeyIdentityActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".DialogPopupActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".SubcomposeActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".InputScrollActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".LazyVariantsActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".PagerCrossfadeActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".AdvancedPatternsActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".ScaffoldSlotsActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".ToggleMorphActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".ChipFilterActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".ExpandableCardActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".StarRatingActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".DonutChartActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".CollapsingHeaderActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".SwipeListActivity"
+        android:exported="false" />
+
+    <activity
+        android:name=".ReorderListActivity"
+        android:exported="false" />
+
+  </application>
+</manifest>
