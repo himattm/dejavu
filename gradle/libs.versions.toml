@@ -9,7 +9,7 @@ lifecycleRuntimeKtx = "2.9.2"
 activityCompose = "1.10.1"
 composeBom = "2026.01.01"
 coroutinesAndroid = "1.9.0"
-binary-compatibility-validator = "0.17.0"
+binary-compatibility-validator = "0.18.1"
 truth = "1.1.5"
 
 [libraries]
