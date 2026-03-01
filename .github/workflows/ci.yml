@@ -18,7 +18,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
       - run: ./gradlew :dejavu:testDebugUnitTest :dejavu:lintDebug apiCheck
 
   compose-compat:
@@ -34,7 +34,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
       - run: ./gradlew :dejavu:compileDebugKotlin :dejavu:testDebugUnitTest -PcomposeBomVersion=${{ matrix.bom }}
 
   instrumented-tests:
@@ -50,7 +50,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
 
       - name: Enable KVM
         run: |
@@ -91,7 +91,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
 
       - name: Publish Dejavu to mavenLocal
         run: ./gradlew :dejavu:publishToMavenLocal
