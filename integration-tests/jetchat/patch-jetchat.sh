@@ -47,7 +47,7 @@ if [ ! -f "$APP_BUILD_FILE" ]; then
   exit 1
 fi
 
-DEJAVU_DEP='androidTestImplementation("me.mmckenna.dejavu:dejavu:0.1.0")'
+DEJAVU_DEP='androidTestImplementation("me.mmckenna.dejavu:dejavu:0.1.1")'
 
 if ! grep -q 'me.mmckenna.dejavu' "$APP_BUILD_FILE"; then
   echo "Adding Dejavu dependency to $APP_BUILD_FILE"

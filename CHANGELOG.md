@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-03-03
+
+### Changed
+- Logcat logging now emits per-instance `RECOMPOSE-TAG` lines for composables with a testTag, matching Layout Inspector's per-instance recomposition counts
+- Composables without a testTag still get the per-function `RECOMPOSE` line with a `[no testTag — per-function aggregate]` caveat
+- No more dual logging — each composable gets exactly one log format
+
 ## [0.1.0] - 2026-02-23
 
 ### Added

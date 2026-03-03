@@ -118,7 +118,10 @@ internal object DejavuTracer : CompositionTracer {
             ))
 
             if (Runtime.isLoggingEnabled) {
-                Log.d(TAG, "RECOMPOSE #$recompCount: ${traced.qualifiedName} (${traced.sourceLocation}) d1=$dirty1 parent=$parentName")
+                val hasTags = testTagToFunction.values.any { it == traced.qualifiedName }
+                if (!hasTags) {
+                    Log.d(TAG, "RECOMPOSE #$recompCount: ${traced.qualifiedName} (${traced.sourceLocation}) d1=$dirty1 parent=$parentName [no testTag — per-function aggregate]")
+                }
             }
         }
     }
@@ -596,8 +599,15 @@ internal object DejavuTracer : CompositionTracer {
         val previousSnapshot = tagParamSnapshots.put(tag, currentSnapshot)
 
         if (prev != null && prev != fingerprint) {
-            perTagRecompCounts.getOrPut(tag) { AtomicInteger(0) }.incrementAndGet()
+            val count = perTagRecompCounts.getOrPut(tag) { AtomicInteger(0) }.incrementAndGet()
             val functionName = testTagToFunction[tag]
+
+            if (Runtime.isLoggingEnabled && functionName != null) {
+                val sourceLocation = simpleNameIndex[functionName.substringAfterLast('.')]
+                    ?.firstOrNull()?.sourceLocation ?: ""
+                val locationSuffix = if (sourceLocation.isNotEmpty()) " ($sourceLocation)" else ""
+                Log.d(TAG, "RECOMPOSE-TAG #$count: $tag → $functionName$locationSuffix parent=$parentName")
+            }
 
             // Diff parameter snapshots to determine what changed
             if (previousSnapshot != null) {
