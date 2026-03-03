@@ -6,7 +6,44 @@ on:
       - 'v*'
 
 jobs:
+  resolve-bom:
+    name: Resolve Latest Compose BOM
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.latest.outputs.version }}
+    steps:
+      - name: Get latest BOM from Google Maven
+        id: latest
+        run: |
+          LATEST=$(curl -sf https://dl.google.com/dl/android/maven2/androidx/compose/compose-bom/maven-metadata.xml \
+            | grep '<release>' \
+            | sed 's/.*<release>\(.*\)<\/release>/\1/')
+          echo "version=$LATEST" >> "$GITHUB_OUTPUT"
+          echo "Latest stable BOM: $LATEST"
+
+  verify-latest-bom:
+    name: Verify against Compose BOM ${{ needs.resolve-bom.outputs.version }}
+    needs: resolve-bom
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Compile with latest BOM
+        run: ./gradlew :dejavu:compileDebugKotlin -PcomposeBomVersion=${{ needs.resolve-bom.outputs.version }}
+
+      - name: Run unit tests with latest BOM
+        run: ./gradlew :dejavu:testDebugUnitTest -PcomposeBomVersion=${{ needs.resolve-bom.outputs.version }}
+
   publish:
+    name: Publish
+    needs: verify-latest-bom
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
