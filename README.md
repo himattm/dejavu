@@ -7,6 +7,8 @@
 [![Compose](https://img.shields.io/badge/Compose-1.6.x–1.10.x-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/develop/ui/compose)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
+**[Full Documentation](https://dejavu.mmckenna.me)**
+
 **Lock in Compose performance. Catch recomposition regressions before your users do.**
 
 ## The Problem
@@ -62,7 +64,7 @@ fun incrementCounter_onlyValueRecomposes() {
 }
 ```
 
-`createRecompositionTrackingRule` wraps `createAndroidComposeRule` and resets counts before each test. For `createComposeRule()` or other rule types, see [Examples](docs/EXAMPLES.md).
+`createRecompositionTrackingRule` wraps `createAndroidComposeRule` and resets counts before each test. For `createComposeRule()` or other rule types, see [Examples](https://dejavu.mmckenna.me/examples/).
 
 ## What a Failure Looks Like
 
@@ -85,7 +87,7 @@ dejavu.UnexpectedRecompositionsError: Recomposition assertion failed for testTag
     Parameter/parent change detected (dirty bits set)
 ```
 
-See [Error Messages Guide](docs/ERROR_MESSAGES.md) for how to read and act on each section.
+See [Error Messages Guide](https://dejavu.mmckenna.me/error-messages/) for how to read and act on each section.
 
 ## API Reference
 
@@ -151,9 +153,9 @@ All tracking runs in the app process on the main thread, directly accessible to 
 
 ## Further Reading
 
-- [Examples](docs/EXAMPLES.md) — test patterns for common scenarios
-- [Error Messages Guide](docs/ERROR_MESSAGES.md) — how to read and act on failure output
-- [Causality Analysis](docs/WHY_DID_YOU_RENDER.md) — understanding why composables recompose
+- [Examples](https://dejavu.mmckenna.me/examples/) — test patterns for common scenarios
+- [Error Messages Guide](https://dejavu.mmckenna.me/error-messages/) — how to read and act on failure output
+- [Causality Analysis](https://dejavu.mmckenna.me/causality-analysis/) — understanding why composables recompose
 
 ## Contributing
 

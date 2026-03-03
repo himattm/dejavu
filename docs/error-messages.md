@@ -147,7 +147,7 @@ Causality analysis from Dejavu's `Snapshot.registerApplyObserver` and dirty bit 
 - **Same-value writes** -- state was written but the new value equaled the old value (this is a performance bug)
 - **Parameter/parent change** -- the recomposition was driven by dirty bits (parameter values changed or parent recomposed)
 
-See [WHY_DID_YOU_RENDER.md](WHY_DID_YOU_RENDER.md) for a deep dive into causality analysis.
+See [Causality Analysis](causality-analysis.md) for a deep dive into causality analysis.
 
 ### 7. Node and Semantic Tree
 
