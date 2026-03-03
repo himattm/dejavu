@@ -16,7 +16,7 @@ import org.junit.runner.RunWith
 class DejavuLibraryCorrectnessTest {
 
     @get:Rule
-    val composeTestRule = createRecompositionTrackingRule<MainActivity>()
+    val composeTestRule = createRecompositionTrackingRule<CounterActivity>()
 
     @Test
     fun reset_clearsCounts() {

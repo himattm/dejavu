@@ -22,7 +22,7 @@ import org.junit.runner.RunWith
 class ImplicitTrackingTest {
 
     @get:Rule
-    val composeTestRule = createRecompositionTrackingRule<MainActivity>()
+    val composeTestRule = createRecompositionTrackingRule<CounterActivity>()
 
     @Test
     fun counterValue_recomposesOnClick() {

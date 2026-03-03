@@ -17,7 +17,7 @@ import org.junit.runner.RunWith
 class AssertionApiTest {
 
     @get:Rule
-    val composeTestRule = createRecompositionTrackingRule<MainActivity>()
+    val composeTestRule = createRecompositionTrackingRule<CounterActivity>()
 
     // ── #10: Negative values rejected ───────────────────────────────
 

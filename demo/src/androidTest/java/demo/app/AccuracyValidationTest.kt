@@ -47,14 +47,14 @@ private fun validateAccuracy(
 }
 
 // ============================================================
-// 1. Counter (MainActivity)
+// 1. Counter (CounterActivity)
 // ============================================================
 
 @RunWith(AndroidJUnit4::class)
 class CounterAccuracyTest {
 
     @get:Rule
-    val rule = createRecompositionTrackingRule<MainActivity>()
+    val rule = createRecompositionTrackingRule<CounterActivity>()
 
     @Before
     fun setup() {
