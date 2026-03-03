@@ -21,7 +21,8 @@ theme:
         icon: material/brightness-4
         name: Switch to light mode
   icon:
-    logo: material/content-copy
+    logo: simple/ebox
+  favicon: assets/favicon.svg
   font:
     code: JetBrains Mono
   features:

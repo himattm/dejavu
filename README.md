@@ -1,3 +1,9 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="docs/assets/favicon.svg">
+  <img src="docs/assets/favicon.svg" width="40" align="left" style="margin-right: 12px;">
+</picture>
+
 # Dejavu
 
 *Wait... didn't we just compose this?*
