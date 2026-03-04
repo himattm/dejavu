@@ -129,6 +129,7 @@ android {
         // these tests run on JVM desktop instead. Android UI tests run as instrumented tests.
         it.exclude("dejavu/DejavuComposeUiTest.class")
         it.exclude("dejavu/SideEffectAccuracyTest.class")
+        it.exclude("dejavu/ComposablePatternAccuracyTest.class")
       }
     }
   }
@@ -145,6 +146,10 @@ dependencies {
   "androidMainCompileOnly"(composeBom)
   "androidMainImplementation"(composeBom)
   "androidUnitTestImplementation"(composeBom)
+}
+
+composeCompiler {
+  includeSourceInformation = true
 }
 
 mavenPublishing {

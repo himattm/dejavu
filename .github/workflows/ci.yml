@@ -21,8 +21,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew :dejavu:testDebugUnitTest :dejavu:jvmTest :dejavu:lintDebug apiCheck
 
-  ios-compile:
-    name: iOS Compilation Check
+  ios-tests:
+    name: iOS Tests
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,10 +31,13 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew :dejavu:compileKotlinIosArm64 :dejavu:compileKotlinIosSimulatorArm64 :dejavu:compileKotlinIosX64
+      - name: Compile all iOS targets
+        run: ./gradlew :dejavu:compileKotlinIosArm64 :dejavu:compileKotlinIosSimulatorArm64 :dejavu:compileKotlinIosX64
+      - name: Run iOS simulator tests
+        run: ./gradlew :dejavu:iosSimulatorArm64Test
 
-  wasm-compile:
-    name: WasmJs Compilation Check
+  wasm-tests:
+    name: WasmJs Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,7 +46,7 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew :dejavu:compileKotlinWasmJs
+      - run: ./gradlew :dejavu:wasmJsBrowserTest
 
   compose-compat:
     name: Compose BOM ${{ matrix.bom }}

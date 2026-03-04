@@ -60,6 +60,17 @@ internal object DejavuTracer : CompositionTracer {
     internal val testTagToFunction = mutableMapOf<String, String>()
     internal val testTagToFunctionLock = SynchronizedObject()
 
+    /** Cache of testTag -> composable key (int) for per-instance recomposition counting. */
+    internal val testTagToKey = mutableMapOf<String, Int>()
+    internal val testTagToKeyLock = SynchronizedObject()
+
+    /**
+     * Shared inspection tables set for non-Android platforms.
+     * Populated by the Compose runtime when [LocalInspectionTables] is provided.
+     * Non-Android [currentCompositionsSnapshot] reads from this set.
+     */
+    internal val inspectionTables = mutableSetOf<CompositionData>()
+
     /** Track parent-child causality: stack of qualified names for the current composition. */
     private val composableStack = PlatformThreadLocal { ArrayDeque<String>() }
 
@@ -300,8 +311,24 @@ internal object DejavuTracer : CompositionTracer {
         }
     }
 
-    fun getPerTagRecompositionCount(tag: String): Int? = synchronized(perTagLock) {
-        perTagRecompCounts[tag]
+    fun getPerTagRecompositionCount(tag: String): Int? {
+        // Use the tag's mapped composable key for single-instance functions (real-time count)
+        val key = synchronized(testTagToKeyLock) { testTagToKey[tag] }
+        if (key != null) {
+            val functionName = synchronized(testTagToFunctionLock) { testTagToFunction[tag] }
+            // Only use key-based count if this function has a single instance.
+            // Multi-instance functions share the same key, so key-based count is the
+            // aggregate; use fingerprint-based per-tag count instead.
+            if (functionName != null && !isMultiInstanceFunction(functionName)) {
+                val totalCompositions = synchronized(compositionCountsLock) {
+                    compositionCounts[key] ?: 0
+                }
+                return maxOf(0, totalCompositions - 1)
+            }
+        }
+        // Multi-instance or no key: use fingerprint-based count from tree walk.
+        // Requires refreshTagMapping() after each waitForIdle() for accurate counts.
+        return synchronized(perTagLock) { perTagRecompCounts[tag] }
     }
 
     fun getPerTagRecompositionEvents(tag: String): List<RecompositionEvent> =
@@ -403,6 +430,7 @@ internal object DejavuTracer : CompositionTracer {
         synchronized(recompositionCountsLock) { recompositionCounts.clear() }
         synchronized(recompositionEventsLock) { recompositionEvents.clear() }
         synchronized(testTagToFunctionLock) { testTagToFunction.clear() }
+        synchronized(testTagToKeyLock) { testTagToKey.clear() }
         synchronized(perTagLock) {
             perTagRecompCounts.clear()
             tagParamFingerprints.clear()

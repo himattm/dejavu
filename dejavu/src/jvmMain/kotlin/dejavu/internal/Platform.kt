@@ -17,10 +17,11 @@ internal actual fun getPendingCause(): RecomposeCause? = null
 
 internal actual fun isLoggingEnabled(): Boolean = Dejavu.logToStdout
 
-internal actual fun currentCompositionsSnapshot(): Set<CompositionData> = emptySet()
+internal actual fun currentCompositionsSnapshot(): Set<CompositionData> =
+    DejavuTracer.inspectionTables.toSet()
 
 internal actual fun platformBuildTagMapping(compositionData: Set<CompositionData>) {
-    // No-op on Desktop: tag mapping requires Android's Group tree walker
+    CommonTagMapping.buildTagMapping(compositionData)
 }
 
 internal actual class PlatformThreadLocal<T> actual constructor(private val initial: () -> T) {
