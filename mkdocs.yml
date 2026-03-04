@@ -34,8 +34,8 @@ theme:
 
 nav:
   - Home: index.md
-  - Use Cases: use-cases.md
   - Getting Started: getting-started.md
+  - Use Cases: use-cases.md
   - Examples: examples.md
   - API Reference: api-reference.md
   - How It Works: how-it-works.md
