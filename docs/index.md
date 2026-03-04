@@ -28,6 +28,7 @@ Dejavu is a test-only library that turns recomposition behavior into assertions.
 
 ## Next Steps
 
+- [Use Cases](use-cases.md) — locking in performance, AI agent guardrails, and CI enforcement
 - [Getting Started](getting-started.md) — add the dependency and write your first test
 - [Examples](examples.md) — test patterns for common scenarios
 - [API Reference](api-reference.md) — all assertions and utilities
