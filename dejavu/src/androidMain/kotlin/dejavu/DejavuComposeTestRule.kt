@@ -25,7 +25,10 @@ public class DejavuComposeTestRule<A : ComponentActivity>(
         return delegate.apply(object : Statement() {
             override fun evaluate() {
                 Dejavu.enable(delegate.activity.application)
-                DejavuTest.reset()
+                // Use resetCounts() — the composition is still alive (same Activity
+                // across tests), so we must preserve compositionCounts so the tracer
+                // still recognizes previously-seen composable keys as "seen".
+                DejavuTest.resetCounts()
                 base.evaluate()
             }
         }, description)
@@ -49,9 +52,9 @@ public inline fun <reified A : ComponentActivity> createRecompositionTrackingRul
 public fun createRecompositionTrackingRule():
     DejavuComposeTestRule<ComponentActivity> = DejavuComposeTestRule(createAndroidComposeRule())
 
-/** Resets all tracked recomposition counts to zero. */
+/** Resets recomposition counts to zero while preserving composition history. */
 public fun ComposeTestRule.resetRecompositionCounts() {
-    DejavuTest.reset()
+    DejavuTest.resetCounts()
 }
 
 /**

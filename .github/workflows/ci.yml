@@ -19,7 +19,31 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew :dejavu:testDebugUnitTest :dejavu:lintDebug apiCheck
+      - run: ./gradlew :dejavu:testDebugUnitTest :dejavu:jvmTest :dejavu:lintDebug apiCheck
+
+  ios-compile:
+    name: iOS Compilation Check
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew :dejavu:compileKotlinIosArm64 :dejavu:compileKotlinIosSimulatorArm64 :dejavu:compileKotlinIosX64
+
+  wasm-compile:
+    name: WasmJs Compilation Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew :dejavu:compileKotlinWasmJs
 
   compose-compat:
     name: Compose BOM ${{ matrix.bom }}

@@ -1,12 +1,14 @@
 package dejavu.internal
 
-import com.google.common.truth.Truth.assertThat
-import org.junit.After
-import org.junit.Test
+import kotlin.test.AfterTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 class RecomposeTrackerUnitTest {
 
-    @After
+    @AfterTest
     fun tearDown() {
         RecomposeTracker.reset()
     }
@@ -17,24 +19,24 @@ class RecomposeTrackerUnitTest {
         RecomposeTracker.recordCause("com.example.MyComposable", cause)
 
         val retrieved = RecomposeTracker.getCause("com.example.MyComposable")
-        assertThat(retrieved).isEqualTo(cause)
+        assertEquals(cause, retrieved)
     }
 
     @Test
     fun getCause_unrecorded_returnsNull() {
         val retrieved = RecomposeTracker.getCause("com.example.NeverRecorded")
-        assertThat(retrieved).isNull()
+        assertNull(retrieved)
     }
 
     @Test
     fun reset_clearsCauses() {
         val cause = RecomposeCause(stateChanges = 1)
         RecomposeTracker.recordCause("com.example.ToClear", cause)
-        assertThat(RecomposeTracker.getCause("com.example.ToClear")).isNotNull()
+        assertNotNull(RecomposeTracker.getCause("com.example.ToClear"))
 
         RecomposeTracker.reset()
 
-        assertThat(RecomposeTracker.getCause("com.example.ToClear")).isNull()
+        assertNull(RecomposeTracker.getCause("com.example.ToClear"))
     }
 
     @Test
@@ -45,6 +47,6 @@ class RecomposeTrackerUnitTest {
         // Recording a null cause should NOT overwrite the existing one
         RecomposeTracker.recordCause("com.example.Keep", null)
 
-        assertThat(RecomposeTracker.getCause("com.example.Keep")).isEqualTo(original)
+        assertEquals(original, RecomposeTracker.getCause("com.example.Keep"))
     }
 }

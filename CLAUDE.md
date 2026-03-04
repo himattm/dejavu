@@ -1,0 +1,46 @@
+# Dejavu
+
+Implicit recomposition tracking for Compose UI tests. KMP library targeting Android, Desktop (JVM), iOS, and WasmJs.
+
+## Verification Requirements
+
+**Always run UI tests when validating changes.** This is a UI testing framework — unit tests alone are not sufficient. The SideEffect accuracy tests in `commonTest` verify that the tracer's recomposition counts match ground-truth `SideEffect` counters through actual Compose UI rendering.
+
+Minimum verification after any code change:
+
+```bash
+./gradlew -q --console=plain :dejavu:jvmTest                    # Desktop JVM (unit + compose UI tests)
+./gradlew -q --console=plain :dejavu:testDebugUnitTest           # Android unit tests
+./gradlew -q --console=plain :dejavu:compileKotlinIosArm64       # iOS compilation
+./gradlew -q --console=plain :dejavu:compileKotlinWasmJs         # Wasm compilation
+./gradlew -q --console=plain apiCheck                            # API compat (all targets)
+```
+
+`jvmTest` is the critical one — it runs both unit tests and the compose UI integration tests (SideEffect accuracy, recomposition counting). Android excludes compose UI tests from `testDebugUnitTest` (they require Robolectric); Android compose coverage comes from instrumented tests in the demo app.
+
+## Project Structure
+
+- `commonMain` — core tracer, data classes, query APIs, test assertions, expect declarations
+- `androidMain` — Android runtime (Activity lifecycle, Choreographer, snapshot observer, tag mapping via Group tree)
+- `jvmMain` — Desktop JVM actuals (Composer.setTracer, ThreadLocal, stdout logging)
+- `iosMain` — iOS actuals (NSDate, NSLog, simple value holder for PlatformThreadLocal)
+- `wasmJsMain` — WasmJs actuals (JS Date.now(), console.log/warn)
+- `commonTest` — unit tests + compose UI integration tests (SideEffect accuracy)
+
+## Key Architecture
+
+- `DejavuTracer` implements `CompositionTracer` — intercepts every `traceEventStart`/`traceEventEnd`
+- First composition of a key → tracked but not counted as recomposition. Subsequent → counted.
+- Tag mapping (testTag → function name) is Android-only via Group tree walking. Other platforms use function-name tracking directly.
+- Locking uses `kotlinx-atomicfu` `SynchronizedObject` (not `kotlin.synchronized` which is JVM-only)
+- `@kotlin.concurrent.Volatile` in common/native code (not `@Volatile` which is `kotlin.jvm.Volatile`)
+
+## Reset Semantics
+
+- `reset()` — full clear of all state including composition history. Use between independent tests.
+- `resetCounts()` — clears recomposition counts but preserves composition history. Use mid-test when a live composition is still running.
+- `ComposeTestRule.resetRecompositionCounts()` calls `resetCounts()` (mid-test use case).
+
+## Gradle
+
+Always run with `-q --console=plain`.

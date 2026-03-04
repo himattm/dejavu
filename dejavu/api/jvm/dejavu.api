@@ -1,0 +1,14 @@
+public final class dejavu/Dejavu {
+	public static final field $stable I
+	public static final field INSTANCE Ldejavu/Dejavu;
+	public final fun disable ()V
+	public final fun enable (Z)V
+	public static synthetic fun enable$default (Ldejavu/Dejavu;ZILjava/lang/Object;)V
+}
+
+public final class dejavu/SemanticNodeInteractionsKt {
+	public static final fun assertRecompositions (Landroidx/compose/ui/test/SemanticsNodeInteraction;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Integer;)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static synthetic fun assertRecompositions$default (Landroidx/compose/ui/test/SemanticsNodeInteraction;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Object;)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+	public static final fun assertStable (Landroidx/compose/ui/test/SemanticsNodeInteraction;)Landroidx/compose/ui/test/SemanticsNodeInteraction;
+}
+
