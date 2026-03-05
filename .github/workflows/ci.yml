@@ -100,7 +100,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: android/compose-samples
-          ref: c962c366ac328bf4e810a9bf4e3ccee5a5d2ac73
+          ref: main
           path: compose-samples
           sparse-checkout: Jetchat
 
