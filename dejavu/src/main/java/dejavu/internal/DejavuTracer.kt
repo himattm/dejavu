@@ -183,7 +183,7 @@ internal object DejavuTracer : CompositionTracer {
         "TopAppBarLayout",
         "Spacer", "LazyVerticalGrid", "LazyHorizontalGrid",
         "AnimatedVisibility", "AnimatedContent", "Crossfade",
-        "Dialog", "Popup", "TextField", "BasicTextField",
+        "Dialog", "Popup", "TextField", "BasicTextField", "OutlinedTextField",
         "HorizontalPager", "VerticalPager",
     )
 
@@ -304,12 +304,14 @@ internal object DejavuTracer : CompositionTracer {
                 var foundTag = false
 
                 // Approach 0: InspectableValue API (Compose 1.3+ ModifierNodeElement)
+                // Handles both older Compose (value = tag → element name "") and
+                // newer Compose (properties["tag"] = tag → element name "tag").
                 try {
                     val modifier = mi.modifier
                     if (modifier is InspectableValue) {
                         if (modifier.nameFallback == "testTag") {
                             for (element in modifier.inspectableElements) {
-                                if (element.name == "tag" && element.value is String) {
+                                if (element.value is String) {
                                     val tag = element.value as String
                                     testTagToFunction.putIfAbsent(tag, currentUserComposable)
                                     lastSeenTags.add(tag)
@@ -434,7 +436,7 @@ internal object DejavuTracer : CompositionTracer {
                     val modifier = mi.modifier
                     if (modifier is InspectableValue && modifier.nameFallback == "testTag") {
                         for (element in modifier.inspectableElements) {
-                            if (element.name == "tag" && element.value is String) {
+                            if (element.value is String) {
                                 unmappedTags.add(element.value as String)
                             }
                         }
@@ -496,7 +498,7 @@ internal object DejavuTracer : CompositionTracer {
                     val modifier = mi.modifier
                     if (modifier is InspectableValue && modifier.nameFallback == "testTag") {
                         for (element in modifier.inspectableElements) {
-                            if (element.name == "tag" && element.value is String) {
+                            if (element.value is String) {
                                 val tag = element.value as String
                                 if (tag in unmappedTags) {
                                     testTagToFunction.putIfAbsent(tag, currentUserComposable)
