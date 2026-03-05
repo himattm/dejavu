@@ -659,3 +659,49 @@ class ScaffoldSlotsAccuracyTest {
         )
     }
 }
+
+// ============================================================
+// 16. FrameworkComposable (FrameworkComposableActivity)
+//
+// Regression test for PR #16: OutlinedTextField, TextField,
+// Switch, and Card wrapped in user composables must be
+// accurately tracked by Dejavu.
+// ============================================================
+
+@RunWith(AndroidJUnit4::class)
+class FrameworkComposableAccuracyTest {
+
+    @get:Rule
+    val rule = createRecompositionTrackingRule<FrameworkComposableActivity>()
+
+    @Before
+    fun setup() {
+        GroundTruthCounters.reset()
+    }
+
+    @Test
+    fun frameworkComposableAccuracy() {
+        rule.onNodeWithTag("type_char_trigger").performClick()
+        rule.waitForIdle()
+        rule.onNodeWithTag("toggle_trigger").performClick()
+        rule.waitForIdle()
+        rule.onNodeWithTag("increment_trigger").performClick()
+        rule.waitForIdle()
+
+        validateAccuracy(
+            rule,
+            listOf(
+                "fw_screen_root",
+                "task_description_input",
+                "simple_text_input",
+                "toggle_switch",
+                "info_card",
+                "counter_label",
+                "type_char_trigger",
+                "toggle_trigger",
+                "increment_trigger",
+            ),
+            "FrameworkComposable",
+        )
+    }
+}
