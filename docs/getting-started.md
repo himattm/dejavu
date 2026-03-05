@@ -9,18 +9,7 @@ dependencies {
 }
 ```
 
-## 2. Enable in your Application
-
-```kotlin
-class MyApp : Application() {
-    override fun onCreate() {
-        super.onCreate()
-        Dejavu.enable(app = this)
-    }
-}
-```
-
-## 3. Write a test
+## 2. Write a test
 
 ```kotlin
 @get:Rule
@@ -30,7 +19,7 @@ val composeTestRule = createRecompositionTrackingRule<MainActivity>()
 fun incrementCounter_onlyValueRecomposes() {
     composeTestRule.onNodeWithTag("inc_button").performClick()
     composeTestRule.onNodeWithTag("counter_value").assertRecompositions(exactly = 1)
-    composeTestRule.onNodeWithTag("counter_title").assertStable()
+    composeTestRule.onNodeWithTag("counter_title").assertStable() // stable = zero recompositions
 }
 ```
 
