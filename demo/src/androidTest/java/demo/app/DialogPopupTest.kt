@@ -2,7 +2,6 @@ package demo.app
 
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dejavu.assertRecompositions
 import dejavu.assertStable
@@ -36,8 +35,8 @@ class DialogPopupTest {
         composeTestRule.onNodeWithTag("show_dialog_btn").performClick()
         composeTestRule.waitForIdle()
 
-        // Dismiss via back press
-        Espresso.pressBack()
+        // Dismiss via dismiss button
+        composeTestRule.onNodeWithTag("dismiss_dialog_btn").performClick()
         composeTestRule.waitForIdle()
 
         // Reset and show again

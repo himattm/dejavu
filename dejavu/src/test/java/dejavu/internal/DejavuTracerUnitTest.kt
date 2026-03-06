@@ -205,7 +205,6 @@ class DejavuTracerUnitTest {
 
         for (name in simpleNames) {
             assertThat(DejavuTracer.resolveUserComposable(name, "fallback"))
-                .named("resolveUserComposable(\"$name\")")
                 .isEqualTo("fallback")
         }
     }
