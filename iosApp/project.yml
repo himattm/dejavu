@@ -1,0 +1,30 @@
+name: iosApp
+options:
+  bundleIdPrefix: com.dejavu.demo
+  deploymentTarget:
+    iOS: "16.0"
+targets:
+  iosApp:
+    type: application
+    platform: iOS
+    info:
+      path: Info.plist
+      properties:
+        CADisableMinimumFrameDurationOnPhone: true
+        UILaunchScreen: {}
+    sources:
+      - path: Sources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dejavu.demo.iosApp
+        FRAMEWORK_SEARCH_PATHS:
+          - "$(SRCROOT)/../demo-shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)"
+        OTHER_LDFLAGS:
+          - "-framework"
+          - "DemoShared"
+    preBuildScripts:
+      - name: "Compile Kotlin Framework"
+        script: |
+          cd "$SRCROOT/.."
+          ./gradlew :demo-shared:embedAndSignAppleFrameworkForXcode
+        basedOnDependencyAnalysis: false
