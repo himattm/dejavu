@@ -10,7 +10,7 @@ plugins {
 }
 
 apiValidation {
-  ignoredProjects += listOf("demo")
+  ignoredProjects += listOf("demo", "demo-shared", "demo-desktop", "demo-wasm")
   @OptIn(kotlinx.validation.ExperimentalBCVApi::class)
   klib {
     enabled = true

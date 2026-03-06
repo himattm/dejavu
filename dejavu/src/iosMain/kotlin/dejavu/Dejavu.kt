@@ -14,10 +14,12 @@ public actual object Dejavu {
 
     /**
      * Installs the CompositionTracer and starts tracking recompositions.
+     *
+     * @param logToNSLog When true, recomposition events are printed via NSLog
      */
     @OptIn(InternalComposeTracingApi::class)
-    public fun enable() {
-        loggingEnabled = false
+    public fun enable(logToNSLog: Boolean = false) {
+        loggingEnabled = logToNSLog
         DejavuTracer.enabled = true
         Composer.setTracer(DejavuTracer)
     }

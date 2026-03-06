@@ -154,7 +154,7 @@ fun LegendItem(
     )
     Spacer(modifier = Modifier.width(8.dp))
     Text(
-      text = "$label: ${"%.1f".format(percentage)}%",
+      text = "$label: ${((percentage * 10).toInt() / 10.0)}%",
       fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
       fontSize = if (isSelected) 16.sp else 14.sp,
     )

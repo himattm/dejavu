@@ -13,10 +13,12 @@ public actual object Dejavu {
 
     /**
      * Installs the CompositionTracer and starts tracking recompositions.
+     *
+     * @param logToConsole When true, recomposition events are printed via console.log
      */
     @OptIn(InternalComposeTracingApi::class)
-    public fun enable() {
-        loggingEnabled = false
+    public fun enable(logToConsole: Boolean = false) {
+        loggingEnabled = logToConsole
         DejavuTracer.enabled = true
         Composer.setTracer(DejavuTracer)
     }

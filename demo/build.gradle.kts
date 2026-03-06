@@ -42,6 +42,7 @@ dependencies {
     platform(libs.androidx.compose.bom)
   }
   implementation(composeBom)
+  implementation(project(":demo-shared"))
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.ui)
   implementation(libs.androidx.material3)
