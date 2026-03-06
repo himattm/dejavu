@@ -94,25 +94,6 @@ internal object DejavuTracer : CompositionTracer {
     /** Framework packages/files to skip when walking the Group tree. */
     internal val frameworkPrefixes = setOf("androidx.", "kotlin.", "android.")
 
-    /** Compose Material/Foundation composable names that appear as Group names in the composition tree.
-     *  User composables with these names should use their full qualified name for disambiguation. */
-    internal val frameworkGroupNames = setOf(
-        "ReusableComposeNode", "ComposeNode", "Layout", "ReusableContent",
-        "ProvideCommonCompositionLocals", "Content", "CompositionLocalProvider",
-        "Providers", "MaterialTheme", "Surface", "ProvideTextStyle",
-        "BasicText", "Box", "Column", "Row", "Text", "Button",
-        "Ripple", "Canvas", "Image", "Icon", "Scaffold",
-        "LazyColumn", "LazyRow", "LazyList",
-        "SubcomposeLayout", "SubcomposeLayoutState", "BoxWithConstraints",
-        "LazyLayout", "LazyLayoutScrollScope",
-        "LazySaveableStateHolderProvider", "LazyLayoutPrefetchState",
-        "LazyLayoutItemContentFactory", "SingleRowTopAppBar",
-        "TopAppBarLayout",
-        "Spacer", "LazyVerticalGrid", "LazyHorizontalGrid",
-        "AnimatedVisibility", "AnimatedContent", "Crossfade",
-        "Dialog", "Popup", "TextField", "BasicTextField",
-        "HorizontalPager", "VerticalPager",
-    )
 
     // ── CompositionTracer implementation ─────────────────────────────
 
@@ -229,26 +210,41 @@ internal object DejavuTracer : CompositionTracer {
      * Given a Group name, determine if it represents a user composable and
      * return its resolved qualified name. Returns [fallback] if the name is
      * null, a framework composable, or otherwise not a user composable.
+     *
+     * Uses dynamic resolution via [simpleNameIndex] instead of a hardcoded
+     * list of framework composable names. Since [parseInfo] runs for every
+     * composable in [traceEventStart] (before the framework filter), the
+     * index contains qualified names for all composed functions — including
+     * framework ones like `Card` or `OutlinedTextField`. This lets us
+     * distinguish `androidx.compose.material3.Card` (framework) from
+     * `com.myapp.Card` (user) at runtime, without maintaining a fragile
+     * manual list.
+     *
+     * Names not found in the index are Compose compiler/runtime
+     * infrastructure Group markers (e.g. `Content`, `ReusableComposeNode`)
+     * that never trigger [traceEventStart]. These are conservatively
+     * treated as framework composables.
      */
     internal fun resolveUserComposable(groupName: String?, fallback: String?): String? {
         if (groupName == null) return fallback
-        val isCandidate = !(groupName.startsWith("remember(") || groupName == "remember") &&
-            frameworkPrefixes.none { groupName.startsWith(it) } &&
-            groupName !in frameworkGroupNames &&
-            groupName.isNotEmpty() && groupName.first().isUpperCase()
-        if (!isCandidate) return fallback
-        val resolved = resolveQualifiedName(groupName)
-        return if (frameworkPrefixes.none { resolved.startsWith(it) }) resolved else fallback
-    }
+        if (groupName.startsWith("remember(") || groupName == "remember") return fallback
+        if (frameworkPrefixes.any { groupName.startsWith(it) }) return fallback
+        if (groupName.isEmpty() || !groupName.first().isUpperCase()) return fallback
 
-    /**
-     * Resolve a simple composable name to its qualified name using the
-     * traced composable info collected during traceEventStart calls.
-     * Falls back to the simple name if no match is found.
-     */
-    internal fun resolveQualifiedName(simpleName: String): String {
-        val matches = synchronized(simpleNameIndexLock) { simpleNameIndex[simpleName] }
-        return matches?.firstOrNull()?.qualifiedName ?: simpleName
+        // Look up the simple name in the traced composable index
+        val matches = synchronized(simpleNameIndexLock) { simpleNameIndex[groupName] }
+        if (matches != null && matches.isNotEmpty()) {
+            // If ANY match resolves to a user package, treat as user composable
+            val userMatch = matches.firstOrNull { traced ->
+                frameworkPrefixes.none { prefix -> traced.qualifiedName.startsWith(prefix) }
+            }
+            return userMatch?.qualifiedName ?: fallback  // all framework → skip
+        }
+
+        // Not in simpleNameIndex → Compose infrastructure Group name (Content, Layout,
+        // ComposeNode, etc.) or a composable that wasn't traced. Conservatively treat
+        // as framework to avoid stealing testTag mappings from the real user composable.
+        return fallback
     }
 
     // ── Tag-to-function mapping (delegates to platform) ──────────────

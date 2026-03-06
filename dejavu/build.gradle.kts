@@ -180,7 +180,11 @@ composeCompiler {
 
 mavenPublishing {
   publishToMavenCentral(automaticRelease = true)
-  signAllPublications()
+
+  // Only sign when GPG credentials are available (skips signing for CI mavenLocal publishes)
+  if (project.hasProperty("signing.keyId") || System.getenv("ORG_GRADLE_PROJECT_signingInMemoryKey") != null) {
+    signAllPublications()
+  }
 
   coordinates("me.mmckenna.dejavu", "dejavu", version.toString())
 

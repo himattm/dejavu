@@ -37,7 +37,7 @@ fun DialogPopupScreen() {
       UnrelatedStaticChild()
       if (showDialog) {
         Dialog(onDismissRequest = { showDialog = false }) {
-          DialogContent()
+          DialogContent(onDismiss = { showDialog = false })
         }
       }
       if (showPopup) {
@@ -87,11 +87,14 @@ fun UnrelatedStaticChild() {
 }
 
 @Composable
-fun DialogContent() {
+fun DialogContent(onDismiss: () -> Unit = {}) {
   SideEffect { GroundTruthCounters.increment("dialog_content") }
   Column(modifier = Modifier.testTag("dialog_content")) {
     Text("Dialog Content")
     DialogInner()
+    Button(onClick = onDismiss, modifier = Modifier.testTag("dismiss_dialog_btn")) {
+      Text("Dismiss")
+    }
   }
 }
 
