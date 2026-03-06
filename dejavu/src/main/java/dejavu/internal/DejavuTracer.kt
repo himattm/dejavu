@@ -418,7 +418,7 @@ internal object DejavuTracer : CompositionTracer {
                 if (Runtime.isLoggingEnabled && !foundTag) {
                     val cn = mi.modifier.javaClass.name
                     if (cn.contains("TestTag", ignoreCase = true) || cn.contains("Semantics", ignoreCase = true)) {
-                        Log.d(TAG, "Could not extract testTag from modifier: ${cn.substringAfterLast('.')}")
+                        Log.d(TAG, "Unresolved testTag on $currentUserComposable (modifier=${cn.substringAfterLast('.')})")
                     }
                 }
             }

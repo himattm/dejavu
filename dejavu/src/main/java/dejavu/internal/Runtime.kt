@@ -69,7 +69,7 @@ internal object Runtime {
     enabled = true
     this.logToLogcat = logToLogcat
     appRef = app
-    if (logToLogcat) Log.d(TAG, "Dejavu enabled")
+    if (logToLogcat) Log.d(TAG, "Dejavu enabled — streaming recomposition events (filter: \"Dejavu\")")
 
     // Enable debug inspector info so InspectableValue.inspectableElements is populated
     previousInspectorInfoEnabled = isDebugInspectorInfoEnabled
