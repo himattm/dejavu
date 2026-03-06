@@ -255,16 +255,6 @@ internal object DejavuTracer : CompositionTracer {
         return fallback
     }
 
-    /**
-     * Resolve a simple composable name to its qualified name using the
-     * traced composable info collected during traceEventStart calls.
-     * Falls back to the simple name if no match is found.
-     */
-    private fun resolveQualifiedName(simpleName: String): String {
-        val matches = simpleNameIndex[simpleName] ?: return simpleName
-        return matches.firstOrNull()?.qualifiedName ?: simpleName
-    }
-
     @OptIn(UiToolingDataApi::class)
     private fun extractIntKey(groupKey: Any?): Int? = when (groupKey) {
         is Int -> groupKey
