@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 @OptIn(InternalComposeTracingApi::class)
 internal object DejavuTracer : CompositionTracer {
-    private const val TAG = "DejavuTracer"
+    private const val TAG = "Dejavu"
 
     @Volatile
     var enabled = false
@@ -120,7 +120,8 @@ internal object DejavuTracer : CompositionTracer {
             if (Runtime.isLoggingEnabled) {
                 val hasTags = testTagToFunction.values.any { it == traced.qualifiedName }
                 if (!hasTags) {
-                    Log.d(TAG, "RECOMPOSE #$recompCount: ${traced.qualifiedName} (${traced.sourceLocation}) d1=$dirty1 parent=$parentName [no testTag — per-function aggregate]")
+                    val parentSuffix = if (parentName != null) " ← ${parentName.substringAfterLast('.')}" else ""
+                    Log.d(TAG, "Recomposition #$recompCount: ${traced.qualifiedName} (${traced.sourceLocation})$parentSuffix")
                 }
             }
         }
@@ -414,11 +415,10 @@ internal object DejavuTracer : CompositionTracer {
                     }
                 }
 
-                // Diagnostic logging for failed tag resolution
                 if (Runtime.isLoggingEnabled && !foundTag) {
                     val cn = mi.modifier.javaClass.name
                     if (cn.contains("TestTag", ignoreCase = true) || cn.contains("Semantics", ignoreCase = true)) {
-                        Log.w(TAG, "Modifier looks like testTag but extraction failed: $cn")
+                        Log.d(TAG, "Could not extract testTag from modifier: ${cn.substringAfterLast('.')}")
                     }
                 }
             }
@@ -532,7 +532,7 @@ internal object DejavuTracer : CompositionTracer {
             matches.size == 1 -> matches.first().value.get()
             matches.size > 1 -> {
                 if (Runtime.isLoggingEnabled) {
-                    Log.w(TAG, "Ambiguous composable name '$name' matches ${matches.size} entries; using first match")
+                    Log.d(TAG, "Ambiguous name '$name' matches ${matches.size} composables, using first match")
                 }
                 matches.first().value.get()
             }
@@ -603,7 +603,8 @@ internal object DejavuTracer : CompositionTracer {
                 val sourceLocation = simpleNameIndex[functionName.substringAfterLast('.')]
                     ?.firstOrNull()?.sourceLocation ?: ""
                 val locationSuffix = if (sourceLocation.isNotEmpty()) " ($sourceLocation)" else ""
-                Log.d(TAG, "RECOMPOSE-TAG #$count: $tag → $functionName$locationSuffix parent=$parentName")
+                val parentSuffix = if (parentName != null) " ← ${parentName.substringAfterLast('.')}" else ""
+                Log.d(TAG, "Recomposition #$count: [$tag] $functionName$locationSuffix$parentSuffix")
             }
 
             // Diff parameter snapshots to determine what changed

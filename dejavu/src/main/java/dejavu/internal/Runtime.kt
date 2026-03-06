@@ -264,13 +264,9 @@ internal object Runtime {
   }
 
   private fun logFrameDetails(anyChanged: Boolean) {
-    Log.d(TAG, "frame begin")
-    if (anyChanged) Log.d(TAG, "composition changed")
-    latestSnapshots.forEach { snapshot ->
-      val roots = getRootGroupCount(snapshot)
-      Log.d(TAG, "snapshot roots=${roots ?: "?"}")
-    }
-    Log.d(TAG, "frame end")
+    if (!anyChanged) return
+    val snapshotSummary = latestSnapshots.mapNotNull { getRootGroupCount(it) }
+    Log.d(TAG, "Composition changed (${snapshotSummary.size} snapshot(s), roots=${snapshotSummary.joinToString(",")})")
   }
 
   private var changeCountMethod: Method? = null
