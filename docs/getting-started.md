@@ -12,8 +12,12 @@ dependencies {
 ## 2. Write a test
 
 ```kotlin
+import dejavu.assertRecompositions
+import dejavu.assertStable
+import dejavu.createRecompositionTrackingRule
+
 @get:Rule
-val composeTestRule = createRecompositionTrackingRule<MainActivity>()
+val composeTestRule = createRecompositionTrackingRule()
 
 @Test
 fun incrementCounter_onlyValueRecomposes() {

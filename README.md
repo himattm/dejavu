@@ -30,7 +30,7 @@ Compose's recomposition behavior is an implicit contract — composables should 
 Dejavu is a test-only library that turns recomposition behavior into assertions. Tag your composables with standard `Modifier.testTag()`, write expectations against recomposition counts, and get structured diagnostics when something changes — whether from a teammate, a library upgrade, an AI agent rewriting your UI code, or a refactor that silently destabilizes a lambda.
 
 - **Zero production code changes** — just `Modifier.testTag()`
-- **One-line test setup** — `createRecompositionTrackingRule<Activity>()`
+- **One-line test setup** — `createRecompositionTrackingRule()`
 - **Rich diagnostics** — source location, recomposition timeline, parameter diffs, causality analysis
 - **Per-instance tracking** — multiple instances of the same composable get independent counters
 
@@ -49,7 +49,7 @@ dependencies {
 
 ```kotlin
 @get:Rule
-val composeTestRule = createRecompositionTrackingRule<MainActivity>()
+val composeTestRule = createRecompositionTrackingRule()
 
 @Test
 fun incrementCounter_onlyValueRecomposes() {
