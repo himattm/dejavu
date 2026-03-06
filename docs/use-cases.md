@@ -68,14 +68,14 @@ The agent sees a structured stream:
 ```
 D/Dejavu: Dejavu enabled — streaming recomposition events (filter: "Dejavu")
 D/Dejavu: Composition changed (1 snapshot(s), roots=3)
-D/Dejavu: Recomposition #1: [counter_value] demo.app.ui.CounterValue (Counter.kt:29), parent = CounterScreen
-D/Dejavu: Recomposition #2: [counter_value] demo.app.ui.CounterValue (Counter.kt:29), parent = CounterScreen
+D/Dejavu: Recomposition #1: [counter_value] demo.app.ui.CounterValue (Counter.kt:29), parent=demo.app.ui.CounterScreen
+D/Dejavu: Recomposition #2: [counter_value] demo.app.ui.CounterValue (Counter.kt:29), parent=demo.app.ui.CounterScreen
 ```
 
 Each line tells the agent which composable recomposed, where it lives in source, and which parent triggered it. An agent running `adb logcat -s Dejavu` gets a live feed of UI state it can use to:
 
 - **Verify its own changes** — after refactoring a composable, watch whether recompositions increase or decrease without needing a full test cycle
-- **Diagnose performance issues** — spot cascading recompositions in real time by following the parent chain (`parent = CounterScreen`)
+- **Diagnose performance issues** — spot cascading recompositions in real time by following the parent chain (`parent=demo.app.ui.CounterScreen`)
 - **Build context about UI behavior** — understand how user interactions map to composition changes before deciding what to optimize
 
 This turns logcat into a lightweight observability layer for composition, giving agents the same kind of real-time signal that a developer would get from Layout Inspector — but in a format they can parse and reason about.
