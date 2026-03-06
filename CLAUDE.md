@@ -11,12 +11,12 @@ Minimum verification after any code change:
 ```bash
 ./gradlew -q --console=plain :dejavu:jvmTest                    # Desktop JVM (unit + compose UI tests)
 ./gradlew -q --console=plain :dejavu:testDebugUnitTest           # Android unit tests
-./gradlew -q --console=plain :dejavu:compileKotlinIosArm64       # iOS compilation
-./gradlew -q --console=plain :dejavu:compileKotlinWasmJs         # Wasm compilation
+./gradlew -q --console=plain :dejavu:iosSimulatorArm64Test       # iOS compose UI tests on simulator
+./gradlew -q --console=plain :dejavu:wasmJsBrowserTest           # Wasm compose UI tests in headless browser
 ./gradlew -q --console=plain apiCheck                            # API compat (all targets)
 ```
 
-`jvmTest` is the critical one — it runs both unit tests and the compose UI integration tests (SideEffect accuracy, recomposition counting). Android excludes compose UI tests from `testDebugUnitTest` (they require Robolectric); Android compose coverage comes from instrumented tests in the demo app.
+`jvmTest`, `iosSimulatorArm64Test`, and `wasmJsBrowserTest` all run the compose UI integration tests (SideEffect accuracy, recomposition counting) from `commonTest`. Android excludes compose UI tests from `testDebugUnitTest` (they require Robolectric); Android compose coverage comes from instrumented tests in the demo app.
 
 ## Project Structure
 
