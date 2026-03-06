@@ -523,6 +523,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#stream-composition-state-to-ai-agents-via-logcat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stream Composition State to AI Agents via Logcat
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#guardrail-against-unexpected-ui-changes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -736,6 +747,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#stream-composition-state-to-ai-agents-via-logcat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stream Composition State to AI Agents via Logcat
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#guardrail-against-unexpected-ui-changes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -821,35 +843,53 @@
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="n">assertThat</span><span class="p">(</span><span class="n">count</span><span class="p">).</span><span class="na">isAtMost</span><span class="p">(</span><span class="m">2</span><span class="p">)</span>
 <a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="p">}</span>
 </code></pre></div>
+<h2 id="stream-composition-state-to-ai-agents-via-logcat">Stream Composition State to AI Agents via Logcat<a class="headerlink" href="#stream-composition-state-to-ai-agents-via-logcat" title="Permanent link">&para;</a></h2>
+<p>Beyond test assertions, you can give AI agents real-time visibility into what your UI is doing by enabling Dejavu's logcat output. When <code>logToLogcat = true</code>, every recomposition event is streamed under the <code>"Dejavu"</code> tag — agents monitoring logcat can follow along with composition changes as they happen.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">// In your debug Application class</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">Dejavu</span><span class="p">.</span><span class="na">enable</span><span class="p">(</span><span class="n">app</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">this</span><span class="p">,</span><span class="w"> </span><span class="n">logToLogcat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+</code></pre></div>
+<p>The agent sees a structured stream:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>D/Dejavu: Dejavu enabled — streaming recomposition events (filter: &quot;Dejavu&quot;)
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>D/Dejavu: Composition changed (1 snapshot(s), roots=3)
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>D/Dejavu: Recomposition #1: [counter_value] demo.app.ui.CounterValue (Counter.kt:29), parent=demo.app.ui.CounterScreen
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>D/Dejavu: Recomposition #2: [counter_value] demo.app.ui.CounterValue (Counter.kt:29), parent=demo.app.ui.CounterScreen
+</code></pre></div>
+<p>Each line tells the agent which composable recomposed, where it lives in source, and which parent triggered it. An agent running <code>adb logcat -s Dejavu</code> gets a live feed of UI state it can use to:</p>
+<ul>
+<li><strong>Verify its own changes</strong> — after refactoring a composable, watch whether recompositions increase or decrease without needing a full test cycle</li>
+<li><strong>Diagnose performance issues</strong> — spot cascading recompositions in real time by following the parent chain (<code>parent=demo.app.ui.CounterScreen</code>)</li>
+<li><strong>Build context about UI behavior</strong> — understand how user interactions map to composition changes before deciding what to optimize</li>
+</ul>
+<p>This turns logcat into a lightweight observability layer for composition, giving agents the same kind of real-time signal that a developer would get from Layout Inspector — but in a format they can parse and reason about.</p>
 <h2 id="guardrail-against-unexpected-ui-changes">Guardrail Against Unexpected UI Changes<a class="headerlink" href="#guardrail-against-unexpected-ui-changes" title="Permanent link">&para;</a></h2>
 <p>When AI agents — or any automated tooling — modify your codebase, they can introduce subtle changes to recomposition behavior without touching any visible UI. A refactor that moves a state read higher in the tree, or inlines a composable that was previously skippable, can cause cascading recompositions that degrade performance silently.</p>
 <p>Dejavu tests act as guardrails. If an agent's changes cause a composable to recompose more than expected, the test fails before the change is ever merged:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nd">@Test</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kd">fun</span><span class="w"> </span><span class="nf">headerRemainsStable_whenListScrolls</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="c1">// Scroll the list</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="n">composeTestRule</span><span class="p">.</span><span class="na">onNodeWithTag</span><span class="p">(</span><span class="s">&quot;product_list&quot;</span><span class="p">).</span><span class="na">performScrollToIndex</span><span class="p">(</span><span class="m">10</span><span class="p">)</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="c1">// Header must not recompose during scroll — lock this expectation in</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="n">composeTestRule</span><span class="p">.</span><span class="na">onNodeWithTag</span><span class="p">(</span><span class="s">&quot;product_header&quot;</span><span class="p">).</span><span class="na">assertStable</span><span class="p">()</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">    </span><span class="c1">// Each visible item recomposes at most once during scroll</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">    </span><span class="n">composeTestRule</span><span class="p">.</span><span class="na">onNodeWithTag</span><span class="p">(</span><span class="s">&quot;product_item_0&quot;</span><span class="p">).</span><span class="na">assertRecompositions</span><span class="p">(</span><span class="n">atMost</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nd">@Test</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="kd">fun</span><span class="w"> </span><span class="nf">headerRemainsStable_whenListScrolls</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="c1">// Scroll the list</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="n">composeTestRule</span><span class="p">.</span><span class="na">onNodeWithTag</span><span class="p">(</span><span class="s">&quot;product_list&quot;</span><span class="p">).</span><span class="na">performScrollToIndex</span><span class="p">(</span><span class="m">10</span><span class="p">)</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span><span class="c1">// Header must not recompose during scroll — lock this expectation in</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">    </span><span class="n">composeTestRule</span><span class="p">.</span><span class="na">onNodeWithTag</span><span class="p">(</span><span class="s">&quot;product_header&quot;</span><span class="p">).</span><span class="na">assertStable</span><span class="p">()</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">    </span><span class="c1">// Each visible item recomposes at most once during scroll</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">    </span><span class="n">composeTestRule</span><span class="p">.</span><span class="na">onNodeWithTag</span><span class="p">(</span><span class="s">&quot;product_item_0&quot;</span><span class="p">).</span><span class="na">assertRecompositions</span><span class="p">(</span><span class="n">atMost</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="p">}</span>
 </code></pre></div>
 <p>This is particularly valuable in codebases where AI agents operate with broad permissions. The agents can move fast and make structural changes, but they can't silently introduce recomposition regressions — the test suite catches it. You get the speed of automated refactoring with the confidence that performance characteristics are preserved.</p>
 <h2 id="enforce-recomposition-budgets-in-ci">Enforce Recomposition Budgets in CI<a class="headerlink" href="#enforce-recomposition-budgets-in-ci" title="Permanent link">&para;</a></h2>
 <p>Combine Dejavu with your CI pipeline to enforce recomposition budgets across your entire app. Every PR that increases recomposition counts beyond the expected values will fail the build:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nd">@Test</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kd">fun</span><span class="w"> </span><span class="nf">criticalPath_meetsRecompositionBudget</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="c1">// Simulate the critical user flow</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="n">composeTestRule</span><span class="p">.</span><span class="na">onNodeWithTag</span><span class="p">(</span><span class="s">&quot;search_input&quot;</span><span class="p">).</span><span class="na">performTextInput</span><span class="p">(</span><span class="s">&quot;shoes&quot;</span><span class="p">)</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="n">composeTestRule</span><span class="p">.</span><span class="na">waitForIdle</span><span class="p">()</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="c1">// Enforce budget: search results render efficiently</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="n">composeTestRule</span><span class="p">.</span><span class="na">onNodeWithTag</span><span class="p">(</span><span class="s">&quot;search_results&quot;</span><span class="p">).</span><span class="na">assertRecompositions</span><span class="p">(</span><span class="n">atMost</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">)</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">    </span><span class="n">composeTestRule</span><span class="p">.</span><span class="na">onNodeWithTag</span><span class="p">(</span><span class="s">&quot;search_header&quot;</span><span class="p">).</span><span class="na">assertStable</span><span class="p">()</span>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">    </span><span class="n">composeTestRule</span><span class="p">.</span><span class="na">onNodeWithTag</span><span class="p">(</span><span class="s">&quot;filter_bar&quot;</span><span class="p">).</span><span class="na">assertStable</span><span class="p">()</span>
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nd">@Test</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kd">fun</span><span class="w"> </span><span class="nf">criticalPath_meetsRecompositionBudget</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="c1">// Simulate the critical user flow</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="n">composeTestRule</span><span class="p">.</span><span class="na">onNodeWithTag</span><span class="p">(</span><span class="s">&quot;search_input&quot;</span><span class="p">).</span><span class="na">performTextInput</span><span class="p">(</span><span class="s">&quot;shoes&quot;</span><span class="p">)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="n">composeTestRule</span><span class="p">.</span><span class="na">waitForIdle</span><span class="p">()</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">    </span><span class="c1">// Enforce budget: search results render efficiently</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">    </span><span class="n">composeTestRule</span><span class="p">.</span><span class="na">onNodeWithTag</span><span class="p">(</span><span class="s">&quot;search_results&quot;</span><span class="p">).</span><span class="na">assertRecompositions</span><span class="p">(</span><span class="n">atMost</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">)</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">    </span><span class="n">composeTestRule</span><span class="p">.</span><span class="na">onNodeWithTag</span><span class="p">(</span><span class="s">&quot;search_header&quot;</span><span class="p">).</span><span class="na">assertStable</span><span class="p">()</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">    </span><span class="n">composeTestRule</span><span class="p">.</span><span class="na">onNodeWithTag</span><span class="p">(</span><span class="s">&quot;filter_bar&quot;</span><span class="p">).</span><span class="na">assertStable</span><span class="p">()</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="p">}</span>
 </code></pre></div>
 <p>This works the same way you'd use snapshot tests for visual regressions — except instead of pixels, you're locking in recomposition behavior. The test documents the expected performance contract and enforces it automatically.</p>
 
