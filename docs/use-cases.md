@@ -68,8 +68,8 @@ The agent sees a structured stream:
 ```
 D/Dejavu: Dejavu enabled — streaming recomposition events (filter: "Dejavu")
 D/Dejavu: Composition changed (1 snapshot(s), roots=3)
-D/Dejavu: Recomposition #1: [counter_value] demo.app.ui.CounterValue (Counter.kt:29) parent = CounterScreen
-D/Dejavu: Recomposition #2: [counter_value] demo.app.ui.CounterValue (Counter.kt:29) parent = CounterScreen
+D/Dejavu: Recomposition #1: [counter_value] demo.app.ui.CounterValue (Counter.kt:29), parent = CounterScreen
+D/Dejavu: Recomposition #2: [counter_value] demo.app.ui.CounterValue (Counter.kt:29), parent = CounterScreen
 ```
 
 Each line tells the agent which composable recomposed, where it lives in source, and which parent triggered it. An agent running `adb logcat -s Dejavu` gets a live feed of UI state it can use to:

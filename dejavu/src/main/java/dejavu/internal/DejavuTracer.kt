@@ -120,7 +120,7 @@ internal object DejavuTracer : CompositionTracer {
             if (Runtime.isLoggingEnabled) {
                 val hasTags = testTagToFunction.values.any { it == traced.qualifiedName }
                 if (!hasTags) {
-                    val parentSuffix = if (parentName != null) " parent = ${parentName.substringAfterLast('.')}" else ""
+                    val parentSuffix = if (parentName != null) ", parent = ${parentName.substringAfterLast('.')}" else ""
                     Log.d(TAG, "Recomposition #$recompCount: ${traced.qualifiedName} (${traced.sourceLocation})$parentSuffix")
                 }
             }
@@ -603,7 +603,7 @@ internal object DejavuTracer : CompositionTracer {
                 val sourceLocation = simpleNameIndex[functionName.substringAfterLast('.')]
                     ?.firstOrNull()?.sourceLocation ?: ""
                 val locationSuffix = if (sourceLocation.isNotEmpty()) " ($sourceLocation)" else ""
-                val parentSuffix = if (parentName != null) " parent = ${parentName.substringAfterLast('.')}" else ""
+                val parentSuffix = if (parentName != null) ", parent = ${parentName.substringAfterLast('.')}" else ""
                 Log.d(TAG, "Recomposition #$count: [$tag] $functionName$locationSuffix$parentSuffix")
             }
 
