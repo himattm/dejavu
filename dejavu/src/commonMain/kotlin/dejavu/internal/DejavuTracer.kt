@@ -8,7 +8,7 @@ import kotlinx.atomicfu.locks.synchronized
 
 @OptIn(InternalComposeTracingApi::class)
 internal object DejavuTracer : CompositionTracer {
-    private const val TAG = "DejavuTracer"
+    private const val TAG = "Dejavu"
 
     @kotlin.concurrent.Volatile
     var enabled = false
@@ -161,7 +161,8 @@ internal object DejavuTracer : CompositionTracer {
                     testTagToFunction.values.any { it == traced.qualifiedName }
                 }
                 if (!hasTags) {
-                    platformLog(TAG, "RECOMPOSE #$recompCount: ${traced.qualifiedName} (${traced.sourceLocation}) d1=$dirty1 parent=$parentName [no testTag — per-function aggregate]")
+                    val parentSuffix = if (parentName != null) ", parent=${parentName}" else ""
+                    platformLog(TAG, "Recomposition #$recompCount: ${traced.qualifiedName} (${traced.sourceLocation})$parentSuffix")
                 }
             }
         }
@@ -280,7 +281,7 @@ internal object DejavuTracer : CompositionTracer {
                 matches.size == 1 -> matches.first().value
                 matches.size > 1 -> {
                     if (isLoggingEnabled()) {
-                        platformWarnLog(TAG, "Ambiguous composable name '$name' matches ${matches.size} entries; using first match")
+                        platformLog(TAG, "Ambiguous name '$name' matches ${matches.size} composables, using first match")
                     }
                     matches.first().value
                 }

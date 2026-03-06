@@ -16,7 +16,7 @@ import kotlinx.atomicfu.locks.synchronized
  * tag and recomposition data.
  */
 internal object TagMapping {
-    private const val TAG = "DejavuTracer"
+    private const val TAG = "Dejavu"
 
     /**
      * Walk the CompositionData Group trees to build a mapping from
@@ -243,7 +243,7 @@ internal object TagMapping {
                 if (isLoggingEnabled() && !foundTag) {
                     val cn = mi.modifier.javaClass.name
                     if (cn.contains("TestTag", ignoreCase = true) || cn.contains("Semantics", ignoreCase = true)) {
-                        Log.w(TAG, "Modifier looks like testTag but extraction failed: $cn")
+                        Log.d(TAG, "Unresolved testTag on $currentUserComposable (modifier=${cn.substringAfterLast('.')})")
                     }
                 }
             }
@@ -384,7 +384,8 @@ internal object TagMapping {
                     DejavuTracer.simpleNameIndex[functionName.substringAfterLast('.')]
                 }?.firstOrNull()?.sourceLocation ?: ""
                 val locationSuffix = if (sourceLocation.isNotEmpty()) " ($sourceLocation)" else ""
-                platformLog(TAG, "RECOMPOSE-TAG #$count: $tag -> $functionName$locationSuffix parent=$parentName")
+                val parentSuffix = if (parentName != null) ", parent=${parentName}" else ""
+                platformLog(TAG, "Recomposition #$count: [$tag] $functionName$locationSuffix$parentSuffix")
             }
 
             // Diff parameter snapshots to determine what changed

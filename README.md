@@ -126,7 +126,8 @@ composeTestRule.resetRecompositionCounts()
 // Get the current recomposition count for a tag
 val count: Int = composeTestRule.getRecompositionCount("tag")
 
-// Enable with Logcat output for manual debugging
+// Stream recomposition events to Logcat (filter: "Dejavu")
+// Useful for AI agents or external tools monitoring UI state
 Dejavu.enable(app = this, logToLogcat = true)
 
 // Disable tracking and clear all data

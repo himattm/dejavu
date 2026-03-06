@@ -15,7 +15,9 @@ public actual object Dejavu {
    * Call in Application.onCreate() or before setContent().
    *
    * @param app Application instance for composition owner discovery
-   * @param logToLogcat When true, recomposition events logged to Logcat
+   * @param logToLogcat When true, recomposition events are streamed to Logcat
+   *   under the "Dejavu" tag. Useful for giving AI agents or external tools
+   *   real-time visibility into composition changes and UI state.
    */
   public fun enable(
     app: Application,
