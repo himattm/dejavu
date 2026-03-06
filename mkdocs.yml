@@ -1,5 +1,5 @@
 site_name: Dejavu
-site_description: Lock in Compose performance. Catch recomposition regressions before your users do.
+site_description: Lock in Compose performance. Catch recomposition regressions before your users.
 site_url: https://dejavu.mmckenna.me
 repo_url: https://github.com/himattm/dejavu
 repo_name: himattm/dejavu
