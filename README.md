@@ -167,6 +167,35 @@ All tracking runs in the app process on the main thread, directly accessible to 
 | 2025.01.01 | 1.8.x | 2.0.x | Tested |
 | 2026.01.01 | 1.10.x | 2.0.x | Baseline |
 
+## Kotlin Multiplatform
+
+Dejavu supports Kotlin Multiplatform with the following targets:
+
+| Target | Status | Notes |
+|--------|--------|-------|
+| Android | Full support | Tag mapping via `ui-tooling-data` Group tree |
+| Desktop (JVM) | Full support | Tag mapping via `CompositionGroup` + `sourceInfo` |
+| iOS (arm64, simulatorArm64, x64) | Supported | Same as JVM; `LazyVerticalGrid` has upstream Compose runtime bug |
+| WasmJs (browser) | Supported | Exception propagation limited in test runner |
+
+### KMP Test Setup
+
+For non-Android platforms, use `runComposeUiTest` with `DejavuTestContent`:
+
+```kotlin
+@Test
+fun myComposable_isStable() = runComposeUiTest {
+    setContent { DejavuTestContent { MyComposable() } }
+    waitForIdle()
+    onNodeWithTag("my_tag").assertStable()
+}
+```
+
+### Known Gaps
+
+- **iOS/WasmJs: `LazyVerticalGrid` crash** — The Compose runtime's internal slot table hash implementation crashes on iOS/Native and WasmJs when `LazyVerticalGrid` is in the composition. This is an upstream Compose bug, not a Dejavu issue. `LazyColumn`, `LazyRow`, and all other composables work correctly when `LazyVerticalGrid` is not present.
+- **WasmJs: Exception propagation** — The Wasm test runner intercepts exceptions at a higher level than the test code, preventing try-catch from capturing `AssertionError` messages. Assertion *behavior* (pass/fail) works correctly; only error message inspection is affected. Parameter validation exceptions (`IllegalArgumentException`) are caught correctly when structured inside `runComposeUiTest`.
+
 ## Known Limitations
 
 - **Off-screen lazy items** — `LazyColumn`/`LazyRow` only compose items that are visible. Items that haven't been composed don't exist in the composition tree, so Dejavu has nothing to track. Scroll them into view before asserting.

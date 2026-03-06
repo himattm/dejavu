@@ -63,6 +63,7 @@ class ErrorMessagePatternTest {
 
     @Test
     fun errorMessage_containsHeaderAndExpectedActual() {
+        if (isWasmJs) return // Wasm test runner swallows AssertionError, see KMP Known Gaps
         val msg = captureErrorMessage()
         assertTrue(
             msg.contains("Recomposition assertion failed for testTag='test_header'"),
@@ -80,6 +81,7 @@ class ErrorMessagePatternTest {
 
     @Test
     fun errorMessage_containsSourceLocation() {
+        if (isWasmJs) return // Wasm test runner swallows AssertionError, see KMP Known Gaps
         val msg = captureErrorMessage()
         assertTrue(
             msg.contains("ErrorTestHeader"),
@@ -89,6 +91,7 @@ class ErrorMessagePatternTest {
 
     @Test
     fun errorMessage_containsAllTrackedComposables() {
+        if (isWasmJs) return // Wasm test runner swallows AssertionError, see KMP Known Gaps
         val msg = captureErrorMessage()
         assertTrue(
             msg.contains("All tracked composables:"),
@@ -106,6 +109,7 @@ class ErrorMessagePatternTest {
 
     @Test
     fun errorMessage_containsRecompositionTimeline() {
+        if (isWasmJs) return // Wasm test runner swallows AssertionError, see KMP Known Gaps
         val msg = captureErrorMessage()
         assertTrue(
             msg.contains("Recomposition timeline:"),
@@ -131,6 +135,7 @@ class ErrorMessagePatternTest {
 
     @Test
     fun errorMessage_containsParentInfo() {
+        if (isWasmJs) return // Wasm test runner swallows AssertionError, see KMP Known Gaps
         val msg = captureErrorMessage()
         assertTrue(
             msg.contains("parent:"),
@@ -140,6 +145,7 @@ class ErrorMessagePatternTest {
 
     @Test
     fun errorMessage_containsCausalityInfo() {
+        if (isWasmJs) return // Wasm test runner swallows AssertionError, see KMP Known Gaps
         val msg = captureErrorMessage()
         assertTrue(
             msg.contains("Possible cause:"),
@@ -153,6 +159,7 @@ class ErrorMessagePatternTest {
 
     @Test
     fun errorMessage_containsSemanticTree() {
+        if (isWasmJs) return // Wasm test runner swallows AssertionError, see KMP Known Gaps
         val msg = captureErrorMessage()
         assertTrue(
             msg.contains("Node:"),

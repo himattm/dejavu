@@ -93,3 +93,9 @@ internal fun DejavuTestContent(content: @Composable () -> Unit) {
 internal fun refreshTagMapping() {
     DejavuTracer.buildTagMapping(DejavuTracer.inspectionTables)
 }
+
+/** True only on WasmJs targets — used to skip tests with Wasm test runner limitations. */
+internal expect val isWasmJs: Boolean
+
+/** True only on iOS/Native targets — used to skip tests with upstream Compose runtime bugs. */
+internal expect val isIos: Boolean

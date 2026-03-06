@@ -18,7 +18,6 @@ import androidx.compose.ui.test.runComposeUiTest
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 /**
@@ -42,58 +41,68 @@ class AssertionApiPatternTest {
     // ── Parameter validation ─────────────────────────────────────
 
     @Test
-    fun negativeExactly_throws() {
-        assertFailsWith<IllegalArgumentException> {
-            runComposeUiTest {
-                setContent { DejavuTestContent { TestCounter() } }
-                waitForIdle()
-                onNodeWithTag("counter_title").assertRecompositions(exactly = -1)
-            }
+    fun negativeExactly_throws() = runComposeUiTest {
+        setContent { DejavuTestContent { TestCounter() } }
+        waitForIdle()
+        val threw = try {
+            onNodeWithTag("counter_title").assertRecompositions(exactly = -1)
+            false
+        } catch (_: IllegalArgumentException) {
+            true
         }
+        assertTrue(threw, "Expected IllegalArgumentException for exactly = -1")
     }
 
     @Test
-    fun negativeAtLeast_throws() {
-        assertFailsWith<IllegalArgumentException> {
-            runComposeUiTest {
-                setContent { DejavuTestContent { TestCounter() } }
-                waitForIdle()
-                onNodeWithTag("counter_title").assertRecompositions(atLeast = -1)
-            }
+    fun negativeAtLeast_throws() = runComposeUiTest {
+        setContent { DejavuTestContent { TestCounter() } }
+        waitForIdle()
+        val threw = try {
+            onNodeWithTag("counter_title").assertRecompositions(atLeast = -1)
+            false
+        } catch (_: IllegalArgumentException) {
+            true
         }
+        assertTrue(threw, "Expected IllegalArgumentException for atLeast = -1")
     }
 
     @Test
-    fun negativeAtMost_throws() {
-        assertFailsWith<IllegalArgumentException> {
-            runComposeUiTest {
-                setContent { DejavuTestContent { TestCounter() } }
-                waitForIdle()
-                onNodeWithTag("counter_title").assertRecompositions(atMost = -1)
-            }
+    fun negativeAtMost_throws() = runComposeUiTest {
+        setContent { DejavuTestContent { TestCounter() } }
+        waitForIdle()
+        val threw = try {
+            onNodeWithTag("counter_title").assertRecompositions(atMost = -1)
+            false
+        } catch (_: IllegalArgumentException) {
+            true
         }
+        assertTrue(threw, "Expected IllegalArgumentException for atMost = -1")
     }
 
     @Test
-    fun exactlyWithAtLeast_throws() {
-        assertFailsWith<IllegalArgumentException> {
-            runComposeUiTest {
-                setContent { DejavuTestContent { TestCounter() } }
-                waitForIdle()
-                onNodeWithTag("counter_title").assertRecompositions(exactly = 1, atLeast = 1)
-            }
+    fun exactlyWithAtLeast_throws() = runComposeUiTest {
+        setContent { DejavuTestContent { TestCounter() } }
+        waitForIdle()
+        val threw = try {
+            onNodeWithTag("counter_title").assertRecompositions(exactly = 1, atLeast = 1)
+            false
+        } catch (_: IllegalArgumentException) {
+            true
         }
+        assertTrue(threw, "Expected IllegalArgumentException for exactly + atLeast")
     }
 
     @Test
-    fun atLeastGreaterThanAtMost_throws() {
-        assertFailsWith<IllegalArgumentException> {
-            runComposeUiTest {
-                setContent { DejavuTestContent { TestCounter() } }
-                waitForIdle()
-                onNodeWithTag("counter_title").assertRecompositions(atLeast = 5, atMost = 2)
-            }
+    fun atLeastGreaterThanAtMost_throws() = runComposeUiTest {
+        setContent { DejavuTestContent { TestCounter() } }
+        waitForIdle()
+        val threw = try {
+            onNodeWithTag("counter_title").assertRecompositions(atLeast = 5, atMost = 2)
+            false
+        } catch (_: IllegalArgumentException) {
+            true
         }
+        assertTrue(threw, "Expected IllegalArgumentException for atLeast > atMost")
     }
 
     // ── Missing testTag ──────────────────────────────────────────
