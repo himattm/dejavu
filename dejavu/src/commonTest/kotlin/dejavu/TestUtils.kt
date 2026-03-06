@@ -4,18 +4,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composer
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.InternalComposeTracingApi
-import androidx.compose.runtime.tooling.CompositionData
 import androidx.compose.runtime.tooling.LocalInspectionTables
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import dejavu.internal.DejavuTracer
 
 /**
- * Shared inspection tables set populated by the Compose runtime when
- * [LocalInspectionTables] is provided. Used by non-Android platforms
- * to access [CompositionData] for tag mapping.
+ * Alias for [DejavuTracer.inspectionTables]. Provided to [LocalInspectionTables]
+ * so the Compose runtime populates the tracer's tables directly, enabling
+ * [assertRecompositions]/[assertStable] to resolve testTag → function mappings
+ * without a manual sync step.
  */
-internal val testInspectionTables = mutableSetOf<CompositionData>()
+internal val testInspectionTables get() = DejavuTracer.inspectionTables
 
 /**
  * Enables the Dejavu tracer for testing without platform-specific dependencies.
@@ -26,9 +26,16 @@ internal fun enableDejavuForTest() {
     isDebugInspectorInfoEnabled = true
     DejavuTracer.enabled = true
     Composer.setTracer(DejavuTracer)
-    testInspectionTables.clear()
     DejavuTracer.inspectionTables.clear()
     DejavuTest.reset()
+}
+
+/**
+ * Clears recomposition counts but preserves composition history.
+ * Use mid-test when a live composition is still running.
+ */
+internal fun resetRecompositionCounts() {
+    DejavuTest.resetCounts()
 }
 
 /**
@@ -37,7 +44,6 @@ internal fun enableDejavuForTest() {
 internal fun disableDejavuForTest() {
     DejavuTracer.enabled = false
     isDebugInspectorInfoEnabled = false
-    testInspectionTables.clear()
     DejavuTracer.inspectionTables.clear()
 }
 
@@ -51,6 +57,10 @@ internal fun disableDejavuForTest() {
  * Without SubcomposeLayout, the root composition's `startRoot()` reads from the
  * Recomposer (which has no LocalInspectionTables) and never populates the set.
  *
+ * Provides [DejavuTracer.inspectionTables] directly so that the assertion API
+ * ([assertRecompositions]/[assertStable]) can resolve testTag → function mappings
+ * via [DejavuTracer.getCompositionSnapshots] without any manual sync.
+ *
  * Usage:
  * ```
  * setContent {
@@ -62,7 +72,7 @@ internal fun disableDejavuForTest() {
  */
 @Composable
 internal fun DejavuTestContent(content: @Composable () -> Unit) {
-    CompositionLocalProvider(LocalInspectionTables provides testInspectionTables) {
+    CompositionLocalProvider(LocalInspectionTables provides DejavuTracer.inspectionTables) {
         SubcomposeLayout { constraints ->
             val placeables = subcompose(Unit) { content() }
                 .map { it.measure(constraints) }
@@ -81,9 +91,5 @@ internal fun DejavuTestContent(content: @Composable () -> Unit) {
  * Call after [waitForIdle] and before making per-tag assertions.
  */
 internal fun refreshTagMapping() {
-    // Sync test inspection tables into the tracer
-    DejavuTracer.inspectionTables.clear()
-    DejavuTracer.inspectionTables.addAll(testInspectionTables)
-    // Build tag mapping from the composition data
-    DejavuTracer.buildTagMapping(testInspectionTables)
+    DejavuTracer.buildTagMapping(DejavuTracer.inspectionTables)
 }
