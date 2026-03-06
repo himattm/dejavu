@@ -65,9 +65,6 @@ public fun SemanticsNodeInteraction.assertRecompositions(
             failRecompositionsExpectation(
                 predicateDescription = description,
                 actualCount = count,
-                exactly = exactly,
-                atLeast = atLeast,
-                atMost = atMost,
                 functionName = functionName,
                 testTag = testTag,
                 node = node,
@@ -139,9 +136,6 @@ private inline fun SemanticsNodeInteraction.onRecompositions(
 private fun failRecompositionsExpectation(
     predicateDescription: String,
     actualCount: Int,
-    exactly: Int?,
-    atLeast: Int?,
-    atMost: Int?,
     functionName: String?,
     testTag: String?,
     node: SemanticsNode,
@@ -175,11 +169,6 @@ private fun failRecompositionsExpectation(
             appendLine("  Actual: composable was never composed or isn't being tracked")
         } else {
             appendLine("  Actual: $actualCount recomposition(s)")
-            // Delta hint: tell the developer whether recompositions were too high or too low
-            val deltaHint = buildDeltaHint(actualCount, exactly, atLeast, atMost)
-            if (deltaHint != null) {
-                appendLine("  $deltaHint")
-            }
         }
 
         // All tracked composables
@@ -287,44 +276,6 @@ private fun failRecompositionsExpectation(
     }
 
     throw UnexpectedRecompositionsError(message.trimEnd())
-}
-
-/**
- * Builds a human-readable delta hint describing how far off the actual count
- * was from the expected value/range, e.g. "(2 more than expected)" or
- * "(3 fewer than minimum)".
- */
-private fun buildDeltaHint(
-    actual: Int,
-    exactly: Int?,
-    atLeast: Int?,
-    atMost: Int?,
-): String? {
-    if (exactly != null) {
-        val delta = actual - exactly
-        return if (delta > 0) {
-            "($delta more than expected)"
-        } else {
-            "(${-delta} fewer than expected)"
-        }
-    }
-    if (atLeast != null && atMost != null) {
-        // Range mode — figure out which bound was violated
-        return if (actual < atLeast) {
-            "(${atLeast - actual} below minimum)"
-        } else if (actual > atMost) {
-            "(${actual - atMost} above maximum)"
-        } else {
-            null
-        }
-    }
-    if (atLeast != null && actual < atLeast) {
-        return "(${atLeast - actual} fewer than minimum)"
-    }
-    if (atMost != null && actual > atMost) {
-        return "(${actual - atMost} more than maximum)"
-    }
-    return null
 }
 
 /** Extracts the simple name (last segment after '.') from a qualified name. */

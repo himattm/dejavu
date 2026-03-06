@@ -13,7 +13,6 @@ dejavu.UnexpectedRecompositionsError: Recomposition assertion failed for testTag
   Composable: demo.app.ui.ProductHeader (ProductList.kt:29)
   Expected: exactly 0 recomposition(s)
   Actual: 1 recomposition(s)
-  (1 more than expected)
 
   All tracked composables:
     ProductListScreen = 1
@@ -73,10 +72,9 @@ This usually means the tag was set on a node that Dejavu could not walk up to a 
 ```
   Expected: exactly 0 recomposition(s)
   Actual: 1 recomposition(s)
-  (1 more than expected)
 ```
 
-Shows what you asserted, what actually happened, and a delta hint telling you whether recompositions were too high or too low. The description matches the assertion parameters:
+Shows what you asserted and what actually happened. The description matches the assertion parameters:
 
 | Assertion | Description |
 |-----------|-------------|
@@ -85,17 +83,6 @@ Shows what you asserted, what actually happened, and a delta hint telling you wh
 | `assertRecompositions(atMost = 3)` | `at most 3` |
 | `assertRecompositions(atLeast = 1, atMost = 5)` | `between 1 and 5` |
 | `assertStable()` | `exactly 0` |
-
-The delta hint tells you at a glance whether recompositions were too high or too low:
-
-| Scenario | Delta hint |
-|----------|------------|
-| `exactly = 1`, actual = 3 | `(2 more than expected)` |
-| `exactly = 3`, actual = 1 | `(2 fewer than expected)` |
-| `atLeast = 5`, actual = 2 | `(3 fewer than minimum)` |
-| `atMost = 2`, actual = 5 | `(3 more than maximum)` |
-| `atLeast = 5, atMost = 10`, actual = 2 | `(3 below minimum)` |
-| `atLeast = 5, atMost = 10`, actual = 15 | `(5 above maximum)` |
 
 A special actual value indicates the composable was never tracked:
 
@@ -185,7 +172,6 @@ The failing semantics node and a dump of the full semantic tree. The `<-- THIS N
 ```
   Expected: exactly 0 recomposition(s)
   Actual: 1 recomposition(s)
-  (1 more than expected)
 
   All tracked composables:
     ParentScreen     = 1
@@ -212,7 +198,6 @@ The failing semantics node and a dump of the full semantic tree. The `<-- THIS N
 ```
   Expected: exactly 1 recomposition(s)
   Actual: 3 recomposition(s)
-  (2 more than expected)
 
   Possible cause:
     3 state change(s) of type Product (2 same-value write(s)!)
@@ -246,7 +231,6 @@ The failing semantics node and a dump of the full semantic tree. The `<-- THIS N
 ```
   Expected: at most 1 recomposition(s)
   Actual: 3 recomposition(s)
-  (2 more than maximum)
 
   Recomposition timeline:
     #1 at +0ms — param slots changed: [0] | parent: Screen
@@ -277,7 +261,7 @@ java.lang.AssertionError: Failed to get semantics node for recomposition asserti
 
 For fast triage, read in this order:
 
-1. **Expected vs Actual + delta hint** -- understand the gap and direction (too many or too few)
+1. **Expected vs Actual** -- understand the gap
 2. **All tracked composables** -- find the `<-- FAILED` marker and check if the parent has the same count (cascade pattern)
 3. **Possible cause** -- check for same-value writes (immediate bug) or parameter-driven (needs investigation)
 4. **Recomposition timeline** -- see which parameter slots changed and when

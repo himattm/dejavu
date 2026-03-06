@@ -54,47 +54,6 @@ class ErrorMessageValidationTest {
         assertThat(error.message).contains("Recomposition assertion failed for testTag='product_header'")
         assertThat(error.message).contains("Expected: exactly 1 recomposition(s)")
         assertThat(error.message).contains("Actual: 3 recomposition(s)")
-        assertThat(error.message).contains("(2 more than expected)")
-    }
-
-    // ── Test 1b: Delta hint — too many recompositions ──────────
-
-    @Test
-    fun errorMessage_deltaHint_tooMany() {
-        triggerThreeSelections()
-
-        val error = catchAssertionError {
-            composeTestRule.onNodeWithTag("product_header")
-                .assertRecompositions(exactly = 0)
-        }
-
-        assertThat(error.message).contains("(3 more than expected)")
-    }
-
-    // ── Test 1c: Delta hint — too few recompositions ─────────
-
-    @Test
-    fun errorMessage_deltaHint_tooFew() {
-        val error = catchAssertionError {
-            composeTestRule.onNodeWithTag("product_header")
-                .assertRecompositions(atLeast = 5)
-        }
-
-        assertThat(error.message).contains("fewer than minimum")
-    }
-
-    // ── Test 1d: Delta hint — above maximum ─────────────────
-
-    @Test
-    fun errorMessage_deltaHint_aboveMaximum() {
-        triggerThreeSelections()
-
-        val error = catchAssertionError {
-            composeTestRule.onNodeWithTag("product_header")
-                .assertRecompositions(atMost = 1)
-        }
-
-        assertThat(error.message).contains("more than maximum")
     }
 
     // ── Test 2: Source Location ─────────────────────────────────
