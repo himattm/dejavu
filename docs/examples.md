@@ -18,7 +18,7 @@ import org.junit.Test
 class MyRecompositionTest {
 
     @get:Rule
-    val composeTestRule = createRecompositionTrackingRule<MyActivity>()
+    val composeTestRule = createRecompositionTrackingRule()
 
     // Tests go here
 }

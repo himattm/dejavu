@@ -15,7 +15,7 @@
 
 **[Full Documentation](https://dejavu.mmckenna.me)**
 
-**Lock in Compose performance. Catch recomposition regressions before your users do.**
+**Lock in Compose performance. Catch recomposition regressions before your users.**
 
 ## The Problem
 
@@ -30,7 +30,7 @@ Compose's recomposition behavior is an implicit contract — composables should 
 Dejavu is a test-only library that turns recomposition behavior into assertions. Tag your composables with standard `Modifier.testTag()`, write expectations against recomposition counts, and get structured diagnostics when something changes — whether from a teammate, a library upgrade, an AI agent rewriting your UI code, or a refactor that silently destabilizes a lambda.
 
 - **Zero production code changes** — just `Modifier.testTag()`
-- **One-line test setup** — `createRecompositionTrackingRule<Activity>()`
+- **One-line test setup** — `createRecompositionTrackingRule()`
 - **Rich diagnostics** — source location, recomposition timeline, parameter diffs, causality analysis
 - **Per-instance tracking** — multiple instances of the same composable get independent counters
 
@@ -45,28 +45,17 @@ dependencies {
 }
 ```
 
-### 2. Enable in your Application
-
-```kotlin
-class MyApp : Application() {
-    override fun onCreate() {
-        super.onCreate()
-        Dejavu.enable(app = this)
-    }
-}
-```
-
-### 3. Write a test
+### 2. Write a test
 
 ```kotlin
 @get:Rule
-val composeTestRule = createRecompositionTrackingRule<MainActivity>()
+val composeTestRule = createRecompositionTrackingRule()
 
 @Test
 fun incrementCounter_onlyValueRecomposes() {
     composeTestRule.onNodeWithTag("inc_button").performClick()
     composeTestRule.onNodeWithTag("counter_value").assertRecompositions(exactly = 1)
-    composeTestRule.onNodeWithTag("counter_title").assertStable()
+    composeTestRule.onNodeWithTag("counter_title").assertStable() // stable = zero recompositions
 }
 ```
 

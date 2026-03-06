@@ -7,7 +7,9 @@
 [![Compose](https://img.shields.io/badge/Compose-1.6.x–1.10.x-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/develop/ui/compose)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-**Lock in Compose performance. Catch recomposition regressions before your users do.**
+**[GitHub Repository](https://github.com/himattm/dejavu)**
+
+**Lock in Compose performance. Catch recomposition regressions before your users.**
 
 ## The Problem
 
