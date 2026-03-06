@@ -54,6 +54,32 @@ fun agentCanCheckRecompositionBudget() {
 }
 ```
 
+## Stream Composition State to AI Agents via Logcat
+
+Beyond test assertions, you can give AI agents real-time visibility into what your UI is doing by enabling Dejavu's logcat output. When `logToLogcat = true`, every recomposition event is streamed under the `"Dejavu"` tag — agents monitoring logcat can follow along with composition changes as they happen.
+
+```kotlin
+// In your debug Application class
+Dejavu.enable(app = this, logToLogcat = true)
+```
+
+The agent sees a structured stream:
+
+```
+D/Dejavu: Dejavu enabled — streaming recomposition events (filter: "Dejavu")
+D/Dejavu: Composition changed (1 snapshot(s), roots=3)
+D/Dejavu: Recomposition #1: [counter_value] demo.app.ui.CounterValue (Counter.kt:29) ← CounterScreen
+D/Dejavu: Recomposition #2: [counter_value] demo.app.ui.CounterValue (Counter.kt:29) ← CounterScreen
+```
+
+Each line tells the agent which composable recomposed, where it lives in source, and which parent triggered it. An agent running `adb logcat -s Dejavu` gets a live feed of UI state it can use to:
+
+- **Verify its own changes** — after refactoring a composable, watch whether recompositions increase or decrease without needing a full test cycle
+- **Diagnose performance issues** — spot cascading recompositions in real time by following the parent chain (`← CounterScreen`)
+- **Build context about UI behavior** — understand how user interactions map to composition changes before deciding what to optimize
+
+This turns logcat into a lightweight observability layer for composition, giving agents the same kind of real-time signal that a developer would get from Layout Inspector — but in a format they can parse and reason about.
+
 ## Guardrail Against Unexpected UI Changes
 
 When AI agents — or any automated tooling — modify your codebase, they can introduce subtle changes to recomposition behavior without touching any visible UI. A refactor that moves a state read higher in the tree, or inlines a composable that was previously skippable, can cause cascading recompositions that degrade performance silently.
