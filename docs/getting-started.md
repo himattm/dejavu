@@ -5,7 +5,7 @@
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    androidTestImplementation("me.mmckenna.dejavu:dejavu:0.1.1")
+    androidTestImplementation("me.mmckenna.dejavu:dejavu:0.1.2")
 }
 ```
 
@@ -21,9 +21,12 @@ val composeTestRule = createRecompositionTrackingRule()
 
 @Test
 fun incrementCounter_onlyValueRecomposes() {
-    composeTestRule.onNodeWithTag("inc_button").performClick()
-    composeTestRule.onNodeWithTag("counter_value").assertRecompositions(exactly = 1)
-    composeTestRule.onNodeWithTag("counter_title").assertStable() // stable = zero recompositions
+    composeTestRule.onNodeWithTag("inc_button")
+        .performClick()
+    composeTestRule.onNodeWithTag("counter_value")
+        .assertRecompositions(exactly = 1)
+    composeTestRule.onNodeWithTag("counter_title")
+        .assertStable() // stable = zero recompositions
 }
 ```
 
