@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-03-08
+
+### Changed
+- Improved logcat output — unified TAG to "Dejavu", single summary lines, cleaner parent notation, consistent log levels (#23)
+
+### Fixed
+- testTag mapping for older Compose versions using value-based InspectableValue (#16)
+- Hardcoded framework filter replaced with dynamic simpleNameIndex resolution (#20)
+
 ## [0.1.1] - 2026-03-03
 
 ### Changed
