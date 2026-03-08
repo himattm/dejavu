@@ -13,8 +13,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     concurrency:
-      group: docs-${{ github.ref }}
-      cancel-in-progress: true
+      group: docs
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
         with:
