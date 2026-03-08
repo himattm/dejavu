@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://dejavu.mmckenna.me/0.1.2/</loc>
+         <lastmod>2026-03-08</lastmod>
+    </url>
+    <url>
+         <loc>https://dejavu.mmckenna.me/0.1.2/api-reference/</loc>
+         <lastmod>2026-03-08</lastmod>
+    </url>
+    <url>
+         <loc>https://dejavu.mmckenna.me/0.1.2/causality-analysis/</loc>
+         <lastmod>2026-03-08</lastmod>
+    </url>
+    <url>
+         <loc>https://dejavu.mmckenna.me/0.1.2/error-messages/</loc>
+         <lastmod>2026-03-08</lastmod>
+    </url>
+    <url>
+         <loc>https://dejavu.mmckenna.me/0.1.2/examples/</loc>
+         <lastmod>2026-03-08</lastmod>
+    </url>
+    <url>
+         <loc>https://dejavu.mmckenna.me/0.1.2/getting-started/</loc>
+         <lastmod>2026-03-08</lastmod>
+    </url>
+    <url>
+         <loc>https://dejavu.mmckenna.me/0.1.2/how-it-works/</loc>
+         <lastmod>2026-03-08</lastmod>
+    </url>
+    <url>
+         <loc>https://dejavu.mmckenna.me/0.1.2/use-cases/</loc>
+         <lastmod>2026-03-08</lastmod>
+    </url>
+</urlset>
