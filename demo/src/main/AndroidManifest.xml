@@ -102,5 +102,9 @@
         android:name=".ReorderListActivity"
         android:exported="false" />
 
+    <activity
+        android:name=".MissingKeyListActivity"
+        android:exported="false" />
+
   </application>
 </manifest>
