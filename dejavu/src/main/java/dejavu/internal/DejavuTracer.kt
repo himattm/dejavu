@@ -61,6 +61,8 @@ internal object DejavuTracer : CompositionTracer {
         override fun initialValue(): ArrayDeque<String> = ArrayDeque()
     }
 
+    internal fun currentComposableName(): String? = composableStack.get()?.lastOrNull()
+
     internal data class TracedComposable(
         val key: Int,
         val simpleName: String,      // e.g., "CounterValue"
@@ -87,6 +89,9 @@ internal object DejavuTracer : CompositionTracer {
         val stack = composableStack.get()!!
         val parentName = stack.lastOrNull()
         stack.add(traced.qualifiedName)
+
+        // Bind the pending observer scope to this composable name
+        DejavuCompositionObserver.bindPendingScope(traced.qualifiedName)
 
         // Skip framework composables for counting
         if (isFrameworkComposable(info)) return
@@ -757,6 +762,7 @@ internal object DejavuTracer : CompositionTracer {
         tagParameterChanges.clear()
         lastSeenTags.clear()
         tagToIdentity.clear()
+        DejavuCompositionObserver.reset()
         // Note: simpleNameIndex is NOT cleared here because keyToInfo is kept.
         // simpleNameIndex is derived from keyToInfo entries (populated in parseInfo),
         // and since keyToInfo is preserved across reset so that already-composed keys

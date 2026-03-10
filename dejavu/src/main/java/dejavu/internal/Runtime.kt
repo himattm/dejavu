@@ -12,6 +12,9 @@ import androidx.compose.runtime.InternalComposeTracingApi
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.runtime.ExperimentalComposeRuntimeApi
+import androidx.compose.runtime.RecomposerInfo
+import androidx.compose.runtime.tooling.CompositionObserverHandle
 import androidx.compose.runtime.tooling.CompositionData
 import androidx.compose.ui.tooling.data.Group
 import androidx.compose.ui.tooling.data.UiToolingDataApi
@@ -35,6 +38,8 @@ internal object Runtime {
   private var appRef: Application? = null
   private var mainScope: CoroutineScope? = null
   private val observedRecomposers = mutableSetOf<Any>()
+  @OptIn(ExperimentalComposeRuntimeApi::class)
+  private val observerHandles = mutableListOf<CompositionObserverHandle>()
 
   private var lifecycleCallbacks: Application.ActivityLifecycleCallbacks? = null
   private var lastResumedRef: WeakReference<Activity>? = null
@@ -63,7 +68,8 @@ internal object Runtime {
   @OptIn(InternalComposeTracingApi::class)
   fun enable(
     app: Application,
-    logToLogcat: Boolean = false
+    logToLogcat: Boolean = false,
+    observeCompositions: Boolean = false,
   ) {
     if (enabled) return
     enabled = true
@@ -116,6 +122,7 @@ internal object Runtime {
           if (observedRecomposers.add(info)) {
             // Initialize change count baseline
             getChangeCount(info)?.let { recomposerChangeCount[info] = it }
+            if (observeCompositions) tryRegisterCompositionObserver(info)
             // When a recomposer appears, seed inspection tags now and next frame
             lastResumedRef?.get()?.let { activity ->
               ensureInspectionTag(activity)
@@ -172,7 +179,7 @@ internal object Runtime {
     lifecycleCallbacks = callbacks
   }
 
-  @OptIn(InternalComposeTracingApi::class)
+  @OptIn(InternalComposeTracingApi::class, ExperimentalComposeRuntimeApi::class)
   fun disable() {
     if (!enabled) return
     enabled = false
@@ -188,6 +195,12 @@ internal object Runtime {
     snapshotObserverHandle = null
     stateValueCache.clear()
     pendingCause = null
+
+    observerHandles.forEach { it.dispose() }
+    observerHandles.clear()
+    DejavuCompositionObserver.isAvailable = false
+    DejavuCompositionObserver.fullReset()
+    CompositionRegistrar.reset()
 
     mainScope?.cancel()
     mainScope = null
@@ -337,6 +350,20 @@ internal object Runtime {
       root.children.size
     } catch (_: Throwable) {
       null
+    }
+  }
+
+  @OptIn(ExperimentalComposeRuntimeApi::class)
+  private fun tryRegisterCompositionObserver(recomposerInfo: Any) {
+    try {
+      val info = recomposerInfo as? RecomposerInfo ?: return
+      val handle = info.observe(CompositionRegistrar) ?: return
+      observerHandles.add(handle)
+      DejavuCompositionObserver.isAvailable = true
+    } catch (_: NoClassDefFoundError) {
+      // CompositionObserver API not available — skip silently
+    } catch (_: NoSuchMethodError) {
+      // Same
     }
   }
 }

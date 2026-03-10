@@ -6,6 +6,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.printToString
 import dejavu.internal.ChangeType
+import dejavu.internal.DejavuCompositionObserver
 import dejavu.internal.DejavuTracer
 import dejavu.internal.RecomposeTracker
 
@@ -235,7 +236,7 @@ private fun failRecompositionsExpectation(
             }
         }
 
-        // Causality info from RecomposeTracker
+        // Causality info from RecomposeTracker (snapshot-level)
         if (functionName != null) {
             val cause = RecomposeTracker.getCause(functionName)
             if (cause != null) {
@@ -254,6 +255,19 @@ private fun failRecompositionsExpectation(
                 if (cause.isParameterDriven) {
                     appendLine("    Parameter/parent change detected (dirty bits set)")
                 }
+            }
+        }
+
+        // Scope-level invalidation detail from CompositionObserver
+        if (functionName != null && DejavuCompositionObserver.isAvailable) {
+            val invalidationDesc = DejavuCompositionObserver.describeInvalidationCauses(functionName)
+            if (invalidationDesc != null) {
+                appendLine()
+                appendLine(invalidationDesc)
+            }
+            val depsDesc = DejavuCompositionObserver.describeStateDependencies(functionName)
+            if (depsDesc != null) {
+                appendLine(depsDesc)
             }
         }
 
