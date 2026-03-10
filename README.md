@@ -56,9 +56,14 @@ val composeTestRule = createRecompositionTrackingRule()
 
 @Test
 fun incrementCounter_onlyValueRecomposes() {
-    composeTestRule.onNodeWithTag("inc_button").performClick()
-    composeTestRule.onNodeWithTag("counter_value").assertRecompositions(exactly = 1)
-    composeTestRule.onNodeWithTag("counter_title").assertStable() // stable = zero recompositions
+  composeTestRule.onNodeWithTag("inc_button")
+    .performClick()
+    
+  composeTestRule.onNodeWithTag("counter_value")
+    .assertRecompositions(exactly = 1)
+    
+  composeTestRule.onNodeWithTag("counter_title")
+    .assertStable() // stable = zero recompositions
 }
 ```
 
@@ -112,12 +117,18 @@ See the full [Use Cases](https://dejavu.mmckenna.me/use-cases/) guide for exampl
 composeTestRule.onNodeWithTag("tag").assertRecompositions(exactly = 2)
 
 // Bounds
-composeTestRule.onNodeWithTag("tag").assertRecompositions(atLeast = 1)
-composeTestRule.onNodeWithTag("tag").assertRecompositions(atMost = 3)
-composeTestRule.onNodeWithTag("tag").assertRecompositions(atLeast = 1, atMost = 5)
+composeTestRule.onNodeWithTag("tag")
+  .assertRecompositions(atLeast = 1)
+
+composeTestRule.onNodeWithTag("tag")
+  .assertRecompositions(atMost = 3)
+
+composeTestRule.onNodeWithTag("tag")
+  .assertRecompositions(atLeast = 1, atMost = 5)
 
 // Stability (alias for exactly = 0)
-composeTestRule.onNodeWithTag("tag").assertStable()
+composeTestRule.onNodeWithTag("tag")
+  .assertStable()
 ```
 
 ### Utilities
