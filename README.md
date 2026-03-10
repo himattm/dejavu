@@ -13,6 +13,9 @@
 [![Compose](https://img.shields.io/badge/Compose-1.6.x–1.10.x-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/develop/ui/compose)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
+###### Featured In
+<a href="https://jetc.dev/issues/305.html"><img src="https://img.shields.io/badge/As_Seen_In-jetc.dev_Newsletter_Issue_%23305-blue?logo=Jetpack+Compose&amp;logoColor=white" alt="As Seen In - jetc.dev Newsletter Issue #305"></a>
+
 **[Full Documentation](https://dejavu.mmckenna.me)**
 
 **Lock in Compose performance. Catch recomposition regressions before your users.**
