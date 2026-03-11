@@ -40,6 +40,11 @@ internal object DejavuTracer : CompositionTracer {
     private val tagParamFingerprints = ConcurrentHashMap<String, Int>()
     private val perTagRecompEvents = ConcurrentHashMap<String, MutableList<RecompositionEvent>>()
 
+    // Tags that have had at least one fingerprint comparison (detectTagRecomposition ran
+    // with prev != null). When a tag is in this set, per-tag tracking is reliable and a
+    // null perTagRecompCounts entry means "stable" (0), not "unknown".
+    private val tagsWithFingerprint: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
     // Parameter snapshots for change tracking (replaces raw fingerprint comparison)
     private val tagParamSnapshots = ConcurrentHashMap<String, List<ParamSnapshot>>()
     private val tagParameterChanges = ConcurrentHashMap<String, MutableList<List<ParameterChange>>>()
@@ -552,8 +557,16 @@ internal object DejavuTracer : CompositionTracer {
         return recompositionEvents[functionName]?.toList() ?: emptyList()
     }
 
-    fun getPerTagRecompositionCount(tag: String): Int? =
-        perTagRecompCounts[tag]?.get()
+    fun getPerTagRecompositionCount(tag: String): Int? {
+        perTagRecompCounts[tag]?.get()?.let { return it }
+        // If per-tag fingerprint tracking has compared this tag's fingerprint
+        // at least once (prev != null in detectTagRecomposition) but found no
+        // change, return 0 (stable) rather than null. Returning null would
+        // cause the caller to fall back to the function-level count, which is
+        // shared across ALL instances and would misattribute another instance's
+        // recomposition to this one.
+        return if (tag in tagsWithFingerprint) 0 else null
+    }
 
     fun getPerTagRecompositionEvents(tag: String): List<RecompositionEvent> =
         perTagRecompEvents[tag]?.toList() ?: emptyList()
@@ -562,15 +575,27 @@ internal object DejavuTracer : CompositionTracer {
         tagParameterChanges[tag]?.toList() ?: emptyList()
 
     /**
-     * Returns true if the given function has multiple tags mapped to it,
-     * indicating multiple instances of the same composable in the tree.
+     * Returns true if the given function has multiple distinct instances in the
+     * composition tree. Uses Group identity (Anchor) to distinguish actual
+     * separate instances from multiple tags within the same instance.
+     *
+     * For example, a composable with both `Modifier.testTag("root")` on a Column
+     * and `Modifier.testTag("button")` on a child Button would have two tags
+     * mapping to the same function, but only ONE instance. This should NOT be
+     * treated as multi-instance.
      */
     fun isMultiInstanceFunction(functionName: String): Boolean {
-        var count = 0
+        val identities = mutableSetOf<Any>()
         for ((tag, value) in testTagToFunction) {
             if (value == functionName && tag in lastSeenTags) {
-                count++
-                if (count > 1) return true
+                val id = tagToIdentity[tag]
+                if (id != null) {
+                    identities.add(id)
+                } else {
+                    // No identity tracked — treat each tag as a separate instance
+                    identities.add(tag)
+                }
+                if (identities.size > 1) return true
             }
         }
         return false
@@ -594,6 +619,11 @@ internal object DejavuTracer : CompositionTracer {
 
         // Store/update the snapshot
         val previousSnapshot = tagParamSnapshots.put(tag, currentSnapshot)
+
+        // Mark this tag as having a reliable fingerprint comparison baseline
+        if (prev != null) {
+            tagsWithFingerprint.add(tag)
+        }
 
         if (prev != null && prev != fingerprint) {
             val count = perTagRecompCounts.getOrPut(tag) { AtomicInteger(0) }.incrementAndGet()
@@ -700,8 +730,12 @@ internal object DejavuTracer : CompositionTracer {
             hash = hash * 31 + (p.name?.hashCode() ?: 0)
             hash = hash * 31 + (p.value?.hashCode() ?: 0)
         }
-        // Also include data to catch state-driven changes
+        // Include group.data to catch state-driven changes, but exclude
+        // Compose runtime internals (RecomposeScopeImpl, etc.) whose identity-
+        // based hashCode can change between buildTagMapping passes even when
+        // the composable wasn't recomposed (e.g., LazyColumn infrastructure).
         for (item in group.data) {
+            if (item != null && item.javaClass.name.startsWith("androidx.compose.runtime.")) continue
             hash = hash * 31 + (item?.hashCode() ?: 0)
         }
         return hash
@@ -717,6 +751,7 @@ internal object DejavuTracer : CompositionTracer {
         testTagToFunction.clear()
         perTagRecompCounts.clear()
         tagParamFingerprints.clear()
+        tagsWithFingerprint.clear()
         perTagRecompEvents.clear()
         tagParamSnapshots.clear()
         tagParameterChanges.clear()

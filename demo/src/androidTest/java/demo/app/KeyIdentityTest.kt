@@ -67,14 +67,13 @@ class KeyIdentityTest {
     }
 
     @Test
-    fun addLoopItem_existingItemsShareCountWithNewItem() {
+    fun addLoopItem_existingItemsStable() {
         composeTestRule.onNodeWithTag("add_loop_btn").performClick()
-        // All LoopItem instances share the same qualified name in Dejavu's tracker.
-        // The new item's initial composition registers as 1 recomposition for all tags
-        // that resolve to LoopItem, even though existing items were actually skipped.
-        composeTestRule.onNodeWithTag("loop_item_0").assertRecompositions(exactly = 1)
-        composeTestRule.onNodeWithTag("loop_item_1").assertRecompositions(exactly = 1)
-        composeTestRule.onNodeWithTag("loop_item_2").assertRecompositions(exactly = 1)
+        // Adding a new LoopItem doesn't recompose existing items — their parameters
+        // haven't changed. Per-tag tracking correctly identifies them as stable.
+        composeTestRule.onNodeWithTag("loop_item_0").assertStable()
+        composeTestRule.onNodeWithTag("loop_item_1").assertStable()
+        composeTestRule.onNodeWithTag("loop_item_2").assertStable()
     }
 
     @Test
