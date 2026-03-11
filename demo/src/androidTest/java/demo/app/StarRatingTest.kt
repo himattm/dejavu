@@ -18,13 +18,14 @@ class StarRatingTest {
     val composeTestRule = createRecompositionTrackingRule<StarRatingActivity>()
 
     @Test
-    fun rating_all_stars_recompose_on_change() {
+    fun rating_changed_stars_recompose_unchanged_stable() {
+        // Rating 0 → 3: stars 0-2 change isFilled (false→true), stars 3-4 stay false
         composeTestRule.onNodeWithTag("set_rating_3_btn").performClick()
         composeTestRule.onNodeWithTag("star_0").assertRecompositions(atLeast = 1)
         composeTestRule.onNodeWithTag("star_1").assertRecompositions(atLeast = 1)
         composeTestRule.onNodeWithTag("star_2").assertRecompositions(atLeast = 1)
-        composeTestRule.onNodeWithTag("star_3").assertRecompositions(atLeast = 1)
-        composeTestRule.onNodeWithTag("star_4").assertRecompositions(atLeast = 1)
+        composeTestRule.onNodeWithTag("star_3").assertStable()
+        composeTestRule.onNodeWithTag("star_4").assertStable()
     }
 
     @Test
