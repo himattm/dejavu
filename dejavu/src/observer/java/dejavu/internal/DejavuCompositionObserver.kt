@@ -50,6 +50,10 @@ internal object DejavuCompositionObserver :
     // Thread-local because composition runs on a single thread.
     private val pendingScope = ThreadLocal<RecomposeScope?>()
 
+    // Reentrancy guard: reading a DerivedState's .value triggers further reads
+    // which re-enter onReadInScope, causing infinite recursion.
+    private val isCapturingValue = ThreadLocal<Boolean>()
+
     // scope → state objects read during last composition pass
     private val scopeReads: MutableMap<RecomposeScope, MutableSet<Any>> =
         Collections.synchronizedMap(IdentityHashMap())
@@ -95,10 +99,18 @@ internal object DejavuCompositionObserver :
         scopeReads.getOrPut(scope) {
             Collections.newSetFromMap(IdentityHashMap())
         }.add(state)
-        // Capture baseline value on first read so we can show the full progression
+        // Capture baseline value on first read so we can show the full progression.
+        // Guard against reentrancy: reading a DerivedState's .value triggers
+        // further reads which re-enter onReadInScope.
+        if (isCapturingValue.get() == true) return
         val id = System.identityHashCode(state)
         if (!initialValues.containsKey(id)) {
-            describeStateValue(state)?.let { initialValues[id] = it }
+            isCapturingValue.set(true)
+            try {
+                describeStateValue(state)?.let { initialValues[id] = it }
+            } finally {
+                isCapturingValue.set(false)
+            }
         }
     }
 
