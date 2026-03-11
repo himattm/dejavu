@@ -50,8 +50,10 @@ internal object DejavuCompositionObserver :
     // Thread-local because composition runs on a single thread.
     private val pendingScope = ThreadLocal<RecomposeScope?>()
 
-    // Reentrancy guard: reading a DerivedState's .value triggers further reads
-    // which re-enter onReadInScope, causing infinite recursion.
+    // Reentrancy guard: reading a DerivedState's .value triggers the derivation
+    // computation, which reads other state objects, re-entering onReadInScope.
+    // Placed in stateValue() so all callers (onReadInScope, onScopeInvalidated,
+    // friendlyStateName) are protected.
     private val isCapturingValue = ThreadLocal<Boolean>()
 
     // scope → state objects read during last composition pass
@@ -99,18 +101,9 @@ internal object DejavuCompositionObserver :
         scopeReads.getOrPut(scope) {
             Collections.newSetFromMap(IdentityHashMap())
         }.add(state)
-        // Capture baseline value on first read so we can show the full progression.
-        // Guard against reentrancy: reading a DerivedState's .value triggers
-        // further reads which re-enter onReadInScope.
-        if (isCapturingValue.get() == true) return
         val id = System.identityHashCode(state)
         if (!initialValues.containsKey(id)) {
-            isCapturingValue.set(true)
-            try {
-                describeStateValue(state)?.let { initialValues[id] = it }
-            } finally {
-                isCapturingValue.set(false)
-            }
+            describeStateValue(state)?.let { initialValues[id] = it }
         }
     }
 
@@ -258,9 +251,15 @@ internal object DejavuCompositionObserver :
 
     // ── Internals ───────────────────────────────────────────────────
 
-    private fun stateValue(state: Any): Any? = when (state) {
-        is State<*> -> state.value
-        else -> null
+    private fun stateValue(state: Any): Any? {
+        if (state !is State<*>) return null
+        if (isCapturingValue.get() == true) return null
+        isCapturingValue.set(true)
+        return try {
+            state.value
+        } finally {
+            isCapturingValue.set(false)
+        }
     }
 
     /**
