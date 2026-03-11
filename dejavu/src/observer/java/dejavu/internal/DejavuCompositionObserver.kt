@@ -5,6 +5,8 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.RecomposeScope
 import androidx.compose.runtime.State
 import androidx.compose.runtime.tooling.CompositionObserver
+import androidx.compose.runtime.tooling.CompositionObserverHandle
+import androidx.compose.runtime.tooling.CompositionRegistrationObserver
 import androidx.compose.runtime.tooling.ObservableComposition
 import java.util.Collections
 import java.util.IdentityHashMap
@@ -32,10 +34,13 @@ import java.util.concurrent.CopyOnWriteArrayList
  * [dejavu.SemanticNodeInteractionsKt.failRecompositionsExpectation].
  */
 @OptIn(ExperimentalComposeRuntimeApi::class)
-internal object DejavuCompositionObserver : CompositionObserver {
+internal object DejavuCompositionObserver :
+    CompositionObserver,
+    CompositionRegistrationObserver,
+    ObserverDelegate {
 
     @Volatile
-    var isAvailable: Boolean = false
+    override var isAvailable: Boolean = false
 
     // scope → qualified composable name
     private val scopeToComposable: MutableMap<RecomposeScope, String> =
@@ -66,7 +71,7 @@ internal object DejavuCompositionObserver : CompositionObserver {
     // identityHashCode → value string captured on first read (baseline before any invalidation)
     private val initialValues: ConcurrentHashMap<Int, String> = ConcurrentHashMap()
 
-    // ── Callbacks ────────────────────────────────────────────────────
+    // ── CompositionObserver callbacks ────────────────────────────────
 
     override fun onBeginComposition(composition: ObservableComposition) {}
     override fun onEndComposition(composition: ObservableComposition) {}
@@ -102,7 +107,7 @@ internal object DejavuCompositionObserver : CompositionObserver {
      * composable name onto the stack. Binds the pending scope (from the most
      * recent [onScopeEnter]) to the given name.
      */
-    fun bindPendingScope(qualifiedName: String) {
+    override fun bindPendingScope(qualifiedName: String) {
         val scope = pendingScope.get() ?: return
         pendingScope.set(null)
         scopeToComposable[scope] = qualifiedName
@@ -120,6 +125,43 @@ internal object DejavuCompositionObserver : CompositionObserver {
         scopeReads.remove(scope)
     }
 
+    // ── CompositionRegistrationObserver (from deleted CompositionRegistrar) ──
+
+    private val compositionHandles: MutableMap<ObservableComposition, CompositionObserverHandle> =
+        Collections.synchronizedMap(IdentityHashMap())
+
+    override fun onCompositionRegistered(composition: ObservableComposition) {
+        if (compositionHandles.containsKey(composition)) return
+        compositionHandles[composition] = composition.setObserver(this)
+    }
+
+    override fun onCompositionUnregistered(composition: ObservableComposition) {
+        compositionHandles.remove(composition)?.dispose()
+    }
+
+    // ── ObserverDelegate ─────────────────────────────────────────────
+
+    override fun tryRegister(recomposerInfo: Any): Any? {
+        return try {
+            val observeMethod = recomposerInfo.javaClass.methods.find {
+                it.name == "observe" && it.parameterCount == 1
+            } ?: return null
+            val handle = observeMethod.invoke(recomposerInfo, this)
+            if (handle != null) isAvailable = true
+            handle
+        } catch (_: Throwable) { null }
+    }
+
+    override fun disposeHandle(handle: Any) {
+        (handle as? CompositionObserverHandle)?.dispose()
+    }
+
+    override fun resetRegistrar() {
+        synchronized(compositionHandles) {
+            compositionHandles.values.toList().also { compositionHandles.clear() }
+        }.forEach { it.dispose() }
+    }
+
     // ── Query (for error messages) ──────────────────────────────────
 
     /**
@@ -127,7 +169,7 @@ internal object DejavuCompositionObserver : CompositionObserver {
      * caused invalidation for this composable. Returns null if no
      * invalidation was recorded.
      */
-    fun describeInvalidationCauses(qualifiedName: String): String? {
+    override fun describeInvalidationCauses(qualifiedName: String): String? {
         val records = invalidations[qualifiedName] ?: return null
         if (records.isEmpty()) return null
 
@@ -177,7 +219,7 @@ internal object DejavuCompositionObserver : CompositionObserver {
      * Formats the set of state objects this composable reads.
      * Returns null if no reads were recorded.
      */
-    fun describeStateDependencies(qualifiedName: String): String? {
+    override fun describeStateDependencies(qualifiedName: String): String? {
         val deps = composableDeps[qualifiedName] ?: return null
         if (deps.isEmpty()) return null
 
@@ -185,7 +227,7 @@ internal object DejavuCompositionObserver : CompositionObserver {
         return "  State reads: ${descriptions.joinToString(", ")}"
     }
 
-    fun reset() {
+    override fun reset() {
         // Keep scopeToComposable — it's structural (scope → name) and must persist
         // so that onScopeInvalidated (which fires before recomposition) can resolve
         // scope names. Cleared only in fullReset() when the observer is disposed.
@@ -196,7 +238,7 @@ internal object DejavuCompositionObserver : CompositionObserver {
     }
 
     /** Full cleanup when the observer is being disposed. */
-    fun fullReset() {
+    override fun fullReset() {
         scopeToComposable.clear()
         pendingScope.remove()
         reset()

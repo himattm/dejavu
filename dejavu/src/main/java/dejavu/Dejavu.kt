@@ -14,20 +14,19 @@ public object Dejavu {
    * Installs the CompositionTracer and starts tracking recompositions.
    * Call in Application.onCreate() or before setContent().
    *
+   * Automatically registers a CompositionObserver if the Compose runtime
+   * supports it, enriching assertion error messages with invalidation
+   * causality and state dependency information.
+   *
    * @param app Application instance for composition owner discovery
    * @param logToLogcat When true, recomposition events are streamed to Logcat
    *   under the "Dejavu" tag. Useful for giving AI agents or external tools
    *   real-time visibility into composition changes and UI state.
-   * @param observeCompositions When true, registers a CompositionObserver to
-   *   track per-scope invalidation causes and state dependencies. This enriches
-   *   assertion error messages with "why" information. Requires Compose runtime
-   *   support for the experimental CompositionObserver API.
    */
   public fun enable(
     app: Application,
     logToLogcat: Boolean = false,
-    observeCompositions: Boolean = false,
-  ): Unit = Runtime.enable(app, logToLogcat, observeCompositions)
+  ): Unit = Runtime.enable(app, logToLogcat)
 
   /**
    * Removes the tracer and clears all tracked recomposition data.

@@ -6,9 +6,9 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.printToString
 import dejavu.internal.ChangeType
-import dejavu.internal.ObserverCompat
 import dejavu.internal.DejavuTracer
 import dejavu.internal.RecomposeTracker
+import dejavu.internal.Runtime
 
 /**
  * Error thrown when recomposition count assertions fail.
@@ -259,13 +259,13 @@ private fun failRecompositionsExpectation(
         }
 
         // Scope-level invalidation detail from CompositionObserver
-        if (functionName != null && ObserverCompat.isAvailable) {
-            val invalidationDesc = ObserverCompat.describeInvalidationCauses(functionName)
+        if (functionName != null && Runtime.observerDelegate.isAvailable) {
+            val invalidationDesc = Runtime.observerDelegate.describeInvalidationCauses(functionName)
             if (invalidationDesc != null) {
                 appendLine()
                 appendLine(invalidationDesc)
             }
-            val depsDesc = ObserverCompat.describeStateDependencies(functionName)
+            val depsDesc = Runtime.observerDelegate.describeStateDependencies(functionName)
             if (depsDesc != null) {
                 appendLine(depsDesc)
             }

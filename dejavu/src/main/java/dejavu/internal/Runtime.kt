@@ -37,6 +37,8 @@ internal object Runtime {
   private val observedRecomposers = mutableSetOf<Any>()
   private val observerHandles = mutableListOf<Any>()
 
+  private var observer: ObserverDelegate = NoOpObserver
+
   private var lifecycleCallbacks: Application.ActivityLifecycleCallbacks? = null
   private var lastResumedRef: WeakReference<Activity>? = null
 
@@ -50,6 +52,8 @@ internal object Runtime {
 
   private var logToLogcat: Boolean = false
   internal val isLoggingEnabled get() = logToLogcat
+
+  internal val observerDelegate: ObserverDelegate get() = observer
 
   // Snapshot observer handle for cleanup
   private var snapshotObserverHandle: Any? = null
@@ -65,12 +69,17 @@ internal object Runtime {
   fun enable(
     app: Application,
     logToLogcat: Boolean = false,
-    observeCompositions: Boolean = false,
   ) {
     if (enabled) return
     enabled = true
     this.logToLogcat = logToLogcat
     appRef = app
+
+    // Load the real observer delegate if Compose observer API is available
+    observer = try {
+        Class.forName("dejavu.internal.DejavuCompositionObserver")
+            .getDeclaredField("INSTANCE").get(null) as ObserverDelegate
+    } catch (_: Throwable) { NoOpObserver }
     if (logToLogcat) Log.d(TAG, "Dejavu enabled — streaming recomposition events (filter: \"Dejavu\")")
 
     // Enable debug inspector info so InspectableValue.inspectableElements is populated
@@ -118,7 +127,7 @@ internal object Runtime {
           if (observedRecomposers.add(info)) {
             // Initialize change count baseline
             getChangeCount(info)?.let { recomposerChangeCount[info] = it }
-            if (observeCompositions) tryRegisterCompositionObserver(info)
+            tryRegisterCompositionObserver(info)
             // When a recomposer appears, seed inspection tags now and next frame
             lastResumedRef?.get()?.let { activity ->
               ensureInspectionTag(activity)
@@ -192,11 +201,11 @@ internal object Runtime {
     stateValueCache.clear()
     pendingCause = null
 
-    observerHandles.forEach { ObserverCompat.disposeHandle(it) }
+    observerHandles.forEach { observer.disposeHandle(it) }
     observerHandles.clear()
-    ObserverCompat.setAvailable(false)
-    ObserverCompat.fullReset()
-    ObserverCompat.resetRegistrar()
+    observer.fullReset()
+    observer.resetRegistrar()
+    observer = NoOpObserver
 
     mainScope?.cancel()
     mainScope = null
@@ -350,8 +359,7 @@ internal object Runtime {
   }
 
   private fun tryRegisterCompositionObserver(recomposerInfo: Any) {
-    val handle = ObserverCompat.tryRegister(recomposerInfo) ?: return
+    val handle = observer.tryRegister(recomposerInfo) ?: return
     observerHandles.add(handle)
-    ObserverCompat.setAvailable(true)
   }
 }

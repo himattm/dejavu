@@ -91,7 +91,7 @@ internal object DejavuTracer : CompositionTracer {
         stack.add(traced.qualifiedName)
 
         // Bind the pending observer scope to this composable name
-        ObserverCompat.bindPendingScope(traced.qualifiedName)
+        Runtime.observerDelegate.bindPendingScope(traced.qualifiedName)
 
         // Skip framework composables for counting
         if (isFrameworkComposable(info)) return
@@ -762,7 +762,7 @@ internal object DejavuTracer : CompositionTracer {
         tagParameterChanges.clear()
         lastSeenTags.clear()
         tagToIdentity.clear()
-        ObserverCompat.reset()
+        Runtime.observerDelegate.reset()
         // Note: simpleNameIndex is NOT cleared here because keyToInfo is kept.
         // simpleNameIndex is derived from keyToInfo entries (populated in parseInfo),
         // and since keyToInfo is preserved across reset so that already-composed keys
