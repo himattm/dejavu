@@ -3,6 +3,7 @@ package dejavu.internal
 import androidx.compose.runtime.ExperimentalComposeRuntimeApi
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.RecomposeScope
+import androidx.compose.runtime.State
 import androidx.compose.runtime.tooling.CompositionObserver
 import androidx.compose.runtime.tooling.ObservableComposition
 import java.util.Collections
@@ -203,22 +204,17 @@ internal object DejavuCompositionObserver : CompositionObserver {
 
     // ── Internals ───────────────────────────────────────────────────
 
+    private fun stateValue(state: Any): Any? = when (state) {
+        is State<*> -> state.value
+        else -> null
+    }
+
     /**
      * Returns a human-friendly name like `MutableState<Int>` instead of
      * `SnapshotMutableStateImpl`.
      */
     private fun friendlyStateName(state: Any): String {
-        val valueType = try {
-            when (state) {
-                is MutableState<*> -> state.value?.let { it::class.simpleName }
-                else -> {
-                    val getter = state.javaClass.methods.find {
-                        it.name == "getValue" && it.parameterCount == 0
-                    }
-                    getter?.invoke(state)?.let { it::class.simpleName }
-                }
-            }
-        } catch (_: Throwable) { null }
+        val valueType = stateValue(state)?.let { it::class.simpleName }
 
         val rawName = state::class.simpleName ?: "State"
         return when {
@@ -231,24 +227,9 @@ internal object DejavuCompositionObserver : CompositionObserver {
     }
 
     private fun describeStateValue(state: Any): String? {
-        return try {
-            when (state) {
-                is MutableState<*> -> state.value?.let { v ->
-                    val s = v.toString()
-                    if (s.length > 60) s.take(57) + "..." else s
-                }
-                else -> {
-                    val getter = state.javaClass.methods.find {
-                        it.name == "getValue" && it.parameterCount == 0
-                    }
-                    getter?.invoke(state)?.let { v ->
-                        val s = v.toString()
-                        if (s.length > 60) s.take(57) + "..." else s
-                    }
-                }
-            }
-        } catch (_: Throwable) {
-            null
+        return stateValue(state)?.let { v ->
+            val s = v.toString()
+            if (s.length > 60) s.take(57) + "..." else s
         }
     }
 }
