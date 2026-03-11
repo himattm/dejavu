@@ -35,6 +35,13 @@ android {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
   }
+
+  // CompositionObserver integration lives in src/observer/java/ and requires
+  // Compose runtime 1.7+ (observer API). Exclude with -PexcludeCompositionObserver=true
+  // when compiling against older Compose BOMs that lack these APIs.
+  if (project.findProperty("excludeCompositionObserver") != "true") {
+    sourceSets["main"].java.srcDir("src/observer/java")
+  }
 }
 
 // Set Kotlin JVM target to 17

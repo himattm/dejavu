@@ -12,9 +12,6 @@ import androidx.compose.runtime.InternalComposeTracingApi
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.snapshots.Snapshot
-import androidx.compose.runtime.ExperimentalComposeRuntimeApi
-import androidx.compose.runtime.RecomposerInfo
-import androidx.compose.runtime.tooling.CompositionObserverHandle
 import androidx.compose.runtime.tooling.CompositionData
 import androidx.compose.ui.tooling.data.Group
 import androidx.compose.ui.tooling.data.UiToolingDataApi
@@ -38,8 +35,7 @@ internal object Runtime {
   private var appRef: Application? = null
   private var mainScope: CoroutineScope? = null
   private val observedRecomposers = mutableSetOf<Any>()
-  @OptIn(ExperimentalComposeRuntimeApi::class)
-  private val observerHandles = mutableListOf<CompositionObserverHandle>()
+  private val observerHandles = mutableListOf<Any>()
 
   private var lifecycleCallbacks: Application.ActivityLifecycleCallbacks? = null
   private var lastResumedRef: WeakReference<Activity>? = null
@@ -179,7 +175,7 @@ internal object Runtime {
     lifecycleCallbacks = callbacks
   }
 
-  @OptIn(InternalComposeTracingApi::class, ExperimentalComposeRuntimeApi::class)
+  @OptIn(InternalComposeTracingApi::class)
   fun disable() {
     if (!enabled) return
     enabled = false
@@ -196,11 +192,11 @@ internal object Runtime {
     stateValueCache.clear()
     pendingCause = null
 
-    observerHandles.forEach { it.dispose() }
+    observerHandles.forEach { ObserverCompat.disposeHandle(it) }
     observerHandles.clear()
-    DejavuCompositionObserver.isAvailable = false
-    DejavuCompositionObserver.fullReset()
-    CompositionRegistrar.reset()
+    ObserverCompat.setAvailable(false)
+    ObserverCompat.fullReset()
+    ObserverCompat.resetRegistrar()
 
     mainScope?.cancel()
     mainScope = null
@@ -353,17 +349,9 @@ internal object Runtime {
     }
   }
 
-  @OptIn(ExperimentalComposeRuntimeApi::class)
   private fun tryRegisterCompositionObserver(recomposerInfo: Any) {
-    try {
-      val info = recomposerInfo as? RecomposerInfo ?: return
-      val handle = info.observe(CompositionRegistrar) ?: return
-      observerHandles.add(handle)
-      DejavuCompositionObserver.isAvailable = true
-    } catch (_: NoClassDefFoundError) {
-      // CompositionObserver API not available — skip silently
-    } catch (_: NoSuchMethodError) {
-      // Same
-    }
+    val handle = ObserverCompat.tryRegister(recomposerInfo) ?: return
+    observerHandles.add(handle)
+    ObserverCompat.setAvailable(true)
   }
 }
