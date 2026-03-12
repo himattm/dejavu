@@ -11,7 +11,6 @@ import androidx.compose.runtime.tooling.ObservableComposition
 import java.util.Collections
 import java.util.IdentityHashMap
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * Implements the Compose [CompositionObserver] API to track per-scope state
@@ -75,7 +74,8 @@ internal object DejavuCompositionObserver :
     )
 
     // identityHashCode → value string captured on first read (baseline before any invalidation)
-    private val initialValues: ConcurrentHashMap<Int, String> = ConcurrentHashMap()
+    private val initialValues: MutableMap<Any, String> =
+        Collections.synchronizedMap(IdentityHashMap())
 
     // ── CompositionObserver callbacks ────────────────────────────────
 
@@ -101,9 +101,8 @@ internal object DejavuCompositionObserver :
         scopeReads.getOrPut(scope) {
             Collections.newSetFromMap(IdentityHashMap())
         }.add(state)
-        val id = System.identityHashCode(state)
-        if (!initialValues.containsKey(id)) {
-            describeStateValue(state)?.let { initialValues[id] = it }
+        if (!initialValues.containsKey(state)) {
+            describeStateValue(state)?.let { initialValues[state] = it }
         }
     }
 
@@ -121,7 +120,7 @@ internal object DejavuCompositionObserver :
     override fun onScopeInvalidated(scope: RecomposeScope, cause: Any?) {
         val name = scopeToComposable[scope] ?: return
         val value = cause?.let { describeStateValue(it) }
-        invalidations.getOrPut(name) { CopyOnWriteArrayList() }
+        invalidations.getOrPut(name) { Collections.synchronizedList(ArrayList()) }
             .add(Invalidation(cause, System.currentTimeMillis(), value))
     }
 
@@ -130,7 +129,7 @@ internal object DejavuCompositionObserver :
         scopeReads.remove(scope)
     }
 
-    // ── CompositionRegistrationObserver (from deleted CompositionRegistrar) ──
+    // ── CompositionRegistrationObserver ──
 
     private val compositionHandles: MutableMap<ObservableComposition, CompositionObserverHandle> =
         Collections.synchronizedMap(IdentityHashMap())
@@ -201,7 +200,7 @@ internal object DejavuCompositionObserver :
 
                 // Build value progression: initial → v1 → v2 → v3
                 val values = mutableListOf<String>()
-                val initial = initialValues[key.identityHash]
+                val initial = initialValues[group.first().cause!!]
                 if (initial != null) values.add(initial)
                 for (inv in group) {
                     val v = inv.valueAtInvalidation ?: continue
@@ -236,6 +235,7 @@ internal object DejavuCompositionObserver :
         // Keep scopeToComposable — it's structural (scope → name) and must persist
         // so that onScopeInvalidated (which fires before recomposition) can resolve
         // scope names. Cleared only in fullReset() when the observer is disposed.
+        pendingScope.remove()
         scopeReads.clear()
         composableDeps.clear()
         invalidations.clear()

@@ -61,8 +61,6 @@ internal object DejavuTracer : CompositionTracer {
         override fun initialValue(): ArrayDeque<String> = ArrayDeque()
     }
 
-    internal fun currentComposableName(): String? = composableStack.get()?.lastOrNull()
-
     internal data class TracedComposable(
         val key: Int,
         val simpleName: String,      // e.g., "CounterValue"
