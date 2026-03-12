@@ -268,7 +268,7 @@ internal object Runtime {
         // Capture snapshots and refresh tag mapping
         latestSnapshots.clear()
         latestSnapshots.addAll(currentCompositionsSnapshot())
-        DejavuTracer.buildTagMapping(latestSnapshots)
+        DejavuTracer.buildTagMappingFromFrameLoop(latestSnapshots)
 
         if (logToLogcat) {
           logFrameDetails(anyChanged)
