@@ -236,8 +236,23 @@ private fun failRecompositionsExpectation(
             }
         }
 
-        // Causality info from RecomposeTracker (snapshot-level)
-        if (functionName != null) {
+        // Causality info: prefer scope-level detail from CompositionObserver when
+        // available; fall back to coarser snapshot-level info from RecomposeTracker.
+        var hasObserverDetail = false
+        if (functionName != null && Runtime.observerDelegate.isAvailable) {
+            val invalidationDesc = Runtime.observerDelegate.describeInvalidationCauses(functionName)
+            if (invalidationDesc != null) {
+                appendLine()
+                appendLine(invalidationDesc)
+                hasObserverDetail = true
+            }
+            val depsDesc = Runtime.observerDelegate.describeStateDependencies(functionName)
+            if (depsDesc != null) {
+                appendLine(depsDesc)
+                hasObserverDetail = true
+            }
+        }
+        if (functionName != null && !hasObserverDetail) {
             val cause = RecomposeTracker.getCause(functionName)
             if (cause != null) {
                 appendLine()
@@ -255,19 +270,6 @@ private fun failRecompositionsExpectation(
                 if (cause.isParameterDriven) {
                     appendLine("    Parameter/parent change detected (dirty bits set)")
                 }
-            }
-        }
-
-        // Scope-level invalidation detail from CompositionObserver
-        if (functionName != null && Runtime.observerDelegate.isAvailable) {
-            val invalidationDesc = Runtime.observerDelegate.describeInvalidationCauses(functionName)
-            if (invalidationDesc != null) {
-                appendLine()
-                appendLine(invalidationDesc)
-            }
-            val depsDesc = Runtime.observerDelegate.describeStateDependencies(functionName)
-            if (depsDesc != null) {
-                appendLine(depsDesc)
             }
         }
 
