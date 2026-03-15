@@ -40,10 +40,19 @@ internal object DejavuTracer : CompositionTracer {
     private val tagParamFingerprints = ConcurrentHashMap<String, Int>()
     private val perTagRecompEvents = ConcurrentHashMap<String, MutableList<RecompositionEvent>>()
 
-    // Tags that have had at least one fingerprint comparison (detectTagRecomposition ran
-    // with prev != null). When a tag is in this set, per-tag tracking is reliable and a
-    // null perTagRecompCounts entry means "stable" (0), not "unknown".
+    // Tags that have had at least one fingerprint comparison during a frame-loop
+    // buildTagMapping pass. When a tag is in this set, per-tag tracking is reliable
+    // and a null perTagRecompCounts entry means "stable" (0), not "unknown".
+    // Only populated during frame-loop passes (not inline refreshTagMapping calls)
+    // to avoid marking baselines as reliable when they may have been captured after
+    // a recomposition (late Choreographer callback).
     private val tagsWithFingerprint: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
+    // True while buildTagMapping is running from the Choreographer frame callback.
+    // Used to gate tagsWithFingerprint population — only frame-loop passes produce
+    // reliable cross-frame baselines; inline assertion refreshes do not.
+    @Volatile
+    private var isFrameLoopPass = false
 
     // Parameter snapshots for change tracking (replaces raw fingerprint comparison)
     private val tagParamSnapshots = ConcurrentHashMap<String, List<ParamSnapshot>>()
@@ -87,6 +96,9 @@ internal object DejavuTracer : CompositionTracer {
         val stack = composableStack.get()!!
         val parentName = stack.lastOrNull()
         stack.add(traced.qualifiedName)
+
+        // Bind the pending observer scope to this composable name
+        Runtime.observerDelegate.bindPendingScope(traced.qualifiedName)
 
         // Skip framework composables for counting
         if (isFrameworkComposable(info)) return
@@ -620,8 +632,11 @@ internal object DejavuTracer : CompositionTracer {
         // Store/update the snapshot
         val previousSnapshot = tagParamSnapshots.put(tag, currentSnapshot)
 
-        // Mark this tag as having a reliable fingerprint comparison baseline
-        if (prev != null) {
+        // Mark this tag as having a reliable fingerprint comparison baseline,
+        // but only during frame-loop passes. Inline refreshTagMapping calls
+        // (from assertions) may capture a post-recomposition baseline that
+        // makes the tag appear stable when it actually recomposed.
+        if (prev != null && isFrameLoopPass) {
             tagsWithFingerprint.add(tag)
         }
 
@@ -757,6 +772,7 @@ internal object DejavuTracer : CompositionTracer {
         tagParameterChanges.clear()
         lastSeenTags.clear()
         tagToIdentity.clear()
+        Runtime.observerDelegate.reset()
         // Note: simpleNameIndex is NOT cleared here because keyToInfo is kept.
         // simpleNameIndex is derived from keyToInfo entries (populated in parseInfo),
         // and since keyToInfo is preserved across reset so that already-composed keys
@@ -764,9 +780,27 @@ internal object DejavuTracer : CompositionTracer {
     }
 
     /**
+     * Called from the Choreographer frame callback to build the tag mapping.
+     * Sets [isFrameLoopPass] so that [detectTagRecomposition] populates
+     * [tagsWithFingerprint] — frame-loop baselines are reliable because the
+     * frame loop runs at regular intervals both before and after interactions.
+     */
+    @OptIn(UiToolingDataApi::class)
+    fun buildTagMappingFromFrameLoop(compositionData: Set<CompositionData>) {
+        isFrameLoopPass = true
+        try {
+            buildTagMapping(compositionData)
+        } finally {
+            isFrameLoopPass = false
+        }
+    }
+
+    /**
      * Synchronously refresh the tag mapping from composition data.
      * Useful in tests where the asynchronous frame loop may not have
-     * run yet when assertions are checked.
+     * run yet when assertions are checked. Does NOT mark baselines as
+     * reliable (does not populate [tagsWithFingerprint]) because the
+     * inline call may capture a post-recomposition state as baseline.
      */
     @OptIn(UiToolingDataApi::class)
     fun refreshTagMapping(compositionData: Set<CompositionData>) {
