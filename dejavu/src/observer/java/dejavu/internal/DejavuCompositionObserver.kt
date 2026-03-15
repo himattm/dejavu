@@ -73,7 +73,7 @@ internal object DejavuCompositionObserver :
         val valueAtInvalidation: String?,
     )
 
-    // identityHashCode → value string captured on first read (baseline before any invalidation)
+    // state object → value string captured on first read (baseline before any invalidation)
     private val initialValues: MutableMap<Any, String> =
         Collections.synchronizedMap(IdentityHashMap())
 
@@ -101,8 +101,11 @@ internal object DejavuCompositionObserver :
         scopeReads.getOrPut(scope) {
             Collections.newSetFromMap(IdentityHashMap())
         }.add(state)
+        // Record baseline value lazily — only capture when an assertion fails and
+        // the error message is built (describeInvalidationCauses). This avoids
+        // calling state.value + toString() on the per-read hot path.
         if (!initialValues.containsKey(state)) {
-            describeStateValue(state)?.let { initialValues[state] = it }
+            initialValues[state] = PENDING_VALUE
         }
     }
 
@@ -177,34 +180,41 @@ internal object DejavuCompositionObserver :
         val records = invalidations[qualifiedName] ?: return null
         if (records.isEmpty()) return null
 
-        // Group by state object identity so repeated invalidations from the same
-        // state show as one line with a value progression.
-        data class GroupKey(val identityHash: Int, val isNull: Boolean)
-
-        val grouped = records.groupBy {
-            if (it.cause != null) GroupKey(System.identityHashCode(it.cause), false)
-            else GroupKey(0, true)
+        // Group by actual state object identity (not identityHashCode, which can collide).
+        // IdentityHashMap keys on reference equality, so distinct objects always get
+        // separate groups even if they share an identityHashCode.
+        val nullCauses = mutableListOf<Invalidation>()
+        val grouped = IdentityHashMap<Any, MutableList<Invalidation>>()
+        for (record in records) {
+            val cause = record.cause
+            if (cause == null) {
+                nullCauses.add(record)
+            } else {
+                grouped.getOrPut(cause) { mutableListOf() }.add(record)
+            }
         }
 
         return buildString {
             appendLine("  Invalidation causes:")
-            for ((key, group) in grouped) {
-                if (key.isNull) {
-                    appendLine("    (forced/unknown cause) × ${group.size}")
-                    continue
-                }
-                val cause = group.first().cause!!
+            if (nullCauses.isNotEmpty()) {
+                appendLine("    (forced/unknown cause) × ${nullCauses.size}")
+            }
+            for ((cause, group) in grouped) {
                 val typeName = friendlyStateName(cause)
                 val times = group.size
                 val timesStr = if (times == 1) "1 time" else "$times times"
 
                 // Build value progression: initial → v1 → v2 → v3
+                // Resolve pending initial value lazily (deferred from onReadInScope)
                 val values = mutableListOf<String>()
-                val initial = initialValues[group.first().cause!!]
-                if (initial != null) values.add(initial)
+                val initial = initialValues[cause]
+                if (initial != null && initial != PENDING_VALUE) {
+                    values.add(initial)
+                } else if (initial == PENDING_VALUE) {
+                    describeStateValue(cause)?.let { values.add(it) }
+                }
                 for (inv in group) {
                     val v = inv.valueAtInvalidation ?: continue
-                    // Skip duplicates from the previous entry in the progression
                     if (values.isEmpty() || values.last() != v) values.add(v)
                 }
 
@@ -236,6 +246,7 @@ internal object DejavuCompositionObserver :
         // so that onScopeInvalidated (which fires before recomposition) can resolve
         // scope names. Cleared only in fullReset() when the observer is disposed.
         pendingScope.remove()
+        isCapturingValue.remove()
         scopeReads.clear()
         composableDeps.clear()
         invalidations.clear()
@@ -245,9 +256,12 @@ internal object DejavuCompositionObserver :
     /** Full cleanup when the observer is being disposed. */
     override fun fullReset() {
         scopeToComposable.clear()
-        pendingScope.remove()
         reset()
     }
+
+    // Sentinel value for initialValues entries that haven't been resolved yet.
+    // Actual value is captured lazily when the error message is built.
+    private const val PENDING_VALUE = "\u0000PENDING"
 
     // ── Internals ───────────────────────────────────────────────────
 
@@ -258,7 +272,7 @@ internal object DejavuCompositionObserver :
         return try {
             state.value
         } finally {
-            isCapturingValue.set(false)
+            isCapturingValue.remove()
         }
     }
 
