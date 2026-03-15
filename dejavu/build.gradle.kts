@@ -105,7 +105,7 @@ dependencies {
   compileOnly("androidx.compose.ui:ui-test")
   compileOnly("androidx.compose.ui:ui-test-junit4")
   // Pinned to avoid Gradle resolution conflict with BOM-managed transitive version; compileOnly, never shipped
-  compileOnly("androidx.activity:activity-compose:1.7.0")
+  compileOnly("androidx.activity:activity-compose:1.13.0")
   // Pinned to avoid Gradle resolution conflict with BOM-managed transitive version; compileOnly, never shipped
   compileOnly("androidx.test.ext:junit:1.1.5")
 }
