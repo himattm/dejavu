@@ -44,7 +44,7 @@ Dejavu is a test-only library that turns recomposition behavior into assertions.
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    androidTestImplementation("me.mmckenna.dejavu:dejavu:0.1.2")
+    androidTestImplementation("me.mmckenna.dejavu:dejavu:0.2.0")
 }
 ```
 
