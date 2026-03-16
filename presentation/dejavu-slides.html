@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dejavu — Recomposition Testing for Jetpack Compose</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/theme/night.min.css" id="theme">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai.min.css">
+  <style>
+    :root {
+      --r-heading-font: 'Source Sans Pro', Helvetica, sans-serif;
+      --r-main-font-size: 28px;
+    }
+    .reveal h1, .reveal h2, .reveal h3 { text-transform: none; }
+    .reveal h1 { font-size: 2.2em; }
+    .reveal h2 { font-size: 1.6em; }
+    .reveal h3 { font-size: 1.2em; }
+    .reveal pre { width: 100%; font-size: 0.52em; }
+    .reveal pre code { max-height: 520px; padding: 16px; }
+    .reveal .small-code pre { font-size: 0.45em; }
+    .reveal .tiny-code pre { font-size: 0.40em; }
+
+    .tagline { font-style: italic; color: #8be9fd; margin-top: 0.5em; font-size: 0.7em; }
+    .red { color: #ff5555; font-weight: bold; }
+    .green { color: #50fa7b; }
+    .cyan { color: #8be9fd; }
+    .yellow { color: #f1fa8c; }
+    .orange { color: #ffb86c; }
+    .muted { color: #6272a4; }
+
+    .two-col { display: flex; gap: 2em; align-items: flex-start; }
+    .two-col > div { flex: 1; }
+    .two-col h3 { font-size: 0.9em; margin-bottom: 0.3em; }
+
+    .image-placeholder {
+      border: 2px dashed #6272a4;
+      border-radius: 8px;
+      padding: 2em 1em;
+      margin: 1em auto;
+      text-align: center;
+      color: #6272a4;
+      font-style: italic;
+      max-width: 80%;
+      background: rgba(98, 114, 164, 0.08);
+    }
+
+    .version-badge {
+      display: inline-block;
+      background: #44475a;
+      color: #f8f8f2;
+      padding: 0.15em 0.6em;
+      border-radius: 4px;
+      font-size: 0.7em;
+      margin-right: 0.5em;
+    }
+
+    .section-slide h2 { font-size: 2em; }
+    .section-slide h3 { color: #8be9fd; font-weight: normal; }
+
+    ul.spaced li { margin-bottom: 0.5em; }
+
+    .error-msg { text-align: left; font-size: 0.42em; line-height: 1.4; }
+    .error-msg .highlight-line { background: rgba(255, 85, 85, 0.2); display: block; }
+
+    .reveal .slide-number { font-size: 14px; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 1: OPENING (Slides 1-4, ~4 min)
+     ═══════════════════════════════════════════════════════════════ -->
+
+<!-- Slide 1: Title -->
+<section>
+  <h1>Dejavu</h1>
+  <h3>Recomposition Testing for Jetpack Compose</h3>
+  <p class="tagline">"Wait... didn't we just compose this?"</p>
+  <br>
+  <p class="muted" style="font-size: 0.5em;">
+    [Your Name] &middot; [Event Name] &middot; 2026
+  </p>
+  <aside class="notes">
+    0:00 — Welcome the audience. "Today I want to talk about a problem that every
+    Compose developer has hit but few have tooling for — unwanted recompositions."
+    ~30 seconds.
+  </aside>
+</section>
+
+<!-- Slide 2: The Promise of Compose -->
+<section>
+  <h2>The Promise of Compose</h2>
+  <ul class="spaced">
+    <li class="fragment">Declarative UI — describe <em>what</em>, not <em>how</em></li>
+    <li class="fragment">Smart recomposition — only recomposes what changed</li>
+    <li class="fragment">The runtime handles it &trade;</li>
+  </ul>
+  <aside class="notes">
+    0:30 — Set up the ideal world. "Compose promises smart recomposition. You
+    describe your UI, the runtime figures out the minimal work. That's the contract.
+    But it's implicit — nowhere in your code does it say which composables should
+    or should not recompose." ~1 minute.
+  </aside>
+</section>
+
+<!-- Slide 3: The Reality -->
+<section>
+  <h2>The Reality</h2>
+  <ul class="spaced">
+    <li class="fragment">Unstable parameters cause silent recompositions</li>
+    <li class="fragment">Lambda captures break skip optimizations</li>
+    <li class="fragment">State hoisting mistakes propagate recompositions</li>
+    <li class="fragment"><span class="red">No test catches this. It just gets slower.</span></li>
+  </ul>
+  <aside class="notes">
+    1:30 — "But here's what actually happens. You add a lambda, forget to remember
+    it, and suddenly half your tree recomposes every frame. The worst part? No test
+    fails. Your CI is green. Your app is just... slower. And you don't know until a
+    user complains or you open Layout Inspector." ~1.5 minutes.
+  </aside>
+</section>
+
+<!-- Slide 4: What If You Could Test This? -->
+<section>
+  <h2>What if recomposition was testable?</h2>
+  <pre><code class="language-kotlin" data-trim data-noescape>
+@get:Rule
+val composeTestRule = createRecompositionTrackingRule&lt;CounterActivity&gt;()
+
+@Test
+fun counterTitle_staysStable() {
+    // Click increment multiple times
+    repeat(3) {
+        composeTestRule.onNodeWithTag("inc_button").performClick()
+    }
+
+    // CounterTitle should never recompose (no inputs changed)
+    composeTestRule.onNodeWithTag("counter_title").assertStable()
+}
+  </code></pre>
+  <p class="fragment cyan" style="font-size: 0.8em;">This is Dejavu.</p>
+  <aside class="notes">
+    3:00 — "What if you could write this? One rule. Standard Compose test APIs.
+    And then assert that a composable did not recompose. This is Dejavu." ~1 minute.
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 2: INCEPTION (Slides 5-9, ~7 min)
+     ═══════════════════════════════════════════════════════════════ -->
+
+<!-- Slide 5: Section Title -->
+<section class="section-slide">
+  <h2>Part I</h2>
+  <h3>Inception</h3>
+  <aside class="notes">
+    4:00 — Transition beat. "Let me take you back to where this started."
+  </aside>
+</section>
+
+<!-- Slide 6: Square's Workflow -->
+<section>
+  <h2>Inspiration: Square's Workflow</h2>
+  <ul class="spaced">
+    <li class="fragment">Square's Workflow library tracks <strong>render passes</strong></li>
+    <li class="fragment">Every render is explicit and countable</li>
+    <li class="fragment">You can assert: <em>"this screen rendered exactly N times"</em></li>
+    <li class="fragment"><span class="cyan">Why can't Compose do the same?</span></li>
+  </ul>
+  <aside class="notes">
+    4:15 — "I was working with Square's Workflow library, which has this concept
+    of render tracking. Every time your screen renders, you know about it, you can
+    count it, you can assert on it. And I kept thinking — Compose has recomposition,
+    which is conceptually the same thing, but there's zero testing infrastructure
+    for it." ~1.5 minutes.
+  </aside>
+</section>
+
+<!-- Slide 7: The Implicit Contract Problem -->
+<section>
+  <h2>The Implicit Contract</h2>
+  <div class="two-col">
+    <div>
+      <h3>What you write</h3>
+      <pre><code class="language-kotlin" data-trim>
+Text(
+  "Title",
+  modifier = Modifier.testTag("title")
+)
+      </code></pre>
+    </div>
+    <div>
+      <h3>What you assume</h3>
+      <ul class="spaced" style="font-size: 0.8em;">
+        <li class="fragment">This doesn't recompose when sibling state changes</li>
+        <li class="fragment">But <span class="red">nothing enforces that</span></li>
+        <li class="fragment">And the Compose compiler can change skipping behavior between versions</li>
+      </ul>
+    </div>
+  </div>
+  <div class="image-placeholder fragment">
+    [IMAGE: Compose tree diagram — state change in one branch causes unexpected recomposition in another]
+  </div>
+  <aside class="notes">
+    5:45 — "When you write this Text composable with a hardcoded string, you're
+    implicitly assuming it will be skipped during recomposition. But that's just an
+    assumption. There's no contract, no test, no assertion." ~1.5 minutes.
+  </aside>
+</section>
+
+<!-- Slide 8: First Commit Architecture -->
+<section>
+  <h2>First Commit: The Architecture</h2>
+  <p class="muted" style="font-size: 0.6em;">August 23, 2025 — Initial release</p>
+  <ul class="spaced">
+    <li class="fragment"><strong class="cyan">CompositionTracer</strong> — intercept composition events via <code>Composer.setTracer()</code></li>
+    <li class="fragment"><strong class="green">Tag-to-Composable Mapping</strong> — walk CompositionData Group trees</li>
+    <li class="fragment"><strong class="orange">Assertion API</strong> — extend <code>SemanticsNodeInteraction</code> with recomposition checks</li>
+  </ul>
+  <div class="image-placeholder fragment">
+    [IMAGE: Architecture diagram — CompositionTracer intercepts the Composer, feeds data to TagMapper,
+    which connects to the Assertion API that tests call]
+  </div>
+  <aside class="notes">
+    7:15 — "The first commit had the full architecture. Three pieces: a tracer that
+    hooks into the Compose runtime, a mapper that connects test tags to composable
+    functions, and an assertion API that feels like standard Compose testing." ~2 minutes.
+  </aside>
+</section>
+
+<!-- Slide 9: The Counter Example -->
+<section>
+  <h2>The Counter Example</h2>
+  <pre><code class="language-kotlin" data-trim data-noescape>
+@Composable
+fun CounterScreen() {
+    var count by remember { mutableIntStateOf(0) }
+    Column(modifier = Modifier.testTag("counter_screen")) {
+        CounterTitle()
+        CounterValue(count)
+        IncButton { count++ }
+        ResetButton { count = 0 }
+    }
+}
+
+@Composable fun CounterTitle() {
+    Text("Dejavu Counter", modifier = Modifier.testTag("counter_title"))
+}
+
+@Composable fun CounterValue(value: Int) {
+    Text("Value: $value", modifier = Modifier.testTag("counter_value"))
+}
+  </code></pre>
+  <p class="fragment" style="font-size: 0.7em;">
+    <code class="green">counter_title</code> — never recompose (no params change)<br>
+    <code class="orange">counter_value</code> — must recompose (reads <code>count</code>)
+  </p>
+  <aside class="notes">
+    9:15 — "Here's the simplest possible example. A counter. The title text is
+    hardcoded — it should never recompose. The value text reads count — it must
+    recompose. With Dejavu, you can assert both sides of that contract." ~1.5 minutes.
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 3: ITERATION (Slides 10-19, ~12 min)
+     ═══════════════════════════════════════════════════════════════ -->
+
+<!-- Slide 10: Section Title -->
+<section class="section-slide">
+  <h2>Part II</h2>
+  <h3>Iteration</h3>
+  <p class="muted" style="font-size: 0.6em;">v0.1.0 through v0.2.0</p>
+  <aside class="notes">
+    11:00 — "Now let me walk you through how the library evolved. Four releases,
+    each solving problems the previous one exposed."
+  </aside>
+</section>
+
+<!-- Slide 11: v0.1.0 Core Release -->
+<section>
+  <h2><span class="version-badge">v0.1.0</span> Core Public Release</h2>
+  <p class="muted" style="font-size: 0.6em;">February 2026</p>
+  <ul class="spaced">
+    <li class="fragment"><code>createRecompositionTrackingRule&lt;Activity&gt;()</code> — one-line setup</li>
+    <li class="fragment"><code>assertStable()</code> — assert zero recompositions</li>
+    <li class="fragment"><code>assertRecompositions(exactly = N)</code> — assert exact count</li>
+    <li class="fragment">Two-pass tag mapping algorithm</li>
+    <li class="fragment">Structured error messages with diagnostics</li>
+  </ul>
+  <aside class="notes">
+    11:15 — "v0.1.0 was the first public release. The API surface was intentionally
+    tiny — a rule, and two assertion methods. That's it." ~1 minute.
+  </aside>
+</section>
+
+<!-- Slide 12: The Entire Public API -->
+<section>
+  <h2>The Entire Public API</h2>
+  <pre><code class="language-kotlin" data-trim data-noescape>
+// 1. Test rule — drop-in replacement for createAndroidComposeRule
+val composeTestRule = createRecompositionTrackingRule&lt;MyActivity&gt;()
+
+// 2. Assert exact recomposition count
+composeTestRule.onNodeWithTag("tag")
+    .assertRecompositions(exactly = 1)
+
+// 3. Assert no recompositions (shorthand for exactly = 0)
+composeTestRule.onNodeWithTag("tag")
+    .assertStable()
+  </code></pre>
+  <p class="fragment cyan" style="font-size: 0.9em; margin-top: 1em;">That's it. Three things.</p>
+  <aside class="notes">
+    12:15 — "I want to emphasize how small this API is. One rule factory. Two
+    assertion extensions. You already know how to use onNodeWithTag from regular
+    Compose tests. We just added assertStable and assertRecompositions. The learning
+    curve is essentially zero." ~1 minute.
+  </aside>
+</section>
+
+<!-- Slide 13: Under the Hood: 5 Steps -->
+<section>
+  <h2>Under the Hood: 5 Steps</h2>
+  <ol class="spaced">
+    <li class="fragment"><strong class="cyan">Intercept</strong> — <code>Composer.setTracer(DejavuTracer)</code></li>
+    <li class="fragment"><strong class="green">Map</strong> — Two-pass walk of CompositionData Group trees</li>
+    <li class="fragment"><strong class="yellow">Count</strong> — First call = composition (skip), subsequent = recomposition (count)</li>
+    <li class="fragment"><strong class="orange">Causality</strong> — Snapshot observer + dirty bits decode</li>
+    <li class="fragment"><strong class="red">Report</strong> — Structured multi-section error messages</li>
+  </ol>
+  <aside class="notes">
+    13:15 — "Under the hood, there are five steps. Let me walk through each one." ~1 minute.
+  </aside>
+</section>
+
+<!-- Slide 14: Tracing and Tag Mapping -->
+<section>
+  <h2>Tracing &amp; Tag Mapping</h2>
+  <div class="small-code">
+  <pre><code class="language-kotlin" data-trim>
+// Step 1: Hook into the Compose runtime
+Composer.setTracer(DejavuTracer)  // hidden runtime API
+
+// Step 2: DejavuTracer receives callbacks for every composable
+override fun traceEventStart(key: Int, dirty1: Int, dirty2: Int, info: String) {
+    // key   = composable identity
+    // dirty1 = bitmask of which parameter slots changed
+    // info   = "pkg.ClassName.FunctionName (File.kt:line)"
+}
+  </code></pre>
+  </div>
+  <ul class="spaced" style="font-size: 0.8em;">
+    <li class="fragment"><strong>Pass 1:</strong> Walk Group tree — collect source locations &amp; modifier info</li>
+    <li class="fragment"><strong>Pass 2:</strong> Match <code>testTag</code> values to their enclosing composable function</li>
+    <li class="fragment"><span class="green">Key insight: uses standard <code>Modifier.testTag()</code> — no custom modifiers</span></li>
+  </ul>
+  <div class="image-placeholder fragment">
+    [IMAGE: CompositionData Group tree on left, Semantics tree on right,
+    arrows showing two-pass mapping connecting testTag nodes to source Groups]
+  </div>
+  <aside class="notes">
+    14:15 — "The tracer hooks into the Compose runtime to get notified of every
+    composition pass. Then we need to figure out which composable function each
+    testTag belongs to. This is the two-pass mapping algorithm. The critical design
+    decision: we use standard testTag modifiers. No custom modifiers, no annotations." ~2 minutes.
+  </aside>
+</section>
+
+<!-- Slide 15: Counting, Causality, Reporting -->
+<section>
+  <h2>Counting &amp; Causality</h2>
+  <div class="two-col">
+    <div>
+      <h3 class="yellow">Counting</h3>
+      <ul style="font-size: 0.75em;">
+        <li>First <code>traceEventStart(key)</code> = initial composition → skip</li>
+        <li>Subsequent calls with same key = recomposition → increment counter</li>
+        <li>Per-function counting via qualified name</li>
+      </ul>
+    </div>
+    <div>
+      <h3 class="orange">Causality</h3>
+      <ul style="font-size: 0.75em;">
+        <li><code>Snapshot.registerApplyObserver</code> detects state changes</li>
+        <li>Dirty bits reveal <em>which</em> parameter slots triggered recomposition</li>
+        <li>Records type of changed state (Int, String, List...)</li>
+      </ul>
+    </div>
+  </div>
+  <pre class="fragment"><code class="language-text" data-trim>
+  Recomposition timeline:
+    #1 at +0ms — param slots changed: [1] | parent: ProductListScreen
+
+  Possible cause:
+    1 state change(s) of type Int
+    Parameter/parent change detected (dirty bits set)
+  </code></pre>
+  <aside class="notes">
+    16:15 — "Counting is straightforward — skip the first call, count the rest.
+    Causality tracking is where it gets interesting — we observe Snapshot state
+    changes and inspect dirty bits to tell you exactly why a recomposition happened." ~2 minutes.
+  </aside>
+</section>
+
+<!-- Slide 16: When Assertions Fail -->
+<section>
+  <h2>When Assertions Fail</h2>
+  <div class="error-msg">
+  <pre><code class="language-text" data-trim data-noescape>
+<span class="fragment highlight-current-red" data-fragment-index="1">Recomposition assertion failed for testTag='product_header'
+  Composable: demo.app.ui.ProductHeader (ProductList.kt:29)
+  Expected: exactly 0 recomposition(s)
+  Actual: 1 recomposition(s)</span>
+
+<span class="fragment highlight-current-red" data-fragment-index="2">  All tracked composables:
+    ProductListScreen = 1
+    ProductHeader    = 1  &lt;-- FAILED
+    ProductItem      = 1
+    CartBanner       = 1
+    TotalDisplay     = 0</span>
+
+<span class="fragment highlight-current-red" data-fragment-index="3">  Recomposition timeline:
+    #1 at +0ms — param slots changed: [1] | parent: ProductListScreen
+
+  Possible cause:
+    1 state change(s) of type Int
+    Parameter/parent change detected (dirty bits set)</span>
+
+<span class="fragment highlight-current-red" data-fragment-index="4">  Node:
+    Node #42 [TestTag='product_header', Text='Products (1 selected)']
+
+  Semantic tree:
+    Node #1
+      Node #10 [TestTag='product_header']  &lt;-- THIS NODE
+      Node #20 [TestTag='product_item']</span>
+  </code></pre>
+  </div>
+  <aside class="notes">
+    18:15 — "Look at how much information this gives you. The composable name and
+    file location. A table of all tracked composables so you see the full picture.
+    A timeline of when recompositions happened with dirty bit info. And a possible
+    cause section. This isn't just a test failure — it's a diagnostic report." ~2 minutes.
+  </aside>
+</section>
+
+<!-- Slide 17: v0.1.0 Drawbacks -->
+<section>
+  <h2><span class="version-badge">v0.1.0</span> What Was Wrong</h2>
+  <ul class="spaced">
+    <li class="fragment">
+      <span class="red">No per-instance tracking</span><br>
+      <span style="font-size: 0.7em;">5 Star composables with <code>star_0</code>...<code>star_4</code> all mapped to the same <code>Star()</code> function count</span>
+    </li>
+    <li class="fragment">
+      <span class="red">Logging was global, not per-tag</span><br>
+      <span style="font-size: 0.7em;">Hard to debug which specific instance recomposed</span>
+    </li>
+    <li class="fragment">
+      <span class="red">Hardcoded framework filter</span><br>
+      <span style="font-size: 0.7em;">~40 entries like <code>Column</code>, <code>Box</code>, <code>Button</code> — broke when Google shipped new components</span>
+    </li>
+    <li class="fragment">
+      <span class="red">Fragile across Compose BOM versions</span><br>
+      <span style="font-size: 0.7em;">InspectableValue API format changed silently between BOMs</span>
+    </li>
+  </ul>
+  <aside class="notes">
+    20:15 — "But v0.1.0 had real problems. The biggest: no per-instance tracking.
+    If you had a list of items, all instances of the same composable were lumped
+    together. And the framework filter was a hardcoded list that broke every time
+    Google shipped a new Compose version." ~1.5 minutes.
+  </aside>
+</section>
+
+<!-- Slide 18: v0.1.1 Per-Instance Tracking -->
+<section>
+  <h2><span class="version-badge">v0.1.1</span> Per-Instance Tracking</h2>
+  <p class="muted" style="font-size: 0.6em;">March 3, 2026</p>
+  <div class="small-code">
+  <pre><code class="language-kotlin" data-trim data-noescape>
+@Composable
+fun Star(index: Int, isFilled: Boolean, onClick: () -> Unit) {
+    Text(
+        text = if (isFilled) "&#x2605;" else "&#x2606;",
+        fontSize = 40.sp,
+        color = if (isFilled) Color(0xFFFFD700) else Color.Gray,
+        modifier = Modifier
+            .testTag("star_$index")  // dynamic tag per instance
+            .size(48.dp)
+            .pointerInput(Unit) { detectTapGestures { onClick() } }
+    )
+}
+  </code></pre>
+  </div>
+  <pre class="fragment"><code class="language-kotlin" data-trim>
+@Test
+fun multiInstance_unchangedInstancesReportZero() {
+    composeTestRule.onNodeWithTag("set_rating_3_btn").performClick()
+
+    // Stars that changed show recomposition
+    composeTestRule.onNodeWithTag("star_0").assertRecompositions(atLeast = 1)
+
+    // Stars that didn't change stay stable
+    composeTestRule.onNodeWithTag("star_3").assertStable()
+    composeTestRule.onNodeWithTag("star_4").assertStable()
+}
+  </code></pre>
+  <aside class="notes">
+    21:45 — "v0.1.1 solved the per-instance problem. Each testTag is tracked
+    independently. So if you have a star rating with 5 stars, you can assert that
+    star_0 recomposed because it became filled, while star_3 stayed stable." ~2 minutes.
+  </aside>
+</section>
+
+<!-- Slide 19: v0.1.2 and v0.2.0 -->
+<section>
+  <h2>Compatibility &amp; Depth</h2>
+  <div class="two-col">
+    <div>
+      <h3><span class="version-badge">v0.1.2</span> March 8</h3>
+      <ul style="font-size: 0.7em;" class="spaced">
+        <li><strong>InspectableValue fix</strong> — older BOMs used <code>value&nbsp;=&nbsp;tag</code> with empty element names</li>
+        <li><strong>Dynamic framework filter</strong> — replaced ~40 hardcoded entries with <code>simpleNameIndex</code> resolution</li>
+        <li class="muted">Drawback: still relied solely on CompositionTracer</li>
+      </ul>
+    </div>
+    <div>
+      <h3><span class="version-badge">v0.2.0</span> March 16</h3>
+      <ul style="font-size: 0.7em;" class="spaced">
+        <li><strong>CompositionObserver</strong> integration (Compose 1.7+) — answers <em>why</em> a recomposition happened</li>
+        <li><strong>Per-tag bug fixes</strong> — identity detection, null-fallback, runtime internals filtering</li>
+        <li class="green">Belt and suspenders: CompositionTracer + CompositionObserver</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes">
+    23:45 — "v0.1.2 was a compatibility release — supporting older BOMs and
+    replacing the brittle hardcoded framework filter with dynamic detection.
+    v0.2.0 adds CompositionObserver integration. This is a Compose 1.7+ API that
+    gives us a second signal for recomposition events." ~2 minutes.
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 4: KEY CONCEPTS DEEP DIVE (Slides 20-24, ~6 min)
+     ═══════════════════════════════════════════════════════════════ -->
+
+<!-- Slide 20: Section Title -->
+<section class="section-slide">
+  <h2>Part III</h2>
+  <h3>Key Concepts</h3>
+  <p class="muted" style="font-size: 0.6em;">Design decisions that matter</p>
+  <aside class="notes">
+    25:45 — Transition. "Let me highlight the design decisions that shaped Dejavu."
+  </aside>
+</section>
+
+<!-- Slide 21: No Custom Modifiers -->
+<section>
+  <h2>Design Decision: No Custom Modifiers</h2>
+  <div class="two-col">
+    <div>
+      <h3 class="red">Other approaches</h3>
+      <pre><code class="language-kotlin" data-trim>
+// Requires production code change
+Text(
+  "Title",
+  modifier = Modifier
+    .trackRecomposition("title")
+    .testTag("title")
+)
+      </code></pre>
+    </div>
+    <div>
+      <h3 class="green">Dejavu</h3>
+      <pre><code class="language-kotlin" data-trim>
+// Standard testTag — already there
+Text(
+  "Title",
+  modifier = Modifier
+    .testTag("title")
+)
+      </code></pre>
+    </div>
+  </div>
+  <p class="fragment green" style="font-size: 0.85em; margin-top: 1em;">
+    Your production code doesn't change. Your test tags do double duty.
+  </p>
+  <aside class="notes">
+    26:00 — "The most important design decision: no custom modifiers. Other approaches
+    require you to add special modifiers to production code. Dejavu uses the testTag
+    you already have. Zero production code changes." ~1.5 minutes.
+  </aside>
+</section>
+
+<!-- Slide 22: Two-Pass Mapping Algorithm -->
+<section>
+  <h2>Two-Pass Mapping Algorithm</h2>
+  <div style="font-size: 0.8em;">
+    <p class="fragment"><strong class="cyan">Pass 1 — Group Tree Walk</strong><br>
+    Traverse <code>CompositionData.compositionGroups</code> recursively.<br>
+    For each Group: record source location, group key, modifier info.</p>
+
+    <p class="fragment"><strong class="green">Pass 2 — Semantics Correlation</strong><br>
+    For each Group with a <code>testTag</code> in its modifier chain,<br>
+    find the nearest ancestor that represents a user composable function call.</p>
+
+    <p class="fragment"><strong class="yellow">Result</strong><br>
+    Map: <code>"counter_title"</code> &rarr; <code>demo.app.ui.CounterTitle (Counter.kt:28)</code></p>
+  </div>
+  <div class="image-placeholder fragment">
+    [IMAGE: Group tree with testTag nodes highlighted,
+    arrows pointing up to their parent composable functions]
+  </div>
+  <aside class="notes">
+    27:30 — "The two-pass mapping is the core algorithm. First pass walks the
+    internal Group tree. Second pass connects testTag nodes to their enclosing
+    composable. This is what lets us say 'counter_title belongs to CounterTitle
+    at line 28'." ~1.5 minutes.
+  </aside>
+</section>
+
+<!-- Slide 23: Composed Modifiers -->
+<section>
+  <h2>Composed Modifiers: The Trap</h2>
+  <div class="small-code">
+  <pre><code class="language-kotlin" data-trim>
+// In older Compose versions, testTag is implemented as:
+fun Modifier.testTag(tag: String): Modifier = composed {
+    semantics { this.testTag = tag }
+}
+// composed {} creates its own recomposition scope!
+  </code></pre>
+  </div>
+  <ul class="spaced" style="font-size: 0.8em;">
+    <li class="fragment">The <em>modifier itself</em> can recompose even when the composable doesn't</li>
+    <li class="fragment">Naive counting would count modifier recompositions, not composable ones</li>
+    <li class="fragment"><span class="green">Dejavu filters these out — tracks at the composable function level</span></li>
+  </ul>
+  <aside class="notes">
+    29:00 — "Here's a subtlety that took a while to get right. In older Compose
+    versions, testTag is a composed modifier with its own recomposition scope. If
+    you naively count recompositions, you count the modifier recomposing, not the
+    composable. Dejavu handles this by tracking at the composable function level." ~1.5 minutes.
+  </aside>
+</section>
+
+<!-- Slide 24: Frame-Aligned Tracking -->
+<section>
+  <h2>Frame-Aligned Tracking</h2>
+  <div class="small-code">
+  <pre><code class="language-kotlin" data-trim>
+// Runtime.kt — Choreographer frame loop
+Choreographer.getInstance().postFrameCallback {
+    // After each frame:
+    // 1. Capture latest CompositionData snapshots
+    // 2. Refresh tag-to-function mappings
+    // 3. Update recomposition counts
+    DejavuTracer.buildTagMappingFromFrameLoop(latestSnapshots)
+}
+  </code></pre>
+  </div>
+  <ul class="spaced" style="font-size: 0.8em;">
+    <li class="fragment">Tracking aligns with Android's frame cadence</li>
+    <li class="fragment">Assertions read stable counts <em>after</em> the frame completes</li>
+    <li class="fragment"><span class="green">This is why assertions are deterministic</span></li>
+  </ul>
+  <aside class="notes">
+    30:30 — "The lifecycle management uses Android's Choreographer to align tracking
+    with composition frames. This is what makes assertions deterministic — you perform
+    an action, the frame completes, and then your assertion reads stable counts." ~1.5 minutes.
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 5: DEVELOPER EXPERIENCE (Slides 25-28, ~5 min)
+     ═══════════════════════════════════════════════════════════════ -->
+
+<!-- Slide 25: Section Title -->
+<section class="section-slide">
+  <h2>Part IV</h2>
+  <h3>Developer Experience</h3>
+  <p class="muted" style="font-size: 0.6em;">Making it feel like Compose testing</p>
+  <aside class="notes">
+    32:00 — Transition.
+  </aside>
+</section>
+
+<!-- Slide 26: One-Line Setup -->
+<section>
+  <h2>One-Line Setup</h2>
+  <div style="font-size: 0.75em;">
+    <p class="red">Before (hypothetical verbose approach):</p>
+  </div>
+  <div class="small-code">
+  <pre><code class="language-kotlin" data-trim>
+@get:Rule val compose = createAndroidComposeRule&lt;MyActivity&gt;()
+@get:Rule val tracer = RecompositionTracer()
+
+@Before fun setup() { tracer.attach(compose); tracer.startTracking() }
+@After fun teardown() { tracer.stopTracking(); tracer.detach() }
+  </code></pre>
+  </div>
+  <div class="fragment">
+    <div style="font-size: 0.75em;">
+      <p class="green">After (Dejavu):</p>
+    </div>
+    <pre><code class="language-kotlin" data-trim>
+@get:Rule
+val composeTestRule = createRecompositionTrackingRule&lt;MyActivity&gt;()
+    </code></pre>
+    <p class="cyan" style="font-size: 0.85em;">One line. Everything else is automatic.</p>
+  </div>
+  <aside class="notes">
+    32:15 — "Developer experience was a first-class concern. You replace
+    createAndroidComposeRule with createRecompositionTrackingRule. One line.
+    The rule handles tracer lifecycle, frame synchronization, cleanup — everything." ~1.5 minutes.
+  </aside>
+</section>
+
+<!-- Slide 27: Assertion Flexibility -->
+<section>
+  <h2>Assertion Flexibility</h2>
+  <pre><code class="language-kotlin" data-trim data-noescape>
+// Exact count
+.assertRecompositions(exactly = 0)
+
+// At least N
+.assertRecompositions(atLeast = 1)
+
+// At most N
+.assertRecompositions(atMost = 2)
+
+// Range
+.assertRecompositions(atLeast = 1, atMost = 3)
+
+// Shorthand for exactly = 0
+.assertStable()
+  </code></pre>
+  <p class="fragment cyan" style="font-size: 0.85em;">
+    <code>assertStable()</code> is what you'll use 90% of the time.
+  </p>
+  <aside class="notes">
+    33:45 — "The assertions mirror patterns from Hamcrest and Truth. In practice,
+    assertStable is the one you use most — you're protecting against regressions." ~1 minute.
+  </aside>
+</section>
+
+<!-- Slide 28: Real-World Test Pattern -->
+<section>
+  <h2>Real-World Pattern</h2>
+  <pre><code class="language-kotlin" data-trim data-noescape>
+@Test
+fun scrollMessages_channelNameBarStaysStable() {
+    // Trigger a UI interaction
+    composeTestRule.onNodeWithTag("ConversationTestTag")
+        .performTouchInput { swipeUp() }
+    composeTestRule.waitForIdle()
+
+    // Assert stable components didn't recompose
+    composeTestRule.onNodeWithTag("ChannelNameBar")
+        .assertStable()
+
+    // Assert dynamic components did recompose
+    composeTestRule.onNodeWithTag("MessageList")
+        .assertRecompositions(atLeast = 1)
+}
+  </code></pre>
+  <p class="fragment" style="font-size: 0.75em;">
+    You're encoding your recomposition contract as a test.<br>
+    <span class="muted">From the JetChat integration test suite.</span>
+  </p>
+  <aside class="notes">
+    34:45 — "Here's the pattern in a real-world test. Trigger some UI interaction.
+    Wait for idle. Then assert: the channel name bar should be stable, but the
+    message list should have recomposed. You're encoding your recomposition contract
+    as a test." ~1.5 minutes.
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 6: AI SAFETY (Slides 29-33, ~5 min)
+     ═══════════════════════════════════════════════════════════════ -->
+
+<!-- Slide 29: Section Title -->
+<section class="section-slide">
+  <h2>Part V</h2>
+  <h3>AI Safety</h3>
+  <p class="muted" style="font-size: 0.6em;">Keeping AI agents informed when they update your UI</p>
+  <aside class="notes">
+    36:15 — "There's one more angle I want to cover that I think is increasingly important."
+  </aside>
+</section>
+
+<!-- Slide 30: AI Agents Editing UI Code -->
+<section>
+  <h2>AI Agents &amp; Compose</h2>
+  <ul class="spaced">
+    <li class="fragment">AI coding agents increasingly write and modify Compose UI code</li>
+    <li class="fragment">They optimize for <em>"does it compile and render correctly?"</em></li>
+    <li class="fragment">An AI can easily introduce a lambda capture or unstable parameter</li>
+    <li class="fragment"><span class="red">The AI has no signal that it broke performance</span></li>
+  </ul>
+  <div class="fragment" style="margin-top: 1em;">
+    <pre><code class="language-kotlin" data-trim>
+// AI "helpfully" refactors — introduces unstable lambda
+ProductItem(
+    product = product,
+    onSelect = { viewModel.select(product.id) }  // new lambda every recomposition!
+)
+    </code></pre>
+  </div>
+  <aside class="notes">
+    36:30 — "AI coding agents are writing more and more UI code. But they have no
+    understanding of recomposition. An AI will happily refactor your composable in
+    a way that compiles, passes all functional tests, but causes 10x more
+    recompositions. And it has no signal that anything went wrong." ~1.5 minutes.
+  </aside>
+</section>
+
+<!-- Slide 31: Dejavu as AI Guardrail -->
+<section>
+  <h2>Dejavu as AI Guardrail</h2>
+  <ul class="spaced">
+    <li class="fragment">Recomposition tests in CI catch AI-introduced regressions</li>
+    <li class="fragment">When Dejavu fails, the structured error tells the AI <em>exactly</em> what went wrong</li>
+    <li class="fragment">The AI can read the error and fix the issue <strong>autonomously</strong></li>
+  </ul>
+  <p class="fragment green" style="font-size: 0.9em; margin-top: 1em;">
+    Structured errors aren't just for humans.
+  </p>
+  <aside class="notes">
+    38:00 — "Dejavu tests in your CI become a guardrail. When an AI agent makes a
+    change and runs the tests, a Dejavu failure gives it a structured error message
+    with composable name, file location, expected vs actual, and a possible cause.
+    That's enough for the AI to understand and fix the problem without human
+    intervention." ~1.5 minutes.
+  </aside>
+</section>
+
+<!-- Slide 32: Errors AI Can Parse -->
+<section>
+  <h2>Errors AI Can Parse</h2>
+  <div class="small-code">
+  <pre><code class="language-text" data-trim data-noescape>
+Recomposition assertion failed for testTag='product_header'
+  Composable: demo.app.ui.ProductHeader (ProductList.kt:29)   <span class="cyan">← file and line</span>
+  Expected: exactly 0 recomposition(s)                        <span class="cyan">← clear delta</span>
+  Actual: 1 recomposition(s)
+
+  Possible cause:
+    1 state change(s) of type Int                             <span class="cyan">← actionable hint</span>
+    Parameter/parent change detected (dirty bits set)
+  </code></pre>
+  </div>
+  <ul style="font-size: 0.75em;" class="spaced">
+    <li class="fragment"><code>testTag</code> — identifies the component</li>
+    <li class="fragment">File and line — tells the AI where to look</li>
+    <li class="fragment">Expected vs actual — defines the problem</li>
+    <li class="fragment">Possible cause — gives a starting hypothesis</li>
+  </ul>
+  <aside class="notes">
+    39:30 — "Look at this error through the lens of an AI reading it. The tag
+    identifies the component. The file and line tell it where to look. Expected vs
+    actual tells it the problem. The possible cause gives it a hypothesis. This is
+    practically a bug report the AI can act on." ~1 minute.
+  </aside>
+</section>
+
+<!-- Slide 33: The Safety Loop -->
+<section>
+  <h2>The Safety Loop</h2>
+  <div class="image-placeholder">
+    [IMAGE: Circular diagram —<br>
+    AI Agent writes code &rarr; CI runs tests &rarr; Dejavu catches regression &rarr;<br>
+    Structured error &rarr; AI Agent reads error &rarr; AI Agent fixes code &rarr; CI green]
+  </div>
+  <br>
+  <p class="fragment" style="font-size: 1.1em;">
+    <span class="cyan">Humans write the recomposition contract.</span><br>
+    <span class="green">AI agents maintain it.</span>
+  </p>
+  <aside class="notes">
+    40:30 — "The loop is: humans write recomposition contracts as Dejavu tests.
+    AI agents modify code. CI catches regressions. The structured error feeds back
+    to the AI. The AI fixes it. The contract is maintained." ~1 minute.
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION 7: CLOSING (Slides 34-36, ~3.5 min)
+     ═══════════════════════════════════════════════════════════════ -->
+
+<!-- Slide 34: What's Next -->
+<section>
+  <h2>What's Next</h2>
+  <ul class="spaced">
+    <li class="fragment">Compose Multiplatform support (Desktop, iOS)</li>
+    <li class="fragment">Gradle plugin for automatic tracking without testTag</li>
+    <li class="fragment">Recomposition budget annotations — <code>@RecompositionBudget(max&nbsp;=&nbsp;2)</code></li>
+    <li class="fragment">IDE integration — inline recomposition counts in the editor</li>
+    <li class="fragment">Performance regression trending over time</li>
+  </ul>
+  <aside class="notes">
+    41:30 — "Where is this going? Compose Multiplatform support, a Gradle plugin,
+    annotation-based budgets, IDE integration, and trending counts over time so you
+    can see regressions before they become user-visible." ~1.5 minutes.
+  </aside>
+</section>
+
+<!-- Slide 35: Getting Started -->
+<section>
+  <h2>Getting Started</h2>
+  <pre><code class="language-kotlin" data-trim>
+// build.gradle.kts
+dependencies {
+    androidTestImplementation("me.mmckenna.dejavu:dejavu:0.2.0")
+}
+  </code></pre>
+  <pre class="fragment"><code class="language-kotlin" data-trim>
+// YourComposeTest.kt
+@get:Rule
+val composeTestRule = createRecompositionTrackingRule&lt;MyActivity&gt;()
+
+@Test
+fun header_staysStable() {
+    composeTestRule.onNodeWithTag("refresh").performClick()
+    composeTestRule.onNodeWithTag("header").assertStable()
+}
+  </code></pre>
+  <p class="fragment muted" style="font-size: 0.6em;">
+    [GitHub URL] &middot; [Documentation URL]
+  </p>
+  <aside class="notes">
+    43:00 — "Getting started is one dependency and one line of code. The library
+    is available today at v0.2.0." ~1 minute.
+  </aside>
+</section>
+
+<!-- Slide 36: Thank You -->
+<section>
+  <h1>Thank You</h1>
+  <p class="tagline">"Wait... didn't we just compose this?"</p>
+  <br>
+  <h3 style="color: #f8f8f2;">Questions?</h3>
+  <br>
+  <p class="muted" style="font-size: 0.5em;">
+    [Your Name] &middot; [Twitter/Mastodon] &middot; [GitHub]<br>
+    [QR code to repository]
+  </p>
+  <aside class="notes">
+    44:00 — "Thank you. I'm happy to take questions about Dejavu, recomposition
+    testing, or anything Compose-related." Remainder for Q&A.
+  </aside>
+</section>
+
+</div><!-- .slides -->
+</div><!-- .reveal -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/plugin/highlight/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/plugin/notes/notes.min.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: true,
+    transition: 'slide',
+    plugins: [ RevealHighlight, RevealNotes ],
+    highlight: {
+      highlightOnLoad: true
+    }
+  });
+</script>
+</body>
+</html>
