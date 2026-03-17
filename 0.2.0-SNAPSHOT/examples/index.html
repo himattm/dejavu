@@ -672,10 +672,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#use-atmost-for-performance-budgets" class="md-nav__link">
+  <a href="#use-atmost-for-recomposition-budgets" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Use atMost for performance budgets
+        Use atMost for recomposition budgets
       
     </span>
   </a>
@@ -985,10 +985,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#use-atmost-for-performance-budgets" class="md-nav__link">
+  <a href="#use-atmost-for-recomposition-budgets" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Use atMost for performance budgets
+        Use atMost for recomposition budgets
       
     </span>
   </a>
@@ -1459,14 +1459,14 @@
 </code></pre></div>
 <h3 id="use-getrecompositioncount-for-programmatic-checks">Use <code>getRecompositionCount()</code> for programmatic checks<a class="headerlink" href="#use-getrecompositioncount-for-programmatic-checks" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="kd">val</span><span class="w"> </span><span class="nv">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">composeTestRule</span><span class="p">.</span><span class="na">getRecompositionCount</span><span class="p">(</span><span class="s">&quot;my_tag&quot;</span><span class="p">)</span>
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="n">assertTrue</span><span class="p">(</span><span class="n">count</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">performanceBudget</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Exceeded budget: </span><span class="si">$</span><span class="n">count</span><span class="s"> &gt; </span><span class="si">$</span><span class="n">performanceBudget</span><span class="s">&quot;</span><span class="p">)</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="n">assertTrue</span><span class="p">(</span><span class="n">count</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">recompositionBudget</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Exceeded budget: </span><span class="si">$</span><span class="n">count</span><span class="s"> &gt; </span><span class="si">$</span><span class="n">recompositionBudget</span><span class="s">&quot;</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="prefer-assertstable-for-components-that-should-never-recompose">Prefer <code>assertStable()</code> for components that should never recompose<a class="headerlink" href="#prefer-assertstable-for-components-that-should-never-recompose" title="Permanent link">&para;</a></h3>
 <p><code>assertStable()</code> is clearer than <code>assertRecompositions(exactly = 0)</code> and communicates intent:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="c1">// Clear intent: this component should be stable</span>
 <a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="n">composeTestRule</span><span class="p">.</span><span class="na">onNodeWithTag</span><span class="p">(</span><span class="s">&quot;header&quot;</span><span class="p">).</span><span class="na">assertStable</span><span class="p">()</span>
 </code></pre></div>
-<h3 id="use-atmost-for-performance-budgets">Use <code>atMost</code> for performance budgets<a class="headerlink" href="#use-atmost-for-performance-budgets" title="Permanent link">&para;</a></h3>
+<h3 id="use-atmost-for-recomposition-budgets">Use <code>atMost</code> for recomposition budgets<a class="headerlink" href="#use-atmost-for-recomposition-budgets" title="Permanent link">&para;</a></h3>
 <p>When you do not know the exact count but want to bound it:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="c1">// CartBanner recomposes on every parent recomposition (known issue).</span>
 <a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="c1">// Budget: no more than 1:1 with parent recompositions.</span>
