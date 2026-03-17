@@ -36,6 +36,8 @@ jobs:
             excludeObserver: "true"
           - bom: "2026.01.01"
             excludeObserver: "false"
+          - bom: "2026.03.00"
+            excludeObserver: "false"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
