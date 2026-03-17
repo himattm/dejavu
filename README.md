@@ -18,7 +18,7 @@
 
 **[Full Documentation](https://dejavu.mmckenna.me)**
 
-**Lock in Compose performance. Catch recomposition regressions before your users.**
+**Guard your Compose UI efficiency. Catch recomposition regressions before your users.**
 
 ## The Problem
 
@@ -94,17 +94,17 @@ See [Error Messages Guide](https://dejavu.mmckenna.me/error-messages/) for how t
 
 ## Use Cases
 
-### Lock In Performance Gains
+### Lock In Efficiency Gains
 
 When you optimize a composable — extracting a lambda, adding `remember`, switching to `derivedStateOf` — Dejavu lets you write a test that captures the expected recomposition count. That improvement becomes part of your test suite: refactors, dependency upgrades, and new features all have to maintain it or explicitly update the expectation.
 
-### Give AI Agents a Performance Signal
+### Give AI Agents a Recomposition Signal
 
 AI coding agents can refactor composables and restructure state, but they have no way to know whether their changes made recomposition better or worse. Dejavu gives them that signal. When an agent runs your tests and a Dejavu assertion fails, the structured error message tells it exactly which composable regressed, by how much, and why — turning recomposition count into an optimization metric the agent can target directly.
 
 ### Guardrail Against Unexpected Changes
 
-When AI agents or automated tooling modify your codebase, they can introduce subtle changes to recomposition behavior without touching any visible UI. Dejavu tests act as guardrails — if an agent's changes cause a composable to recompose more than expected, the test fails before the change is merged. You get the speed of automated refactoring with the confidence that performance characteristics are preserved.
+When AI agents or automated tooling modify your codebase, they can introduce subtle changes to recomposition behavior without touching any visible UI. Dejavu tests act as guardrails — if an agent's changes cause a composable to recompose more than expected, the test fails before the change is merged. You get the speed of automated refactoring with the confidence that recomposition behavior is preserved.
 
 See the full [Use Cases](https://dejavu.mmckenna.me/use-cases/) guide for examples.
 
@@ -179,7 +179,7 @@ All tracking runs in the app process on the main thread, directly accessible to 
 
 ## Further Reading
 
-- [Use Cases](https://dejavu.mmckenna.me/use-cases/) — locking in performance, AI agent guardrails, and CI enforcement
+- [Use Cases](https://dejavu.mmckenna.me/use-cases/) — locking in UI efficiency, AI agent guardrails, and CI enforcement
 - [Examples](https://dejavu.mmckenna.me/examples/) — test patterns for common scenarios
 - [Error Messages Guide](https://dejavu.mmckenna.me/error-messages/) — how to read and act on failure output
 - [Causality Analysis](https://dejavu.mmckenna.me/causality-analysis/) — understanding why composables recompose

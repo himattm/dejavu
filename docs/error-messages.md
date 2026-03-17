@@ -144,7 +144,7 @@ Each composable function's parameters occupy 2-bit slots in a dirty bitmask. Whe
 Causality analysis from Dejavu's `Snapshot.registerApplyObserver` and dirty bit tracking:
 
 - **State changes** -- how many `Snapshot` state objects changed, and their types (e.g., `Int`, `String`, `SnapshotStateList`)
-- **Same-value writes** -- state was written but the new value equaled the old value (this is a performance bug)
+- **Same-value writes** -- state was written but the new value equaled the old value (this triggers unnecessary recompositions)
 - **Parameter/parent change** -- the recomposition was driven by dirty bits (parameter values changed or parent recomposed)
 
 See [Causality Analysis](causality-analysis.md) for a deep dive into causality analysis.

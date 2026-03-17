@@ -519,7 +519,7 @@ composeTestRule.onNodeWithTag("derived_banner").assertStable()
 
 ```kotlin
 val count = composeTestRule.getRecompositionCount("my_tag")
-assertTrue(count < performanceBudget, "Exceeded budget: $count > $performanceBudget")
+assertTrue(count < recompositionBudget, "Exceeded budget: $count > $recompositionBudget")
 ```
 
 ### Prefer `assertStable()` for components that should never recompose
@@ -531,7 +531,7 @@ assertTrue(count < performanceBudget, "Exceeded budget: $count > $performanceBud
 composeTestRule.onNodeWithTag("header").assertStable()
 ```
 
-### Use `atMost` for performance budgets
+### Use `atMost` for recomposition budgets
 
 When you do not know the exact count but want to bound it:
 
