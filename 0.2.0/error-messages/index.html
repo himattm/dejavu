@@ -1199,7 +1199,7 @@
 <p>Causality analysis from Dejavu's <code>Snapshot.registerApplyObserver</code> and dirty bit tracking:</p>
 <ul>
 <li><strong>State changes</strong> -- how many <code>Snapshot</code> state objects changed, and their types (e.g., <code>Int</code>, <code>String</code>, <code>SnapshotStateList</code>)</li>
-<li><strong>Same-value writes</strong> -- state was written but the new value equaled the old value (this is a performance bug)</li>
+<li><strong>Same-value writes</strong> -- state was written but the new value equaled the old value (this triggers unnecessary recompositions)</li>
 <li><strong>Parameter/parent change</strong> -- the recomposition was driven by dirty bits (parameter values changed or parent recomposed)</li>
 </ul>
 <p>See <a href="../causality-analysis/">Causality Analysis</a> for a deep dive into causality analysis.</p>
