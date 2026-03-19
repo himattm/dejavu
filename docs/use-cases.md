@@ -2,7 +2,7 @@
 
 Dejavu turns recomposition behavior into a testable contract. Here are the key scenarios where that matters most.
 
-## Lock In Performance Gains
+## Lock In Efficiency Gains
 
 When you optimize a composable — extracting a lambda, adding `remember`, switching to `derivedStateOf` — you get a measurable improvement: fewer recompositions. But without a test to enforce it, that improvement can silently regress on the next PR.
 
@@ -10,7 +10,7 @@ Dejavu lets you write a test that captures the expected recomposition count and 
 
 ```kotlin
 @Test
-fun optimizedProductList_recompositionCountIsLocked() {
+fun stableProductList_recompositionCountIsLocked() {
     composeTestRule.onNodeWithTag("inc_button").performClick()
 
     // After optimization, only the counter value recomposes.
@@ -21,9 +21,9 @@ fun optimizedProductList_recompositionCountIsLocked() {
 }
 ```
 
-Now the performance improvement is part of your test suite. Refactors, dependency upgrades, and new features all have to maintain it or explicitly update the expectation.
+Now the efficiency improvement is part of your test suite. Refactors, dependency upgrades, and new features all have to maintain it or explicitly update the expectation.
 
-## Give AI Agents a Performance Signal
+## Give AI Agents a Recomposition Signal
 
 AI coding agents can refactor composables, extract components, and restructure state — but they have no way to know whether their changes made recomposition better or worse. Dejavu gives them that signal.
 
@@ -75,14 +75,14 @@ D/Dejavu: Recomposition #2: [counter_value] demo.app.ui.CounterValue (Counter.kt
 Each line tells the agent which composable recomposed, where it lives in source, and which parent triggered it. An agent running `adb logcat -s Dejavu` gets a live feed of UI state it can use to:
 
 - **Verify its own changes** — after refactoring a composable, watch whether recompositions increase or decrease without needing a full test cycle
-- **Diagnose performance issues** — spot cascading recompositions in real time by following the parent chain (`parent=demo.app.ui.CounterScreen`)
-- **Build context about UI behavior** — understand how user interactions map to composition changes before deciding what to optimize
+- **Diagnose recomposition inefficiencies** — spot cascading recompositions in real time by following the parent chain (`parent=demo.app.ui.CounterScreen`)
+- **Build context about UI behavior** — understand how user interactions map to composition changes before deciding where unnecessary recompositions occur
 
 This turns logcat into a lightweight observability layer for composition, giving agents the same kind of real-time signal that a developer would get from Layout Inspector — but in a format they can parse and reason about.
 
 ## Guardrail Against Unexpected UI Changes
 
-When AI agents — or any automated tooling — modify your codebase, they can introduce subtle changes to recomposition behavior without touching any visible UI. A refactor that moves a state read higher in the tree, or inlines a composable that was previously skippable, can cause cascading recompositions that degrade performance silently.
+When AI agents — or any automated tooling — modify your codebase, they can introduce subtle changes to recomposition behavior without touching any visible UI. A refactor that moves a state read higher in the tree, or inlines a composable that was previously skippable, can cause cascading recompositions that reduce UI efficiency silently.
 
 Dejavu tests act as guardrails. If an agent's changes cause a composable to recompose more than expected, the test fails before the change is ever merged:
 
@@ -100,7 +100,7 @@ fun headerRemainsStable_whenListScrolls() {
 }
 ```
 
-This is particularly valuable in codebases where AI agents operate with broad permissions. The agents can move fast and make structural changes, but they can't silently introduce recomposition regressions — the test suite catches it. You get the speed of automated refactoring with the confidence that performance characteristics are preserved.
+This is particularly valuable in codebases where AI agents operate with broad permissions. The agents can move fast and make structural changes, but they can't silently introduce recomposition regressions — the test suite catches it. You get the speed of automated refactoring with the confidence that recomposition behavior is preserved.
 
 ## Enforce Recomposition Budgets in CI
 
@@ -120,4 +120,4 @@ fun criticalPath_meetsRecompositionBudget() {
 }
 ```
 
-This works the same way you'd use snapshot tests for visual regressions — except instead of pixels, you're locking in recomposition behavior. The test documents the expected performance contract and enforces it automatically.
+This works the same way you'd use snapshot tests for visual regressions — except instead of pixels, you're locking in recomposition behavior. The test documents the expected recomposition contract and enforces it automatically.

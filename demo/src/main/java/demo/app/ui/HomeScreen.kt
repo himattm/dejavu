@@ -31,6 +31,7 @@ import demo.app.LazyListStressActivity
 import demo.app.LazyVariantsActivity
 import demo.app.PagerCrossfadeActivity
 import demo.app.ProductActivity
+import demo.app.MissingKeyListActivity
 import demo.app.ReorderListActivity
 import demo.app.ScaffoldSlotsActivity
 import demo.app.SharedStateStressActivity
@@ -65,6 +66,7 @@ private val demos = listOf(
   DemoEntry("Collapsing Header", CollapsingHeaderActivity::class.java),
   DemoEntry("Swipe List", SwipeListActivity::class.java),
   DemoEntry("Reorder List", ReorderListActivity::class.java),
+  DemoEntry("Missing Key List", MissingKeyListActivity::class.java),
 )
 
 @Composable

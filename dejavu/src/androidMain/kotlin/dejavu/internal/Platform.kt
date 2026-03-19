@@ -31,3 +31,20 @@ internal actual class PlatformThreadLocal<T> actual constructor(private val init
 
     actual fun get(): T = tl.get()!!
 }
+
+internal actual fun onComposableTraced(qualifiedName: String) {
+    Runtime.observerDelegate.bindPendingScope(qualifiedName)
+}
+
+internal actual fun describeInvalidationCauses(qualifiedName: String): String? =
+    Runtime.observerDelegate.describeInvalidationCauses(qualifiedName)
+
+internal actual fun describeStateDependencies(qualifiedName: String): String? =
+    Runtime.observerDelegate.describeStateDependencies(qualifiedName)
+
+internal actual fun isObserverAvailable(): Boolean =
+    Runtime.observerDelegate.isAvailable
+
+internal actual fun resetObserver() {
+    Runtime.observerDelegate.reset()
+}

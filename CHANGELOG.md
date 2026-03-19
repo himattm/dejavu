@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-16
+
+### Added
+- CompositionObserver integration — automatically tracks per-scope invalidation causes and state dependencies on Compose runtime 1.7+ (#27)
+  - Enriches `assertStable()` / `assertRecompositions()` error messages with invalidation cause details, value progressions, and state dependency sets
+  - Auto-detected at `Dejavu.enable()` — no opt-in required
+  - Backward-compatible: observer classes in separate source set, core compiles against Compose BOMs 2024.06+
+  - Reentrancy guard in `stateValue()` prevents StackOverflowError from DerivedState reads
+  - Uses IdentityHashMap instead of identityHashCode to avoid hash collisions
+
+### Fixed
+- Per-tag recomposition tracking: false positives from identity-based multi-instance detection, null-fallback to function-level counts, and runtime-internal objects drifting fingerprint hashes (#28)
+- Flaky per-tag recomposition detection in CI
+
+### Changed
+- CI publish workflow auto-updates docs version references at deploy time
+
+## [0.1.2] - 2026-03-08
+
+### Changed
+- Improved logcat output — unified TAG to "Dejavu", single summary lines, cleaner parent notation, consistent log levels (#23)
+
+### Fixed
+- testTag mapping for older Compose versions using value-based InspectableValue (#16)
+- Hardcoded framework filter replaced with dynamic simpleNameIndex resolution (#20)
+
 ## [0.1.1] - 2026-03-03
 
 ### Changed

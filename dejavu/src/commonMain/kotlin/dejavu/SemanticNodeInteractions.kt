@@ -8,6 +8,9 @@ import androidx.compose.ui.test.printToString
 import dejavu.internal.ChangeType
 import dejavu.internal.DejavuTracer
 import dejavu.internal.RecomposeTracker
+import dejavu.internal.describeInvalidationCauses
+import dejavu.internal.describeStateDependencies
+import dejavu.internal.isObserverAvailable
 
 /**
  * Error thrown when recomposition count assertions fail.
@@ -235,8 +238,23 @@ private fun failRecompositionsExpectation(
             }
         }
 
-        // Causality info from RecomposeTracker
-        if (functionName != null) {
+        // Causality info: prefer scope-level detail from CompositionObserver when
+        // available; fall back to coarser snapshot-level info from RecomposeTracker.
+        var hasObserverDetail = false
+        if (functionName != null && isObserverAvailable()) {
+            val invalidationDesc = describeInvalidationCauses(functionName)
+            if (invalidationDesc != null) {
+                appendLine()
+                appendLine(invalidationDesc)
+                hasObserverDetail = true
+            }
+            val depsDesc = describeStateDependencies(functionName)
+            if (depsDesc != null) {
+                appendLine(depsDesc)
+                hasObserverDetail = true
+            }
+        }
+        if (functionName != null && !hasObserverDetail) {
             val cause = RecomposeTracker.getCause(functionName)
             if (cause != null) {
                 appendLine()

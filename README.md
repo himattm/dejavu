@@ -13,9 +13,12 @@
 [![Compose](https://img.shields.io/badge/Compose-1.6.x–1.10.x-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/develop/ui/compose)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
+###### Featured In
+<a href="https://jetc.dev/issues/305.html"><img src="https://img.shields.io/badge/As_Seen_In-jetc.dev_Newsletter_Issue_%23305-blue?logo=Jetpack+Compose&amp;logoColor=white" alt="As Seen In - jetc.dev Newsletter Issue #305"></a>
+
 **[Full Documentation](https://dejavu.mmckenna.me)**
 
-**Lock in Compose performance. Catch recomposition regressions before your users.**
+**Guard your Compose UI efficiency. Catch recomposition regressions before your users.**
 
 ## The Problem
 
@@ -41,7 +44,7 @@ Dejavu is a test-only library that turns recomposition behavior into assertions.
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    androidTestImplementation("me.mmckenna.dejavu:dejavu:0.1.1")
+    androidTestImplementation("me.mmckenna.dejavu:dejavu:0.2.0")
 }
 ```
 
@@ -53,9 +56,14 @@ val composeTestRule = createRecompositionTrackingRule()
 
 @Test
 fun incrementCounter_onlyValueRecomposes() {
-    composeTestRule.onNodeWithTag("inc_button").performClick()
-    composeTestRule.onNodeWithTag("counter_value").assertRecompositions(exactly = 1)
-    composeTestRule.onNodeWithTag("counter_title").assertStable() // stable = zero recompositions
+  composeTestRule.onNodeWithTag("inc_button")
+    .performClick()
+    
+  composeTestRule.onNodeWithTag("counter_value")
+    .assertRecompositions(exactly = 1)
+    
+  composeTestRule.onNodeWithTag("counter_title")
+    .assertStable() // stable = zero recompositions
 }
 ```
 
@@ -86,17 +94,17 @@ See [Error Messages Guide](https://dejavu.mmckenna.me/error-messages/) for how t
 
 ## Use Cases
 
-### Lock In Performance Gains
+### Lock In Efficiency Gains
 
 When you optimize a composable — extracting a lambda, adding `remember`, switching to `derivedStateOf` — Dejavu lets you write a test that captures the expected recomposition count. That improvement becomes part of your test suite: refactors, dependency upgrades, and new features all have to maintain it or explicitly update the expectation.
 
-### Give AI Agents a Performance Signal
+### Give AI Agents a Recomposition Signal
 
 AI coding agents can refactor composables and restructure state, but they have no way to know whether their changes made recomposition better or worse. Dejavu gives them that signal. When an agent runs your tests and a Dejavu assertion fails, the structured error message tells it exactly which composable regressed, by how much, and why — turning recomposition count into an optimization metric the agent can target directly.
 
 ### Guardrail Against Unexpected Changes
 
-When AI agents or automated tooling modify your codebase, they can introduce subtle changes to recomposition behavior without touching any visible UI. Dejavu tests act as guardrails — if an agent's changes cause a composable to recompose more than expected, the test fails before the change is merged. You get the speed of automated refactoring with the confidence that performance characteristics are preserved.
+When AI agents or automated tooling modify your codebase, they can introduce subtle changes to recomposition behavior without touching any visible UI. Dejavu tests act as guardrails — if an agent's changes cause a composable to recompose more than expected, the test fails before the change is merged. You get the speed of automated refactoring with the confidence that recomposition behavior is preserved.
 
 See the full [Use Cases](https://dejavu.mmckenna.me/use-cases/) guide for examples.
 
@@ -109,12 +117,18 @@ See the full [Use Cases](https://dejavu.mmckenna.me/use-cases/) guide for exampl
 composeTestRule.onNodeWithTag("tag").assertRecompositions(exactly = 2)
 
 // Bounds
-composeTestRule.onNodeWithTag("tag").assertRecompositions(atLeast = 1)
-composeTestRule.onNodeWithTag("tag").assertRecompositions(atMost = 3)
-composeTestRule.onNodeWithTag("tag").assertRecompositions(atLeast = 1, atMost = 5)
+composeTestRule.onNodeWithTag("tag")
+  .assertRecompositions(atLeast = 1)
+
+composeTestRule.onNodeWithTag("tag")
+  .assertRecompositions(atMost = 3)
+
+composeTestRule.onNodeWithTag("tag")
+  .assertRecompositions(atLeast = 1, atMost = 5)
 
 // Stability (alias for exactly = 0)
-composeTestRule.onNodeWithTag("tag").assertStable()
+composeTestRule.onNodeWithTag("tag")
+  .assertStable()
 ```
 
 ### Utilities
@@ -194,7 +208,7 @@ fun myComposable_isStable() = runComposeUiTest {
 
 ## Further Reading
 
-- [Use Cases](https://dejavu.mmckenna.me/use-cases/) — locking in performance, AI agent guardrails, and CI enforcement
+- [Use Cases](https://dejavu.mmckenna.me/use-cases/) — locking in UI efficiency, AI agent guardrails, and CI enforcement
 - [Examples](https://dejavu.mmckenna.me/examples/) — test patterns for common scenarios
 - [Error Messages Guide](https://dejavu.mmckenna.me/error-messages/) — how to read and act on failure output
 - [Causality Analysis](https://dejavu.mmckenna.me/causality-analysis/) — understanding why composables recompose

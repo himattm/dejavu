@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "me.mmckenna.dejavu"
-version = "0.1.1"
+version = "0.2.0"
 
 kotlin {
   explicitApi()
@@ -165,6 +165,13 @@ android {
         it.exclude("dejavu/ChipFilterPatternTest.class")
       }
     }
+  }
+
+  // CompositionObserver integration lives in src/observerAndroid/kotlin/ and requires
+  // Compose runtime 1.7+ (observer API). Exclude with -PexcludeCompositionObserver=true
+  // when compiling against older Compose BOMs that lack these APIs.
+  if (project.findProperty("excludeCompositionObserver") != "true") {
+    sourceSets["main"].kotlin.srcDir("src/observerAndroid/kotlin")
   }
 }
 

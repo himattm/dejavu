@@ -363,6 +363,14 @@ internal object TagMapping {
             DejavuTracer.tagParamFingerprints.put(tag, fingerprint)
         }
 
+        // Mark this tag as having a reliable fingerprint comparison baseline,
+        // but only during frame-loop passes.
+        if (prev != null && DejavuTracer.isFrameLoopPass) {
+            synchronized(DejavuTracer.tagsWithFingerprintLock) {
+                DejavuTracer.tagsWithFingerprint.add(tag)
+            }
+        }
+
         // Store/update the snapshot
         val previousSnapshot = synchronized(DejavuTracer.tagParamLock) {
             DejavuTracer.tagParamSnapshots.put(tag, currentSnapshot)
@@ -444,6 +452,7 @@ internal object TagMapping {
         }
         // Also include data to catch state-driven changes
         for (item in group.data) {
+            if (item != null && item.javaClass.name.startsWith("androidx.compose.runtime.")) continue
             hash = hash * 31 + (item?.hashCode() ?: 0)
         }
         return hash

@@ -56,6 +56,16 @@ internal object DejavuTracer : CompositionTracer {
     internal val tagToIdentity = mutableMapOf<String, Any>()
     internal val tagToIdentityLock = SynchronizedObject()
 
+    /** Tags that have had at least one fingerprint comparison during a frame-loop
+     *  buildTagMapping pass. When a tag is in this set, per-tag tracking is reliable. */
+    internal val tagsWithFingerprint = mutableSetOf<String>()
+    internal val tagsWithFingerprintLock = SynchronizedObject()
+
+    /** True while buildTagMapping is running from the frame callback.
+     *  Gates tagsWithFingerprint population. */
+    @kotlin.concurrent.Volatile
+    var isFrameLoopPass = false
+
     /** Cache of testTag -> composable function name. */
     internal val testTagToFunction = mutableMapOf<String, String>()
     internal val testTagToFunctionLock = SynchronizedObject()
@@ -110,6 +120,9 @@ internal object DejavuTracer : CompositionTracer {
         val stack = composableStack.get()
         val parentName = stack.lastOrNull()
         stack.add(traced.qualifiedName)
+
+        // Bind the pending observer scope to this composable name
+        onComposableTraced(traced.qualifiedName)
 
         // Skip framework composables for counting
         if (isFrameworkComposable(info)) return
@@ -267,6 +280,19 @@ internal object DejavuTracer : CompositionTracer {
         platformBuildTagMapping(compositionData)
     }
 
+    /**
+     * Called from the Choreographer frame callback. Sets [isFrameLoopPass] so
+     * that detectTagRecomposition populates [tagsWithFingerprint].
+     */
+    fun buildTagMappingFromFrameLoop(compositionData: Set<CompositionData>) {
+        isFrameLoopPass = true
+        try {
+            buildTagMapping(compositionData)
+        } finally {
+            isFrameLoopPass = false
+        }
+    }
+
     // ── Query APIs ───────────────────────────────────────────────────
 
     fun getRecompositionCount(name: String): Int {
@@ -313,9 +339,6 @@ internal object DejavuTracer : CompositionTracer {
         val key = synchronized(testTagToKeyLock) { testTagToKey[tag] }
         if (key != null) {
             val functionName = synchronized(testTagToFunctionLock) { testTagToFunction[tag] }
-            // Only use key-based count if this function has a single instance.
-            // Multi-instance functions share the same key, so key-based count is the
-            // aggregate; use fingerprint-based per-tag count instead.
             if (functionName != null && !isMultiInstanceFunction(functionName)) {
                 val totalCompositions = synchronized(compositionCountsLock) {
                     compositionCounts[key] ?: 0
@@ -324,8 +347,12 @@ internal object DejavuTracer : CompositionTracer {
             }
         }
         // Multi-instance or no key: use fingerprint-based count from tree walk.
-        // Requires refreshTagMapping() after each waitForIdle() for accurate counts.
-        return synchronized(perTagLock) { perTagRecompCounts[tag] }
+        val perTagCount = synchronized(perTagLock) { perTagRecompCounts[tag] }
+        if (perTagCount != null) return perTagCount
+        // If fingerprint tracking has compared this tag at least once but found no
+        // change, return 0 (stable) rather than null. Null would cause fallback to
+        // the function-level count which is shared across ALL instances.
+        return if (synchronized(tagsWithFingerprintLock) { tag in tagsWithFingerprint }) 0 else null
     }
 
     fun getPerTagRecompositionEvents(tag: String): List<RecompositionEvent> =
@@ -344,11 +371,16 @@ internal object DejavuTracer : CompositionTracer {
      */
     fun isMultiInstanceFunction(functionName: String): Boolean {
         synchronized(testTagToFunctionLock) {
-            var count = 0
+            val identities = mutableSetOf<Any>()
             for ((tag, value) in testTagToFunction) {
                 if (value == functionName && tag in lastSeenTags) {
-                    count++
-                    if (count > 1) return true
+                    val id = synchronized(tagToIdentityLock) { tagToIdentity[tag] }
+                    if (id != null) {
+                        identities.add(id)
+                    } else {
+                        identities.add(tag)
+                    }
+                    if (identities.size > 1) return true
                 }
             }
             return false
@@ -439,6 +471,8 @@ internal object DejavuTracer : CompositionTracer {
         }
         synchronized(lastSeenTagsLock) { lastSeenTags.clear() }
         synchronized(tagToIdentityLock) { tagToIdentity.clear() }
+        synchronized(tagsWithFingerprintLock) { tagsWithFingerprint.clear() }
+        resetObserver()
     }
 
     /**

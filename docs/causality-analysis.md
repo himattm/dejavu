@@ -1,6 +1,6 @@
 # Why Did It Recompose? -- Causality Analysis
 
-When a Dejavu assertion fails, the error message includes a "Possible cause" section and a recomposition timeline. This document explains how Dejavu determines why a composable recomposed, what each piece of information means, and how to use it to fix performance issues.
+When a Dejavu assertion fails, the error message includes a "Possible cause" section and a recomposition timeline. This document explains how Dejavu determines why a composable recomposed, what each piece of information means, and how to use it to fix unnecessary recompositions.
 
 ---
 
@@ -82,7 +82,7 @@ Three different state objects changed. Dejavu lists the distinct types to help y
     2 state change(s) of type Product (1 same-value write(s)!)
 ```
 
-Two state writes occurred, but one of them set the same value that was already there. This is a performance bug: the write triggered a snapshot notification even though nothing logically changed.
+Two state writes occurred, but one of them set the same value that was already there. This is an unnecessary recomposition: the write triggered a snapshot notification even though nothing logically changed.
 
 **How Dejavu detects same-value writes:**
 

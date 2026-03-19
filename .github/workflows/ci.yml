@@ -21,6 +21,32 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew :dejavu:testDebugUnitTest :dejavu:jvmTest :dejavu:lintDebug apiCheck
 
+  compose-compat:
+    name: Compose BOM ${{ matrix.bom }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - bom: "2024.06.00"
+            excludeObserver: "true"
+          - bom: "2024.09.00"
+            excludeObserver: "true"
+          - bom: "2025.01.01"
+            excludeObserver: "true"
+          - bom: "2026.01.01"
+            excludeObserver: "false"
+          - bom: "2026.03.00"
+            excludeObserver: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew :dejavu:compileDebugKotlin :dejavu:testDebugUnitTest -PcomposeBomVersion=${{ matrix.bom }} -PexcludeCompositionObserver=${{ matrix.excludeObserver }}
+
   ios-tests:
     name: iOS Tests
     runs-on: macos-latest
@@ -55,7 +81,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        bom: ["2024.06.00", "2024.09.00", "2025.01.01", "2026.01.01"]
+        bom: ["2024.06.00", "2024.09.00", "2025.01.01", "2026.01.01", "2026.03.00"]
     steps:
       - uses: actions/checkout@v4
 

@@ -9,7 +9,7 @@
 
 **[GitHub Repository](https://github.com/himattm/dejavu)**
 
-**Lock in Compose performance. Catch recomposition regressions before your users.**
+**Guard your Compose UI efficiency. Catch recomposition regressions before your users.**
 
 ## The Problem
 
@@ -31,7 +31,7 @@ Dejavu is a test-only library that turns recomposition behavior into assertions.
 ## Next Steps
 
 - [Getting Started](getting-started.md) — add the dependency and write your first test
-- [Use Cases](use-cases.md) — locking in performance, AI agent guardrails, and CI enforcement
+- [Use Cases](use-cases.md) — locking in UI efficiency, AI agent guardrails, and CI enforcement
 - [Examples](examples.md) — test patterns for common scenarios
 - [API Reference](api-reference.md) — all assertions and utilities
 - [How It Works](how-it-works.md) — internals, compatibility, and limitations

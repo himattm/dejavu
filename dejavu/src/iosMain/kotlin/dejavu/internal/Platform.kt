@@ -33,3 +33,9 @@ internal actual class PlatformThreadLocal<T> actual constructor(private val init
 
     actual fun get(): T = value
 }
+
+internal actual fun onComposableTraced(qualifiedName: String) {}
+internal actual fun describeInvalidationCauses(qualifiedName: String): String? = null
+internal actual fun describeStateDependencies(qualifiedName: String): String? = null
+internal actual fun isObserverAvailable(): Boolean = false
+internal actual fun resetObserver() {}

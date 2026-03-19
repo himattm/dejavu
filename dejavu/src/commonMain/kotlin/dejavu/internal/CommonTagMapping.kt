@@ -241,6 +241,13 @@ internal object CommonTagMapping {
                 return
             }
 
+            // Mark reliable fingerprint comparison (frame-loop passes only)
+            if (DejavuTracer.isFrameLoopPass) {
+                synchronized(DejavuTracer.tagsWithFingerprintLock) {
+                    DejavuTracer.tagsWithFingerprint.add(tag)
+                }
+            }
+
             if (fingerprint != prevFingerprint) {
                 // Fingerprint changed → recomposition occurred
                 DejavuTracer.tagParamFingerprints[tag] = fingerprint

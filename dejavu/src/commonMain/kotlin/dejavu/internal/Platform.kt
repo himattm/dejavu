@@ -38,3 +38,18 @@ internal expect fun platformBuildTagMapping(compositionData: Set<CompositionData
 internal expect class PlatformThreadLocal<T>(initial: () -> T) {
     fun get(): T
 }
+
+/** Called from [DejavuTracer.traceEventStart] to bind the pending observer scope. */
+internal expect fun onComposableTraced(qualifiedName: String)
+
+/** Returns observer-provided invalidation cause descriptions, or null if unavailable. */
+internal expect fun describeInvalidationCauses(qualifiedName: String): String?
+
+/** Returns observer-provided state dependency descriptions, or null if unavailable. */
+internal expect fun describeStateDependencies(qualifiedName: String): String?
+
+/** Whether the CompositionObserver integration is available and active. */
+internal expect fun isObserverAvailable(): Boolean
+
+/** Resets the observer's per-test state (invalidations, dependencies). */
+internal expect fun resetObserver()
