@@ -2,6 +2,7 @@ package dejavu.internal
 
 import androidx.compose.runtime.tooling.CompositionData
 import dejavu.Dejavu
+import kotlinx.atomicfu.locks.synchronized
 
 internal actual fun currentTimeMillis(): Long = System.currentTimeMillis()
 
@@ -18,7 +19,7 @@ internal actual fun getPendingCause(): RecomposeCause? = null
 internal actual fun isLoggingEnabled(): Boolean = Dejavu.logToStdout
 
 internal actual fun currentCompositionsSnapshot(): Set<CompositionData> =
-    DejavuTracer.inspectionTables.toSet()
+    synchronized(DejavuTracer.inspectionTablesLock) { DejavuTracer.inspectionTables.toSet() }
 
 internal actual fun platformBuildTagMapping(compositionData: Set<CompositionData>) {
     CommonTagMapping.buildTagMapping(compositionData)

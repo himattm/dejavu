@@ -80,6 +80,7 @@ internal object DejavuTracer : CompositionTracer {
      * Non-Android [currentCompositionsSnapshot] reads from this set.
      */
     internal val inspectionTables = mutableSetOf<CompositionData>()
+    internal val inspectionTablesLock = SynchronizedObject()
 
     /** Track parent-child causality: stack of qualified names for the current composition. */
     private val composableStack = PlatformThreadLocal { ArrayDeque<String>() }

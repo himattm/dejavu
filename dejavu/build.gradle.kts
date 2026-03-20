@@ -135,34 +135,10 @@ android {
       all {
         // Compose UI tests use runComposeUiTest which requires Robolectric on Android;
         // these tests run on JVM desktop instead. Android UI tests run as instrumented tests.
-        it.exclude("dejavu/DejavuComposeUiTest.class")
-        it.exclude("dejavu/SideEffectAccuracyTest.class")
-        it.exclude("dejavu/ComposablePatternAccuracyTest.class")
-        it.exclude("dejavu/AssertionApiPatternTest.class")
-        it.exclude("dejavu/ErrorMessagePatternTest.class")
-        it.exclude("dejavu/LibraryCorrectnessPatternTest.class")
-        it.exclude("dejavu/SubcomposePatternTest.class")
-        it.exclude("dejavu/AnimationPatternTest.class")
-        it.exclude("dejavu/FlowStatePatternTest.class")
-        it.exclude("dejavu/InputScrollPatternTest.class")
-        it.exclude("dejavu/ReorderListPatternTest.class")
-        it.exclude("dejavu/KeyIdentityPatternTest.class")
-        it.exclude("dejavu/AdvancedPatternTest.class")
-        it.exclude("dejavu/DeepNestingStressPatternTest.class")
-        it.exclude("dejavu/SharedStateStressPatternTest.class")
-        it.exclude("dejavu/LazyListStressPatternTest.class")
-        it.exclude("dejavu/ExpandableCardPatternTest.class")
-        it.exclude("dejavu/ToggleMorphPatternTest.class")
-        it.exclude("dejavu/ImplicitTrackingPatternTest.class")
-        it.exclude("dejavu/DonutChartPatternTest.class")
-        it.exclude("dejavu/CollapsingHeaderPatternTest.class")
-        it.exclude("dejavu/SwipeListPatternTest.class")
-        it.exclude("dejavu/LazyVariantsPatternTest.class")
-        it.exclude("dejavu/DialogPopupPatternTest.class")
-        it.exclude("dejavu/PagerCrossfadePatternTest.class")
-        it.exclude("dejavu/ScaffoldSlotsPatternTest.class")
-        it.exclude("dejavu/StarRatingPatternTest.class")
-        it.exclude("dejavu/ChipFilterPatternTest.class")
+        // Compose UI tests (runComposeUiTest) live in the dejavu/ package;
+        // unit tests live in dejavu/internal/. Glob excludes all UI tests
+        // automatically — no need to add each new test class manually.
+        it.exclude("dejavu/*Test.class")
       }
     }
   }
