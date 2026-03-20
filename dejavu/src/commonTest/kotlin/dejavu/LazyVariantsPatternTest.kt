@@ -50,7 +50,7 @@ class LazyVariantsPatternTest {
 
     @Test
     fun lazyRow_tagMappingWorks() = runComposeUiTest {
-        if (isIos || isWasmJs) return@runComposeUiTest
+        if (isIos || isWasmJs) { println("SKIP: slot table crash on iOS/WasmJs (upstream bug)"); return@runComposeUiTest }
         setContent { DejavuTestContent { LazyVariantsScreen() } }
         waitForIdle()
         refreshTagMapping()
@@ -60,7 +60,7 @@ class LazyVariantsPatternTest {
 
     @Test
     fun lazyRow_selectItem_selectionCountRecomposes() = runComposeUiTest {
-        if (isIos || isWasmJs) return@runComposeUiTest
+        if (isIos || isWasmJs) { println("SKIP: slot table crash on iOS/WasmJs (upstream bug)"); return@runComposeUiTest }
         setContent { DejavuTestContent { LazyVariantsScreen() } }
         waitForIdle()
         resetRecompositionCounts()
@@ -73,7 +73,7 @@ class LazyVariantsPatternTest {
 
     @Test
     fun lazyRow_selectItem_gridCountStable() = runComposeUiTest {
-        if (isIos || isWasmJs) return@runComposeUiTest
+        if (isIos || isWasmJs) { println("SKIP: slot table crash on iOS/WasmJs (upstream bug)"); return@runComposeUiTest }
         setContent { DejavuTestContent { LazyVariantsScreen() } }
         waitForIdle()
         resetRecompositionCounts()
@@ -86,7 +86,7 @@ class LazyVariantsPatternTest {
 
     @Test
     fun lazyRow_initiallyStable() = runComposeUiTest {
-        if (isIos || isWasmJs) return@runComposeUiTest
+        if (isIos || isWasmJs) { println("SKIP: slot table crash on iOS/WasmJs (upstream bug)"); return@runComposeUiTest }
         setContent { DejavuTestContent { LazyVariantsScreen() } }
         waitForIdle()
 
@@ -97,7 +97,7 @@ class LazyVariantsPatternTest {
 
     @Test
     fun lazyGrid_tagMappingWorks() = runComposeUiTest {
-        if (isIos || isWasmJs) return@runComposeUiTest
+        if (isIos || isWasmJs) { println("SKIP: slot table crash on iOS/WasmJs (upstream bug)"); return@runComposeUiTest }
         setContent { DejavuTestContent { LazyVariantsScreen() } }
         waitForIdle()
         refreshTagMapping()
@@ -107,7 +107,7 @@ class LazyVariantsPatternTest {
 
     @Test
     fun lazyGrid_selectCell_highlightCountRecomposes() = runComposeUiTest {
-        if (isIos || isWasmJs) return@runComposeUiTest
+        if (isIos || isWasmJs) { println("SKIP: slot table crash on iOS/WasmJs (upstream bug)"); return@runComposeUiTest }
         setContent { DejavuTestContent { LazyVariantsScreen() } }
         waitForIdle()
         resetRecompositionCounts()
@@ -120,7 +120,7 @@ class LazyVariantsPatternTest {
 
     @Test
     fun lazyGrid_selectCell_rowCountStable() = runComposeUiTest {
-        if (isIos || isWasmJs) return@runComposeUiTest
+        if (isIos || isWasmJs) { println("SKIP: slot table crash on iOS/WasmJs (upstream bug)"); return@runComposeUiTest }
         setContent { DejavuTestContent { LazyVariantsScreen() } }
         waitForIdle()
         resetRecompositionCounts()
@@ -133,7 +133,7 @@ class LazyVariantsPatternTest {
 
     @Test
     fun lazyGrid_initiallyStable() = runComposeUiTest {
-        if (isIos || isWasmJs) return@runComposeUiTest
+        if (isIos || isWasmJs) { println("SKIP: slot table crash on iOS/WasmJs (upstream bug)"); return@runComposeUiTest }
         setContent { DejavuTestContent { LazyVariantsScreen() } }
         waitForIdle()
 

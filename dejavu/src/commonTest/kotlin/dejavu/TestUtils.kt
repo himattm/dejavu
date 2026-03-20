@@ -8,6 +8,7 @@ import androidx.compose.runtime.tooling.LocalInspectionTables
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import dejavu.internal.DejavuTracer
+import kotlinx.atomicfu.locks.synchronized
 
 /**
  * Alias for [DejavuTracer.inspectionTables]. Provided to [LocalInspectionTables]
@@ -26,7 +27,7 @@ internal fun enableDejavuForTest() {
     isDebugInspectorInfoEnabled = true
     DejavuTracer.enabled = true
     Composer.setTracer(DejavuTracer)
-    DejavuTracer.inspectionTables.clear()
+    synchronized(DejavuTracer.inspectionTablesLock) { DejavuTracer.inspectionTables.clear() }
     DejavuTest.reset()
 }
 
@@ -44,7 +45,7 @@ internal fun resetRecompositionCounts() {
 internal fun disableDejavuForTest() {
     DejavuTracer.enabled = false
     isDebugInspectorInfoEnabled = false
-    DejavuTracer.inspectionTables.clear()
+    synchronized(DejavuTracer.inspectionTablesLock) { DejavuTracer.inspectionTables.clear() }
 }
 
 /**
@@ -91,7 +92,10 @@ internal fun DejavuTestContent(content: @Composable () -> Unit) {
  * Call after [waitForIdle] and before making per-tag assertions.
  */
 internal fun refreshTagMapping() {
-    DejavuTracer.buildTagMapping(DejavuTracer.inspectionTables)
+    val snapshot = synchronized(DejavuTracer.inspectionTablesLock) {
+        DejavuTracer.inspectionTables.toSet()
+    }
+    DejavuTracer.buildTagMapping(snapshot)
 }
 
 /** True only on WasmJs targets — used to skip tests with Wasm test runner limitations. */
