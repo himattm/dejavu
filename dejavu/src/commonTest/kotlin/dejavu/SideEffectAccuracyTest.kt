@@ -53,6 +53,7 @@ class SideEffectAccuracyTest {
         waitForIdle()
 
         val dejavuCount = DejavuTracer.getRecompositionCount("dejavu.SideEffectCounter")
+        println("[stableComposable] SideEffect=$sideEffectCounter, Dejavu=$dejavuCount (expected: 1 / 0)")
         assertEquals(1, sideEffectCounter, "SideEffect should have run exactly once (initial composition)")
         assertEquals(0, dejavuCount, "Dejavu should report 0 recompositions for stable composable")
         assertEquals(sideEffectCounter - 1, dejavuCount,
@@ -73,6 +74,7 @@ class SideEffectAccuracyTest {
         waitForIdle()
 
         val dejavuCount = DejavuTracer.getRecompositionCount("dejavu.ClickCounter")
+        println("[singleStateChange] SideEffect=$sideEffectCounter, Dejavu=$dejavuCount (expected recomps: ${sideEffectCounter - 1})")
         assertEquals(sideEffectCounter - 1, dejavuCount,
             "After 1 click: SideEffect=$sideEffectCounter (${sideEffectCounter - 1} recomps), Dejavu=$dejavuCount")
     }
@@ -91,6 +93,7 @@ class SideEffectAccuracyTest {
 
         val dejavuCount = DejavuTracer.getRecompositionCount("dejavu.ClickCounter")
         val expectedRecomps = sideEffectCounter - 1
+        println("[multipleStateChanges] SideEffect=$sideEffectCounter, Dejavu=$dejavuCount (expected recomps: $expectedRecomps)")
         assertEquals(expectedRecomps, dejavuCount,
             "After 5 clicks: SideEffect=$sideEffectCounter ($expectedRecomps recomps), Dejavu=$dejavuCount")
     }
@@ -114,6 +117,7 @@ class SideEffectAccuracyTest {
         val parentDejavuCount = DejavuTracer.getRecompositionCount("dejavu.ParentWithChild")
         val childDejavuCount = DejavuTracer.getRecompositionCount("dejavu.TrackedChild")
 
+        println("[childComposable] Parent: SideEffect=$sideEffectCounter, Dejavu=$parentDejavuCount | Child: SideEffect=$childSideEffectCounter, Dejavu=$childDejavuCount")
         assertEquals(sideEffectCounter - 1, parentDejavuCount,
             "Parent: SideEffect=$sideEffectCounter, Dejavu=$parentDejavuCount")
         assertEquals(childSideEffectCounter - 1, childDejavuCount,
@@ -134,6 +138,7 @@ class SideEffectAccuracyTest {
 
         val dejavuCount = DejavuTracer.getRecompositionCount("dejavu.ClickCounter")
         val expectedRecomps = sideEffectCounter - 1
+        println("[rapidStateChanges] SideEffect=$sideEffectCounter, Dejavu=$dejavuCount (expected recomps: $expectedRecomps)")
         assertEquals(expectedRecomps, dejavuCount,
             "After 20 clicks: SideEffect=$sideEffectCounter ($expectedRecomps recomps), Dejavu=$dejavuCount")
     }

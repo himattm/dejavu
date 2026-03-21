@@ -81,7 +81,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        bom: ["2024.06.00", "2024.09.00", "2025.01.01", "2026.01.01", "2026.03.00"]
+        include:
+          - bom: "2024.06.00"
+            excludeObserver: "true"
+          - bom: "2024.09.00"
+            excludeObserver: "true"
+          - bom: "2025.01.01"
+            excludeObserver: "true"
+          - bom: "2026.01.01"
+            excludeObserver: "false"
+          - bom: "2026.03.00"
+            excludeObserver: "false"
     steps:
       - uses: actions/checkout@v4
 
@@ -99,7 +109,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Build APKs
-        run: ./gradlew :demo:assembleDebug :demo:assembleDebugAndroidTest -PcomposeBomVersion=${{ matrix.bom }}
+        run: ./gradlew :demo:assembleDebug :demo:assembleDebugAndroidTest -PcomposeBomVersion=${{ matrix.bom }} -PexcludeCompositionObserver=${{ matrix.excludeObserver }}
 
       - name: Run instrumented tests
         uses: reactivecircus/android-emulator-runner@v2
@@ -107,7 +117,7 @@ jobs:
           api-level: 31
           arch: x86_64
           target: google_apis
-          script: ./gradlew :demo:connectedDebugAndroidTest -PcomposeBomVersion=${{ matrix.bom }}
+          script: ./gradlew :demo:connectedDebugAndroidTest -PcomposeBomVersion=${{ matrix.bom }} -PexcludeCompositionObserver=${{ matrix.excludeObserver }}
 
       - name: Upload test reports
         if: always()

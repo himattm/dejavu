@@ -371,11 +371,14 @@ internal object DejavuTracer : CompositionTracer {
      * indicating multiple instances of the same composable in the tree.
      */
     fun isMultiInstanceFunction(functionName: String): Boolean {
+        // Snapshot under individual locks to avoid nested lock acquisition
+        val tagsSnapshot = synchronized(lastSeenTagsLock) { lastSeenTags.toSet() }
+        val identitySnapshot = synchronized(tagToIdentityLock) { tagToIdentity.toMap() }
         synchronized(testTagToFunctionLock) {
             val identities = mutableSetOf<Any>()
             for ((tag, value) in testTagToFunction) {
-                if (value == functionName && tag in lastSeenTags) {
-                    val id = synchronized(tagToIdentityLock) { tagToIdentity[tag] }
+                if (value == functionName && tag in tagsSnapshot) {
+                    val id = identitySnapshot[tag]
                     if (id != null) {
                         identities.add(id)
                     } else {

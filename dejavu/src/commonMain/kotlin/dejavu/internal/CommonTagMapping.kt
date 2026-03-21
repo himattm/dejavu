@@ -183,7 +183,7 @@ internal object CommonTagMapping {
     private fun registerTag(tag: String, functionName: String, composableKey: Int?, group: CompositionGroup) {
         // Store tag → function name
         synchronized(DejavuTracer.testTagToFunctionLock) {
-            DejavuTracer.testTagToFunction[tag] = functionName
+            DejavuTracer.testTagToFunction.getOrPut(tag) { functionName }
         }
 
         // Store tag → composable key for per-instance recomposition counting
