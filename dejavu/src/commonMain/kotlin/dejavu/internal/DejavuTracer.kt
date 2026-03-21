@@ -18,6 +18,10 @@ internal object DejavuTracer : CompositionTracer {
     /** Count traceEventStart calls per composable key (int).
      *  First call is initial composition, subsequent are recompositions. */
     internal val compositionCounts = mutableMapOf<Int, Int>()
+    /** Baseline for key-based per-tag counting, set at resetCounts() time.
+     *  Stores maxOf(0, compositionCounts[key] - 1) at reset so post-reset
+     *  queries subtract it to get only post-reset recompositions. */
+    internal val compositionCountBaseline = mutableMapOf<Int, Int>()
     internal val compositionCountsLock = SynchronizedObject()
 
     /** Map from key (int) to parsed info: functionName, fullInfo, sourceLocation. */
@@ -336,18 +340,23 @@ internal object DejavuTracer : CompositionTracer {
     }
 
     fun getPerTagRecompositionCount(tag: String): Int? {
-        // Use the tag's mapped composable key for single-instance functions (real-time count)
+        // Use the tag's mapped composable key for deterministic counting.
+        // Key-based counting works for both single-instance and multi-instance
+        // functions, as long as the tag's key is unique (no other tag shares it).
+        // This is the common case for LazyColumn items with explicit key{}.
+        // Falls back to fingerprint-based counting only for true key collisions.
         val key = synchronized(testTagToKeyLock) { testTagToKey[tag] }
         if (key != null) {
             val functionName = synchronized(testTagToFunctionLock) { testTagToFunction[tag] }
-            if (functionName != null && !isMultiInstanceFunction(functionName)) {
-                val totalCompositions = synchronized(compositionCountsLock) {
-                    compositionCounts[key] ?: 0
+            if (functionName != null &&
+                (!isMultiInstanceFunction(functionName) || isKeyUniqueForTag(tag))) {
+                val (total, baseline) = synchronized(compositionCountsLock) {
+                    (compositionCounts[key] ?: 0) to (compositionCountBaseline[key] ?: 0)
                 }
-                return maxOf(0, totalCompositions - 1)
+                return maxOf(0, maxOf(0, total - 1) - baseline)
             }
         }
-        // Multi-instance or no key: use fingerprint-based count from tree walk.
+        // Key collision or no key: use fingerprint-based count from tree walk.
         val perTagCount = synchronized(perTagLock) { perTagRecompCounts[tag] }
         if (perTagCount != null) return perTagCount
         // If fingerprint tracking has compared this tag at least once but found no
@@ -389,6 +398,24 @@ internal object DejavuTracer : CompositionTracer {
             }
             return false
         }
+    }
+
+    /**
+     * Returns true if the tag's mapped composer key is unique (no other
+     * currently-visible tag shares it). When true, compositionCounts[key]
+     * is a per-instance count, so key-based deterministic counting is safe.
+     */
+    fun isKeyUniqueForTag(tag: String): Boolean {
+        val key = synchronized(testTagToKeyLock) { testTagToKey[tag] } ?: return false
+        val tagsSnapshot = synchronized(lastSeenTagsLock) { lastSeenTags.toSet() }
+        synchronized(testTagToKeyLock) {
+            for ((otherTag, otherKey) in testTagToKey) {
+                if (otherTag != tag && otherKey == key && otherTag in tagsSnapshot) {
+                    return false
+                }
+            }
+        }
+        return true
     }
 
     // ── Parameter diffing ────────────────────────────────────────────
@@ -446,7 +473,10 @@ internal object DejavuTracer : CompositionTracer {
      */
     fun reset() {
         resetCounts()
-        synchronized(compositionCountsLock) { compositionCounts.clear() }
+        synchronized(compositionCountsLock) {
+            compositionCounts.clear()
+            compositionCountBaseline.clear()
+        }
         synchronized(keyToInfoLock) { keyToInfo.clear() }
         synchronized(simpleNameIndexLock) { simpleNameIndex.clear() }
     }
@@ -460,6 +490,14 @@ internal object DejavuTracer : CompositionTracer {
      * as recompositions rather than initial compositions.
      */
     fun resetCounts() {
+        // Snapshot current key-based recomposition counts as baseline so that
+        // post-reset queries only report recompositions that occur after this point.
+        synchronized(compositionCountsLock) {
+            compositionCountBaseline.clear()
+            for ((key, count) in compositionCounts) {
+                compositionCountBaseline[key] = maxOf(0, count - 1)
+            }
+        }
         synchronized(recompositionCountsLock) { recompositionCounts.clear() }
         synchronized(recompositionEventsLock) { recompositionEvents.clear() }
         synchronized(testTagToFunctionLock) { testTagToFunction.clear() }

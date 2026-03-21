@@ -72,6 +72,15 @@ internal object TagMapping {
         else -> null
     }
 
+    /** Stores the tag → composable key mapping for key-based per-tag counting. */
+    private fun registerTagKey(tag: String, key: Int?) {
+        if (key != null) {
+            synchronized(DejavuTracer.testTagToKeyLock) {
+                DejavuTracer.testTagToKey[tag] = key
+            }
+        }
+    }
+
     @OptIn(UiToolingDataApi::class)
     private fun walkForTagMapping(
         group: Group,
@@ -120,6 +129,7 @@ internal object TagMapping {
                                     synchronized(DejavuTracer.testTagToFunctionLock) {
                                         DejavuTracer.testTagToFunction.putIfAbsent(tag, currentUserComposable)
                                     }
+                                    registerTagKey(tag, currentKey)
                                     synchronized(DejavuTracer.lastSeenTagsLock) {
                                         DejavuTracer.lastSeenTags.add(tag)
                                     }
@@ -164,6 +174,7 @@ internal object TagMapping {
                                                         synchronized(DejavuTracer.testTagToFunctionLock) {
                                                             DejavuTracer.testTagToFunction.putIfAbsent(value, currentUserComposable)
                                                         }
+                                                        registerTagKey(value, currentKey)
                                                         synchronized(DejavuTracer.lastSeenTagsLock) {
                                                             DejavuTracer.lastSeenTags.add(value)
                                                         }
@@ -197,6 +208,7 @@ internal object TagMapping {
                                         synchronized(DejavuTracer.testTagToFunctionLock) {
                                             DejavuTracer.testTagToFunction.putIfAbsent(tagValue, currentUserComposable)
                                         }
+                                        registerTagKey(tagValue, currentKey)
                                         synchronized(DejavuTracer.lastSeenTagsLock) {
                                             DejavuTracer.lastSeenTags.add(tagValue)
                                         }
@@ -226,6 +238,7 @@ internal object TagMapping {
                                     synchronized(DejavuTracer.testTagToFunctionLock) {
                                         DejavuTracer.testTagToFunction.putIfAbsent(tagValue, currentUserComposable)
                                     }
+                                    registerTagKey(tagValue, currentKey)
                                     synchronized(DejavuTracer.lastSeenTagsLock) {
                                         DejavuTracer.lastSeenTags.add(tagValue)
                                     }
@@ -324,6 +337,7 @@ internal object TagMapping {
                                     synchronized(DejavuTracer.testTagToFunctionLock) {
                                         DejavuTracer.testTagToFunction.putIfAbsent(tag, currentUserComposable)
                                     }
+                                    registerTagKey(tag, currentKey)
                                     synchronized(DejavuTracer.lastSeenTagsLock) {
                                         DejavuTracer.lastSeenTags.add(tag)
                                     }

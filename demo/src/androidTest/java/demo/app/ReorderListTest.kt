@@ -20,6 +20,7 @@ class ReorderListTest {
     @Test
     fun reorder_swap_affects_first_two_items() {
         composeTestRule.onNodeWithTag("swap_first_two_btn").performClick()
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("reorderable_item_0").assertRecompositions(atLeast = 1)
         composeTestRule.onNodeWithTag("reorderable_item_1").assertRecompositions(atLeast = 1)
     }
@@ -27,6 +28,7 @@ class ReorderListTest {
     @Test
     fun reorder_swap_other_items_stable() {
         composeTestRule.onNodeWithTag("swap_first_two_btn").performClick()
+        composeTestRule.waitForIdle()
         // mutableStateListOf structural mutations propagate dirty bits to all
         // lazy list items, so non-swapped items may recompose. Verify they
         // exist and weren't excessively recomposed rather than asserting zero.
@@ -39,6 +41,7 @@ class ReorderListTest {
     @Test
     fun reorder_shuffle_affects_all_items() {
         composeTestRule.onNodeWithTag("shuffle_btn").performClick()
+        composeTestRule.waitForIdle()
         // Shuffle mutates the list structurally, so all items recompose
         composeTestRule.onNodeWithTag("reorderable_item_0").assertRecompositions(atLeast = 1)
     }
@@ -46,6 +49,7 @@ class ReorderListTest {
     @Test
     fun reorder_order_label_recomposes_on_mutation() {
         composeTestRule.onNodeWithTag("swap_first_two_btn").performClick()
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("list_order_label").assertRecompositions(atLeast = 1)
     }
 
@@ -63,7 +67,9 @@ class ReorderListTest {
     @Test
     fun reorder_static_label_stable() {
         composeTestRule.onNodeWithTag("shuffle_btn").performClick()
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("swap_first_two_btn").performClick()
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("static_reorder_label").assertStable()
     }
 
