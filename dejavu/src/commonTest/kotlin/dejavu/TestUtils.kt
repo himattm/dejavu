@@ -34,9 +34,21 @@ internal fun enableDejavuForTest() {
 /**
  * Clears recomposition counts but preserves composition history.
  * Use mid-test when a live composition is still running.
+ *
+ * Also captures fingerprint baselines from the current composition state
+ * so that per-tag tracking can detect post-reset changes deterministically.
  */
 internal fun resetRecompositionCounts() {
     DejavuTest.resetCounts()
+    // Capture fingerprint baselines from current composition state,
+    // then clear counts so only post-reset changes are reported.
+    val snapshots = synchronized(DejavuTracer.inspectionTablesLock) {
+        DejavuTracer.inspectionTables.toSet()
+    }
+    if (snapshots.isNotEmpty()) {
+        DejavuTracer.buildTagMappingFromFrameLoop(snapshots)
+        DejavuTracer.clearCountsPreservingBaselines()
+    }
 }
 
 /**
