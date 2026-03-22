@@ -488,6 +488,10 @@ internal object DejavuTracer : CompositionTracer {
      * Use for mid-test resets where the same composition is still alive and
      * you want subsequent compositions of already-seen keys to still count
      * as recompositions rather than initial compositions.
+     *
+     * When a live composition is running, this also captures fingerprint
+     * baselines from the current composition state so that per-tag tracking
+     * can detect post-reset changes deterministically.
      */
     fun resetCounts() {
         // Snapshot current key-based recomposition counts as baseline so that
@@ -515,27 +519,35 @@ internal object DejavuTracer : CompositionTracer {
         synchronized(tagToIdentityLock) { tagToIdentity.clear() }
         synchronized(tagsWithFingerprintLock) { tagsWithFingerprint.clear() }
         resetObserver()
-    }
 
-    /**
-     * Clears all recomposition counts while preserving fingerprint baselines
-     * and [tagsWithFingerprint]. Used after [resetCounts] + waitForIdle to
-     * clear counts from frame callbacks that ran during idle, keeping the
-     * fingerprint baselines they established for per-tag change detection.
-     */
-    fun clearCountsPreservingBaselines() {
-        synchronized(recompositionCountsLock) { recompositionCounts.clear() }
-        synchronized(recompositionEventsLock) { recompositionEvents.clear() }
-        synchronized(perTagLock) {
-            perTagRecompCounts.clear()
-            perTagRecompEvents.clear()
-        }
-        synchronized(tagParamLock) { tagParameterChanges.clear() }
-        // Update key-based baseline to account for any compositions during waitForIdle
-        synchronized(compositionCountsLock) {
-            compositionCountBaseline.clear()
-            for ((key, count) in compositionCounts) {
-                compositionCountBaseline[key] = maxOf(0, count - 1)
+        // Capture fingerprint baselines from current composition state.
+        // On platforms with a running composition, this establishes a
+        // deterministic reference point for per-tag change detection.
+        val snapshots = currentCompositionsSnapshot()
+        if (snapshots.isNotEmpty()) {
+            try {
+                buildTagMappingFromFrameLoop(snapshots)
+            } catch (_: Throwable) {
+                // On Android, this can fail during Activity transitions with
+                // ComposeRuntimeError("Cannot start a writer when a reader is pending").
+                // Silently skip baseline capture — the frame callback will
+                // establish baselines later.
+                return
+            }
+            // Clear counts from baseline capture — only post-reset changes should count.
+            synchronized(recompositionCountsLock) { recompositionCounts.clear() }
+            synchronized(recompositionEventsLock) { recompositionEvents.clear() }
+            synchronized(perTagLock) {
+                perTagRecompCounts.clear()
+                perTagRecompEvents.clear()
+            }
+            synchronized(tagParamLock) { tagParameterChanges.clear() }
+            // Update key-based baseline for compositions during baseline capture
+            synchronized(compositionCountsLock) {
+                compositionCountBaseline.clear()
+                for ((key, count) in compositionCounts) {
+                    compositionCountBaseline[key] = maxOf(0, count - 1)
+                }
             }
         }
     }

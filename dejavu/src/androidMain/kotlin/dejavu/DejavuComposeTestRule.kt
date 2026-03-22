@@ -25,17 +25,8 @@ public class DejavuComposeTestRule<A : ComponentActivity>(
         return delegate.apply(object : Statement() {
             override fun evaluate() {
                 Dejavu.enable(delegate.activity.application)
-                // Use resetCounts() — the composition is still alive (same Activity
-                // across tests), so we must preserve compositionCounts so the tracer
-                // still recognizes previously-seen composable keys as "seen".
-                DejavuTest.resetCounts()
-
-                // Allow frame callbacks to establish fingerprint baselines for
-                // per-tag tracking, then clear counts so only post-idle changes
-                // are reported. This eliminates Choreographer timing dependencies.
                 delegate.waitForIdle()
-                dejavu.internal.DejavuTracer.clearCountsPreservingBaselines()
-
+                DejavuTest.resetCounts()
                 base.evaluate()
             }
         }, description)
