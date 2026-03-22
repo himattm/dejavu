@@ -58,6 +58,8 @@ jobs:
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
       - name: Compile all iOS targets
+        # iosArm64 (device) and iosX64 (Intel simulator) are compile-only checks;
+        # only iosSimulatorArm64 can run tests on macos-latest (Apple Silicon).
         run: ./gradlew :dejavu:compileKotlinIosArm64 :dejavu:compileKotlinIosSimulatorArm64 :dejavu:compileKotlinIosX64
       - name: Run iOS simulator tests
         run: ./gradlew :dejavu:iosSimulatorArm64Test

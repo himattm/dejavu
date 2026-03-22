@@ -464,6 +464,16 @@ internal object DejavuTracer : CompositionTracer {
     }
 
     // ── Reset ────────────────────────────────────────────────────────
+    //
+    // Lock ordering: when acquiring multiple locks in resetCounts(), always
+    // use this order to prevent deadlocks:
+    //   compositionCountsLock → recompositionCountsLock → recompositionEventsLock →
+    //   testTagToFunctionLock → testTagToKeyLock → perTagLock → tagParamLock →
+    //   lastSeenTagsLock → tagToIdentityLock → tagsWithFingerprintLock
+    //
+    // No method acquires more than one lock simultaneously; each lock is acquired
+    // and released independently. Query methods use snapshot-based reads
+    // (copy under one lock, then read under another) to avoid nested locking.
 
     /**
      * Clears all tracked state — recomposition counts, composition history,

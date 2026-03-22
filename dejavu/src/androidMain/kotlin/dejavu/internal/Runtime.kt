@@ -287,7 +287,9 @@ internal object Runtime {
     Log.d(TAG, "Composition changed (${snapshotSummary.size} snapshot(s), roots=${snapshotSummary.joinToString(",")})")
   }
 
+  @Volatile
   private var changeCountMethod: Method? = null
+  @Volatile
   private var hasPendingWorkMethod: Method? = null
 
   private fun getChangeCount(recomposerInfo: Any): Long? {

@@ -128,6 +128,33 @@ class DeepNestingStressPatternTest {
 
         onNodeWithTag("sibling_branch").assertStable()
     }
+
+    // ── Per-tag tracking regression test (port of Android PerTagTrackingRegressionTest fix 1) ──
+    // Note: the Android version of this test uses Group.identity (Anchor) to detect
+    // single-instance vs multi-instance composables. CommonTagMapping assigns identity
+    // per-CompositionGroup (not per composable instance), so the Android-specific
+    // identity-based multi-instance detection test is not portable. Instead, we verify
+    // that a single-instance composable with multiple tags tracks recomposition via
+    // function-level counting.
+
+    /**
+     * A single composable with multiple tags should still track recomposition.
+     * After clicking the button, the function-level count for MultiTagScreen
+     * should reflect the recomposition.
+     */
+    @Test
+    fun singleInstanceWithMultipleTags_functionLevelTracking() = runComposeUiTest {
+        setContent { DejavuTestContent { MultiTagScreen() } }
+        waitForIdle()
+        resetRecompositionCounts()
+
+        onNodeWithTag("multi_tag_btn").performClick()
+        waitForIdle()
+
+        // Verify recomposition is tracked (via function-level count since both tags
+        // map to MultiTagScreen)
+        onNodeWithTag("multi_tag_btn").assertRecompositions(atLeast = 1)
+    }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -182,4 +209,18 @@ private fun SiblingBranch() {
 @Composable
 private fun SiblingChild() {
     BasicText("Sibling", Modifier.testTag("sibling_child"))
+}
+
+/**
+ * A composable with multiple testTags on a single instance. The root Column
+ * is tagged "multi_tag_root" and the button inside is tagged "multi_tag_btn".
+ * Both tags map to MultiTagScreen, but they share one Group identity.
+ */
+@Composable
+private fun MultiTagScreen() {
+    var count by remember { mutableIntStateOf(0) }
+    Column(Modifier.testTag("multi_tag_root")) {
+        BasicText("Count: $count")
+        BasicText("Inc", Modifier.testTag("multi_tag_btn").clickable { count++ })
+    }
 }

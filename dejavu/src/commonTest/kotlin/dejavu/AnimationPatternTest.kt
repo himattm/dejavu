@@ -40,6 +40,8 @@ class AnimationPatternTest {
         onNodeWithTag("toggle_vis_btn").performClick()
         waitForIdle()
 
+        // atLeast = 0: verifies tag mapping resolves and assertion API doesn't crash;
+        // exact count depends on Compose animation internals across platforms.
         onNodeWithTag("visible_panel").assertRecompositions(atLeast = 0)
     }
 

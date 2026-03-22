@@ -168,6 +168,49 @@ composeCompiler {
   includeSourceInformation = true
 }
 
+// ── Aggregate verification tasks ────────────────────────────────────────
+//
+// ./gradlew :dejavu:compileAll      — compile every KMP target (no tests)
+// ./gradlew :dejavu:testAll         — run compose UI + unit tests on every runnable target
+// ./gradlew :dejavu:verifyAll       — compileAll + testAll + apiCheck + lint
+
+tasks.register("compileAll") {
+  group = "verification"
+  description = "Compile all KMP targets (Android, JVM, iOS arm64/simulatorArm64/x64, WasmJs)"
+  dependsOn(
+    "compileDebugKotlinAndroid",
+    "compileKotlinJvm",
+    "compileKotlinIosArm64",
+    "compileKotlinIosSimulatorArm64",
+    "compileKotlinIosX64",
+    "compileKotlinWasmJs",
+  )
+}
+
+tasks.register("testAll") {
+  group = "verification"
+  description = "Run tests on all runnable targets (Android unit, JVM desktop, iOS simulator, WasmJs browser)"
+  dependsOn(
+    "testDebugUnitTest",         // Android unit tests (excludes compose UI tests)
+    "jvmTest",                   // Desktop JVM — unit + compose UI tests
+    "iosSimulatorArm64Test",     // iOS — compose UI tests on ARM simulator
+    "wasmJsBrowserTest",         // WasmJs — compose UI tests in headless browser
+  )
+}
+
+tasks.register("verifyAll") {
+  group = "verification"
+  description = "Full verification: compile all targets, run all tests, API check, and lint"
+  dependsOn("compileAll", "testAll")
+}
+
+// Wire apiCheck and lintDebug into verifyAll after the tasks are resolved
+afterEvaluate {
+  tasks.named("verifyAll") {
+    dependsOn("apiCheck", "lintDebug")
+  }
+}
+
 mavenPublishing {
   publishToMavenCentral(automaticRelease = true)
 

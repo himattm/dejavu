@@ -121,6 +121,57 @@ class StarRatingPatternTest {
         onNodeWithTag("set_rating_5_btn").assertRecompositions(atMost = 1)
     }
 
+    // ── Per-tag tracking regression tests (port of Android PerTagTrackingRegressionTest) ──
+    //
+    // Per-tag fingerprint tracking for multi-instance composables requires the
+    // Android Choreographer frame loop to continuously rebuild tag mappings.
+    // On non-Android platforms (JVM, iOS, WasmJs), per-tag tracking falls back
+    // to function-level counting for multi-instance composables. The tests below
+    // validate changed stars recompose; per-instance stability for unchanged stars
+    // is only testable on Android (see PerTagTrackingRegressionTest in demo/androidTest).
+
+    /**
+     * Rating 0→3: stars 0-2 change (isFilled false→true). After reset, verify
+     * that changed stars are detected as recomposed.
+     */
+    @Test
+    fun multiInstance_changedInstancesDetected() = runComposeUiTest {
+        setContent { DejavuTestContent { RatingBarScreen() } }
+        waitForIdle()
+        resetRecompositionCounts()
+
+        onNodeWithTag("set_rating_3_btn").performClick()
+        waitForIdle()
+
+        // Stars that changed should show recomposition
+        onNodeWithTag("star_0").assertRecompositions(atLeast = 1)
+        onNodeWithTag("star_1").assertRecompositions(atLeast = 1)
+        onNodeWithTag("star_2").assertRecompositions(atLeast = 1)
+    }
+
+    /**
+     * Rating 0→3, reset, then 3→5: stars 3-4 change from unfilled to filled.
+     * Verifies changed stars are detected across a reset boundary.
+     */
+    @Test
+    fun perTagDetection_afterReset_changedInstancesDetected() = runComposeUiTest {
+        setContent { DejavuTestContent { RatingBarScreen() } }
+        waitForIdle()
+
+        // Establish initial state: rating = 3
+        onNodeWithTag("set_rating_3_btn").performClick()
+        waitForIdle()
+        resetRecompositionCounts()
+
+        // Change rating 3→5: stars 3-4 become filled
+        onNodeWithTag("set_rating_5_btn").performClick()
+        waitForIdle()
+
+        // Stars 3-4 changed — should show recomposition
+        onNodeWithTag("star_3").assertRecompositions(atLeast = 1)
+        onNodeWithTag("star_4").assertRecompositions(atLeast = 1)
+    }
+
     @Test
     fun rating_sequentialChanges() = runComposeUiTest {
         setContent { DejavuTestContent { RatingBarScreen() } }

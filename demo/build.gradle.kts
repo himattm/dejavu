@@ -54,6 +54,7 @@ dependencies {
   debugImplementation(libs.androidx.ui.test.manifest)
 
   // Android instrumented tests
+  androidTestImplementation(project(":dejavu"))
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.espresso.core)
   androidTestImplementation(composeBom)

@@ -82,6 +82,37 @@ class KeyIdentityPatternTest {
         onNodeWithTag("loop_count_label").assertRecompositions(atLeast = 1)
     }
 
+    /**
+     * Guards against runtime internal fingerprint drift (port of Android
+     * PerTagTrackingRegressionTest fix 3).
+     *
+     * Adding a new LoopItem triggers the parent to recompose. The count label
+     * should recompose (itemCount changed), while existing items should not be
+     * over-counted by false-positive fingerprint drift. On Android, per-tag
+     * fingerprint tracking validates stability via the frame loop. On non-Android
+     * platforms, function-level counting is used for multi-instance composables,
+     * so we bound existing items to at most 1 recomposition (the parent's scope
+     * re-evaluation may trigger a Compose-level re-check).
+     */
+    @Test
+    fun addLoopItem_existingItemsBounded() = runComposeUiTest {
+        setContent { DejavuTestContent { LoopScreen() } }
+        waitForIdle()
+        resetRecompositionCounts()
+
+        onNodeWithTag("add_loop_btn").performClick()
+        waitForIdle()
+
+        // Existing items should have at most 1 recomposition (parent scope re-eval),
+        // not be inflated by false-positive fingerprint changes
+        onNodeWithTag("loop_item_0").assertRecompositions(atMost = 1)
+        onNodeWithTag("loop_item_1").assertRecompositions(atMost = 1)
+        onNodeWithTag("loop_item_2").assertRecompositions(atMost = 1)
+
+        // The count label should recompose (item count changed)
+        onNodeWithTag("loop_count_label").assertRecompositions(atLeast = 1)
+    }
+
     @Test
     fun derivedChainA_recomposesWhenIntegerDivisionChanges() = runComposeUiTest {
         setContent { DejavuTestContent { DerivedChainScreen() } }

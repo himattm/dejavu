@@ -9,6 +9,7 @@ import dejavu.internal.DejavuTracer
  * on WasmJs.
  */
 public actual object Dejavu {
+    // No @Volatile needed: WasmJs is single-threaded (no multi-threaded memory model).
     internal var loggingEnabled: Boolean = false
 
     /**

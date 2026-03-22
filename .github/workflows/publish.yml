@@ -67,9 +67,32 @@ jobs:
           path: demo/build/reports/androidTests/
           retention-days: 14
 
+  verify-kmp-targets:
+    name: Verify KMP Targets
+    needs: resolve-bom
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Run JVM Desktop tests
+        run: ./gradlew :dejavu:jvmTest
+
+      - name: Compile iOS targets
+        run: ./gradlew :dejavu:compileKotlinIosArm64 :dejavu:compileKotlinIosSimulatorArm64 :dejavu:compileKotlinIosX64
+
+      - name: Run WasmJs tests
+        run: ./gradlew :dejavu:wasmJsBrowserTest
+
   publish:
     name: Publish
-    needs: verify-latest-bom
+    needs: [verify-latest-bom, verify-kmp-targets]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
