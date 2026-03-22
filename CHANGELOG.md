@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-03-22
+
+### Added
+- Kotlin Multiplatform support — JVM Desktop, iOS, and WasmJs targets (#13)
+- 210 cross-platform tests reaching 98% coverage parity with Android
+- Cross-platform tag mapping and per-instance recomposition tracking
+- KMP demo targets (Desktop, iOS, Wasm) with shared demo module
+
+### Changed
+- CI matrix expanded with cross-platform regression tests and hardened verification
+- Consolidated fingerprint baseline capture into `resetCounts()` for deterministic test setup
+
+### Fixed
+- Timing-sensitive per-tag counting for multi-instance composables
+- Thread safety issues for concurrent access across platforms
+- iOS/WasmJs test failures from platform-specific actuals
+
 ## [0.2.0] - 2026-03-16
 
 ### Added
