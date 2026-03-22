@@ -12,7 +12,7 @@ composeMultiplatform = "1.10.1"
 coroutinesAndroid = "1.9.0"
 atomicfu = "0.27.0"
 binary-compatibility-validator = "0.17.0"
-robolectric = "4.14.1"
+robolectric = "4.16.1"
 truth = "1.1.5"
 
 [libraries]
