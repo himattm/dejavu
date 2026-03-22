@@ -1,12 +1,106 @@
 plugins {
-  id("com.android.library")
-  alias(libs.plugins.kotlin.android)
+  alias(libs.plugins.kotlin.multiplatform)
+  alias(libs.plugins.android.library)
   alias(libs.plugins.kotlin.compose)
+  alias(libs.plugins.compose.multiplatform)
   id("com.vanniktech.maven.publish") version "0.36.0"
 }
 
 group = "me.mmckenna.dejavu"
 version = "0.2.0"
+
+kotlin {
+  explicitApi()
+
+  androidTarget {
+    compilations.all {
+      compileTaskProvider.configure {
+        compilerOptions {
+          jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
+      }
+    }
+    publishLibraryVariants("release")
+  }
+
+  jvm {
+    compilations.all {
+      compileTaskProvider.configure {
+        compilerOptions {
+          jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
+      }
+    }
+  }
+
+  iosArm64()
+  iosSimulatorArm64()
+  iosX64()
+
+  wasmJs { browser() }
+
+  sourceSets {
+    val iosMain by creating {
+      dependsOn(commonMain.get())
+    }
+    val iosArm64Main by getting { dependsOn(iosMain) }
+    val iosSimulatorArm64Main by getting { dependsOn(iosMain) }
+    val iosX64Main by getting { dependsOn(iosMain) }
+
+    val iosTest by creating {
+      dependsOn(commonTest.get())
+    }
+    val iosArm64Test by getting { dependsOn(iosTest) }
+    val iosSimulatorArm64Test by getting { dependsOn(iosTest) }
+    val iosX64Test by getting { dependsOn(iosTest) }
+
+    commonMain.dependencies {
+      compileOnly(compose.runtime)
+      compileOnly(compose.ui)
+      @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
+      compileOnly(compose.uiTest)
+      implementation(libs.kotlinx.atomicfu)
+    }
+
+    commonTest.dependencies {
+      implementation(kotlin("test"))
+      implementation(compose.runtime)
+      implementation(compose.ui)
+      implementation(compose.foundation)
+      implementation(compose.animation)
+      @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
+      implementation(compose.uiTest)
+    }
+
+    androidMain.dependencies {
+      compileOnly(libs.androidx.ui.tooling)
+      implementation(libs.kotlinx.coroutines.android)
+      implementation("androidx.compose.ui:ui-tooling-data")
+      // Needed for DejavuComposeTestRule (Android-specific JUnit4 rule)
+      compileOnly("androidx.compose.ui:ui-test-junit4")
+      // Pinned to avoid Gradle resolution conflict with BOM-managed transitive version; compileOnly, never shipped
+      compileOnly("androidx.activity:activity-compose:1.7.0")
+      // Pinned to avoid Gradle resolution conflict with BOM-managed transitive version; compileOnly, never shipped
+      compileOnly("androidx.test.ext:junit:1.1.5")
+    }
+
+    val jvmTest by getting {
+      dependencies {
+        implementation(compose.runtime)
+        implementation(compose.desktop.currentOs)
+      }
+    }
+
+    val androidUnitTest by getting {
+      dependencies {
+        implementation(libs.junit)
+        implementation(libs.truth)
+        implementation(libs.robolectric)
+        implementation(compose.runtime)
+      }
+    }
+  }
+}
 
 android {
   namespace = "dejavu"
@@ -35,20 +129,85 @@ android {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
   }
+  testOptions {
+    unitTests {
+      isIncludeAndroidResources = true
+      all {
+        // Compose UI tests use runComposeUiTest which requires Robolectric on Android;
+        // these tests run on JVM desktop instead. Android UI tests run as instrumented tests.
+        // Compose UI tests (runComposeUiTest) live in the dejavu/ package;
+        // unit tests live in dejavu/internal/. Glob excludes all UI tests
+        // automatically — no need to add each new test class manually.
+        it.exclude("dejavu/*Test.class")
+      }
+    }
+  }
 
-  // CompositionObserver integration lives in src/observer/java/ and requires
+  // CompositionObserver integration lives in src/observerAndroid/kotlin/ and requires
   // Compose runtime 1.7+ (observer API). Exclude with -PexcludeCompositionObserver=true
   // when compiling against older Compose BOMs that lack these APIs.
   if (project.findProperty("excludeCompositionObserver") != "true") {
-    sourceSets["main"].java.srcDir("src/observer/java")
+    sourceSets["main"].kotlin.srcDir("src/observerAndroid/kotlin")
   }
 }
 
-// Set Kotlin JVM target to 17
-kotlin {
-  explicitApi()
-  compilerOptions {
-    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+// Compose BOM for version alignment (overridable via -PcomposeBomVersion=...)
+dependencies {
+  val composeBomVersion = project.findProperty("composeBomVersion") as? String
+  val composeBom = if (composeBomVersion != null) {
+    platform("androidx.compose:compose-bom:$composeBomVersion")
+  } else {
+    platform(libs.androidx.compose.bom)
+  }
+  "androidMainCompileOnly"(composeBom)
+  "androidMainImplementation"(composeBom)
+  "androidUnitTestImplementation"(composeBom)
+}
+
+composeCompiler {
+  includeSourceInformation = true
+}
+
+// ── Aggregate verification tasks ────────────────────────────────────────
+//
+// ./gradlew :dejavu:compileAll      — compile every KMP target (no tests)
+// ./gradlew :dejavu:testAll         — run compose UI + unit tests on every runnable target
+// ./gradlew :dejavu:verifyAll       — compileAll + testAll + apiCheck + lint
+
+tasks.register("compileAll") {
+  group = "verification"
+  description = "Compile all KMP targets (Android, JVM, iOS arm64/simulatorArm64/x64, WasmJs)"
+  dependsOn(
+    "compileDebugKotlinAndroid",
+    "compileKotlinJvm",
+    "compileKotlinIosArm64",
+    "compileKotlinIosSimulatorArm64",
+    "compileKotlinIosX64",
+    "compileKotlinWasmJs",
+  )
+}
+
+tasks.register("testAll") {
+  group = "verification"
+  description = "Run tests on all runnable targets (Android unit, JVM desktop, iOS simulator, WasmJs browser)"
+  dependsOn(
+    "testDebugUnitTest",         // Android unit tests (excludes compose UI tests)
+    "jvmTest",                   // Desktop JVM — unit + compose UI tests
+    "iosSimulatorArm64Test",     // iOS — compose UI tests on ARM simulator
+    "wasmJsBrowserTest",         // WasmJs — compose UI tests in headless browser
+  )
+}
+
+tasks.register("verifyAll") {
+  group = "verification"
+  description = "Full verification: compile all targets, run all tests, API check, and lint"
+  dependsOn("compileAll", "testAll")
+}
+
+// Wire apiCheck and lintDebug into verifyAll after the tasks are resolved
+afterEvaluate {
+  tasks.named("verifyAll") {
+    dependsOn("apiCheck", "lintDebug")
   }
 }
 
@@ -85,34 +244,4 @@ mavenPublishing {
       developerConnection.set("scm:git:ssh://github.com/himattm/dejavu.git")
     }
   }
-}
-
-dependencies {
-  // Compose BOM for version alignment (overridable via -PcomposeBomVersion=...)
-  val composeBomVersion = project.findProperty("composeBomVersion") as? String
-  val composeBom = if (composeBomVersion != null) {
-    platform("androidx.compose:compose-bom:$composeBomVersion")
-  } else {
-    platform(libs.androidx.compose.bom)
-  }
-
-  // JVM unit tests
-  testImplementation(libs.junit)
-  testImplementation(libs.truth)
-  testImplementation(composeBom)
-  testImplementation("androidx.compose.runtime:runtime")
-
-  compileOnly(composeBom)
-  compileOnly("androidx.compose.runtime:runtime")
-  compileOnly(libs.androidx.ui.tooling)
-  implementation(composeBom)
-  implementation(libs.kotlinx.coroutines.android)
-  implementation("androidx.compose.ui:ui-tooling-data")
-  // Needed for SemanticsNodeInteraction assertion extensions and test helpers
-  compileOnly("androidx.compose.ui:ui-test")
-  compileOnly("androidx.compose.ui:ui-test-junit4")
-  // Pinned to avoid Gradle resolution conflict with BOM-managed transitive version; compileOnly, never shipped
-  compileOnly("androidx.activity:activity-compose:1.7.0")
-  // Pinned to avoid Gradle resolution conflict with BOM-managed transitive version; compileOnly, never shipped
-  compileOnly("androidx.test.ext:junit:1.1.5")
 }
