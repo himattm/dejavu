@@ -29,6 +29,13 @@ public class DejavuComposeTestRule<A : ComponentActivity>(
                 // across tests), so we must preserve compositionCounts so the tracer
                 // still recognizes previously-seen composable keys as "seen".
                 DejavuTest.resetCounts()
+
+                // Allow frame callbacks to establish fingerprint baselines for
+                // per-tag tracking, then clear counts so only post-idle changes
+                // are reported. This eliminates Choreographer timing dependencies.
+                delegate.waitForIdle()
+                dejavu.internal.DejavuTracer.clearCountsPreservingBaselines()
+
                 base.evaluate()
             }
         }, description)

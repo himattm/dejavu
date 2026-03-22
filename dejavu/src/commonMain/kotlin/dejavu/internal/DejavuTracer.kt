@@ -518,6 +518,29 @@ internal object DejavuTracer : CompositionTracer {
     }
 
     /**
+     * Clears all recomposition counts while preserving fingerprint baselines
+     * and [tagsWithFingerprint]. Used after [resetCounts] + waitForIdle to
+     * clear counts from frame callbacks that ran during idle, keeping the
+     * fingerprint baselines they established for per-tag change detection.
+     */
+    fun clearCountsPreservingBaselines() {
+        synchronized(recompositionCountsLock) { recompositionCounts.clear() }
+        synchronized(recompositionEventsLock) { recompositionEvents.clear() }
+        synchronized(perTagLock) {
+            perTagRecompCounts.clear()
+            perTagRecompEvents.clear()
+        }
+        synchronized(tagParamLock) { tagParameterChanges.clear() }
+        // Update key-based baseline to account for any compositions during waitForIdle
+        synchronized(compositionCountsLock) {
+            compositionCountBaseline.clear()
+            for ((key, count) in compositionCounts) {
+                compositionCountBaseline[key] = maxOf(0, count - 1)
+            }
+        }
+    }
+
+    /**
      * Synchronously refresh the tag mapping from composition data.
      * Useful in tests where the asynchronous frame loop may not have
      * run yet when assertions are checked.
