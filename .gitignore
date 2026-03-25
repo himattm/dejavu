@@ -24,5 +24,6 @@ local.properties
 .idea/markdown.xml
 .idea/migrations.xml
 site/
+docs/api/
 blog/
 iosApp/*.xcodeproj

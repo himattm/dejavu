@@ -3,6 +3,7 @@ plugins {
   alias(libs.plugins.android.library)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.compose.multiplatform)
+  alias(libs.plugins.dokka)
   id("com.vanniktech.maven.publish") version "0.36.0"
 }
 
@@ -243,5 +244,26 @@ mavenPublishing {
       connection.set("scm:git:git://github.com/himattm/dejavu.git")
       developerConnection.set("scm:git:ssh://github.com/himattm/dejavu.git")
     }
+  }
+}
+
+dokka {
+  dokkaPublications.html {
+    outputDirectory.set(rootProject.layout.projectDirectory.dir("docs/api"))
+  }
+  dokkaSourceSets.configureEach {
+    sourceLink {
+      localDirectory.set(projectDir.resolve("src"))
+      remoteUrl("https://github.com/himattm/dejavu/blob/main/dejavu/src")
+      remoteLineSuffix.set("#L")
+    }
+    documentedVisibilities(
+      org.jetbrains.dokka.gradle.engine.parameters.VisibilityModifier.Public
+    )
+    perPackageOption {
+      matchingRegex.set(".*\\.internal.*")
+      suppress.set(true)
+    }
+    reportUndocumented.set(true)
   }
 }

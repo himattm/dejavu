@@ -39,7 +39,7 @@ nav:
   - Getting Started: getting-started.md
   - Use Cases: use-cases.md
   - Examples: examples.md
-  - API Reference: api-reference.md
+  - 'API Reference ↗': api/index.html
   - How It Works: how-it-works.md
   - Error Messages: error-messages.md
   - Causality Analysis: causality-analysis.md
