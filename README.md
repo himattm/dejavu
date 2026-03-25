@@ -169,7 +169,8 @@ All tracking runs in the app process on the main thread, directly accessible to 
 | 2024.06.00 | 1.6.x | 2.0.x | Tested |
 | 2024.09.00 | 1.7.x | 2.0.x | Tested |
 | 2025.01.01 | 1.8.x | 2.0.x | Tested |
-| 2026.01.01 | 1.10.x | 2.0.x | Baseline |
+| 2026.01.01 | 1.10.x | 2.0.x | Tested |
+| 2026.03.01 | 1.10.x | 2.0.x | Baseline |
 
 ## Kotlin Multiplatform
 
