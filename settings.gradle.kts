@@ -18,6 +18,7 @@ dependencyResolutionManagement {
   repositories {
     google()
     mavenCentral()
+    // Required for Compose Multiplatform artifacts (ui-test, etc.) that aren't on Maven Central
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
   }
 }

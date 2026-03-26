@@ -13,6 +13,8 @@ final object dejavu/Dejavu { // dejavu/Dejavu|null[0]
 
 final val dejavu/dejavu_Dejavu$stableprop // dejavu/dejavu_Dejavu$stableprop|#static{}dejavu_Dejavu$stableprop[0]
 
+final fun (androidx.compose.ui.test/ComposeUiTest).dejavu/setTrackedContent(kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>) // dejavu/setTrackedContent|setTrackedContent@androidx.compose.ui.test.ComposeUiTest(kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
 final fun (androidx.compose.ui.test/SemanticsNodeInteraction).dejavu/assertRecompositions(kotlin/Int? = ..., kotlin/Int? = ..., kotlin/Int? = ...): androidx.compose.ui.test/SemanticsNodeInteraction // dejavu/assertRecompositions|assertRecompositions@androidx.compose.ui.test.SemanticsNodeInteraction(kotlin.Int?;kotlin.Int?;kotlin.Int?){}[0]
 final fun (androidx.compose.ui.test/SemanticsNodeInteraction).dejavu/assertStable(): androidx.compose.ui.test/SemanticsNodeInteraction // dejavu/assertStable|assertStable@androidx.compose.ui.test.SemanticsNodeInteraction(){}[0]
 final fun dejavu/dejavu_Dejavu$stableprop_getter(): kotlin/Int // dejavu/dejavu_Dejavu$stableprop_getter|dejavu_Dejavu$stableprop_getter(){}[0]
+final fun dejavu/runRecompositionTrackingUiTest(kotlin/Function1<androidx.compose.ui.test/ComposeUiTest, kotlin/Unit>) // dejavu/runRecompositionTrackingUiTest|runRecompositionTrackingUiTest(kotlin.Function1<androidx.compose.ui.test.ComposeUiTest,kotlin.Unit>){}[0]

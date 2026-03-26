@@ -8,6 +8,13 @@ on:
   schedule:
     - cron: '0 6 * * 1'  # Weekly Monday 6am UTC
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
     name: Lint, Unit Tests & API Check
@@ -114,7 +121,7 @@ jobs:
         run: ./gradlew :demo:assembleDebug :demo:assembleDebugAndroidTest -PcomposeBomVersion=${{ matrix.bom }} -PexcludeCompositionObserver=${{ matrix.excludeObserver }}
 
       - name: Run instrumented tests
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@70f4dee990796918b78d040e3278474bdbd348a7 # v2
         with:
           api-level: 31
           arch: x86_64

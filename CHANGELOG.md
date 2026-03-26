@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Bump Kotlin from 2.2.20 to 2.3.20
+- Bump AGP from 8.13.2 to 9.1.0
+- Bump Gradle wrapper from 8.13 to 9.4.1
+- Bump Compose Multiplatform from 1.10.1 to 1.10.3
+- Bump Compose BOM from 2026.01.01 to 2026.03.00
+- Bump Activity Compose from 1.7.0 to 1.13.0
+- Bump atomicfu from 0.27.0 to 0.32.0
+- Bump Robolectric from 4.14.1 to 4.16.1
+- Bump core-ktx from 1.17.0 to 1.18.0
+- Update compatibility tables and CI matrix for 2026.03.01 BOM baseline
+
+### Added
+- `runRecompositionTrackingUiTest` and `setTrackedContent` public APIs for KMP test setup (JVM, iOS, WasmJs)
+- Dokka API documentation generation
+
 ## [0.3.0] - 2026-03-22
 
 ### Added
