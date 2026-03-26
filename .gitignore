@@ -12,5 +12,6 @@ local.properties
 .claude/
 .kotlin/
 site/
+docs/api/
 blog/
 iosApp/*.xcodeproj

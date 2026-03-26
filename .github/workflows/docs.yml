@@ -20,6 +20,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
@@ -35,6 +42,9 @@ jobs:
         run: |
           VERSION=$(grep '^version = ' dejavu/build.gradle.kts | sed 's/version = "\(.*\)"/\1/')
           sed -i "s/dejavu:[0-9]\+\.[0-9]\+\.[0-9]\+/dejavu:$VERSION/g" docs/*.md
+
+      - name: Generate API documentation
+        run: ./gradlew -q --console=plain :dejavu:dokkaGeneratePublicationHtml
 
       - name: Deploy snapshot (main branch)
         if: github.ref == 'refs/heads/main'
