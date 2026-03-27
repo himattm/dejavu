@@ -37,7 +37,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: Compile with latest BOM
         run: ./gradlew :dejavu:compileDebugKotlin -PcomposeBomVersion=${{ needs.resolve-bom.outputs.version }}
@@ -82,7 +82,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: Run JVM Desktop tests
         run: ./gradlew :dejavu:jvmTest
@@ -105,7 +105,7 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: Publish to Maven Central
         run: ./gradlew :dejavu:publishAndReleaseToMavenCentral --no-configuration-cache

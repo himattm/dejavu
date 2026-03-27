@@ -61,7 +61,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: Compile with new BOM
         run: ./gradlew :dejavu:compileDebugKotlin -PcomposeBomVersion=${{ needs.check-bom.outputs.latest }}
