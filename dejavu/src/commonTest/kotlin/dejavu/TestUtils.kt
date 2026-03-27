@@ -2,10 +2,7 @@ package dejavu
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composer
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.InternalComposeTracingApi
-import androidx.compose.runtime.tooling.LocalInspectionTables
-import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import dejavu.internal.DejavuTracer
 import kotlinx.atomicfu.locks.synchronized
@@ -51,42 +48,12 @@ internal fun disableDejavuForTest() {
 }
 
 /**
- * Wraps test content with [LocalInspectionTables] so that the Compose runtime
- * populates [CompositionData] for tag mapping on all platforms.
- *
- * Uses [SubcomposeLayout] to create a sub-composition. The sub-composition's
- * `startRoot()` reads [LocalInspectionTables] from its parent context (this
- * composition), finds our provided set, and adds its [CompositionData] to it.
- * Without SubcomposeLayout, the root composition's `startRoot()` reads from the
- * Recomposer (which has no LocalInspectionTables) and never populates the set.
- *
- * Provides [DejavuTracer.inspectionTables] directly so that the assertion API
- * ([assertRecompositions]/[assertStable]) can resolve testTag → function mappings
- * via [DejavuTracer.getCompositionSnapshots] without any manual sync.
- *
- * Usage:
- * ```
- * setContent {
- *     DejavuTestContent {
- *         MyComposable()
- *     }
- * }
- * ```
+ * Delegates to [DejavuTrackedContent] from the public API.
+ * Existing tests use this name; kept as a thin wrapper.
  */
 @Composable
 internal fun DejavuTestContent(content: @Composable () -> Unit) {
-    CompositionLocalProvider(LocalInspectionTables provides DejavuTracer.inspectionTables) {
-        SubcomposeLayout { constraints ->
-            val placeables = subcompose(Unit) { content() }
-                .map { it.measure(constraints) }
-            layout(
-                placeables.maxOfOrNull { it.width } ?: 0,
-                placeables.maxOfOrNull { it.height } ?: 0
-            ) {
-                placeables.forEach { it.place(0, 0) }
-            }
-        }
-    }
+    DejavuTrackedContent(content)
 }
 
 /**

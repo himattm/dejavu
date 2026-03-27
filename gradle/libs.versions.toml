@@ -14,7 +14,8 @@ atomicfu = "0.32.0"
 binary-compatibility-validator = "0.17.0"
 dokka = "2.1.0"
 robolectric = "4.16.1"
-truth = "1.1.5"
+truth = "1.4.4"
+vanniktech-maven-publish = "0.36.0"
 
 [libraries]
 kotlinx-atomicfu = { group = "org.jetbrains.kotlinx", name = "atomicfu", version.ref = "atomicfu" }
@@ -45,4 +46,5 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "binary-compatibility-validator" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktech-maven-publish" }
 

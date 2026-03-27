@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: read
+
 jobs:
   resolve-bom:
     name: Resolve Latest Compose BOM
@@ -52,7 +55,7 @@ jobs:
         run: ./gradlew :demo:assembleDebug :demo:assembleDebugAndroidTest -PcomposeBomVersion=${{ needs.resolve-bom.outputs.version }}
 
       - name: Run instrumented tests with latest BOM
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@70f4dee990796918b78d040e3278474bdbd348a7 # v2
         with:
           api-level: 31
           arch: x86_64
@@ -99,7 +102,7 @@ jobs:
 
       - uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: temurin
           java-version: '17'
 
       - uses: gradle/actions/setup-gradle@v4

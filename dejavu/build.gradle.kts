@@ -4,7 +4,7 @@ plugins {
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.compose.multiplatform)
   alias(libs.plugins.dokka)
-  id("com.vanniktech.maven.publish") version "0.36.0"
+  alias(libs.plugins.vanniktech.maven.publish)
 }
 
 group = "me.mmckenna.dejavu"

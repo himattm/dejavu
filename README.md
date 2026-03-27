@@ -134,10 +134,10 @@ composeTestRule.onNodeWithTag("tag")
 ### Utilities
 
 ```kotlin
-// Reset all counts to zero mid-test
+// Reset all counts to zero mid-test (Android)
 composeTestRule.resetRecompositionCounts()
 
-// Get the current recomposition count for a tag
+// Get the current recomposition count for a tag (Android)
 val count: Int = composeTestRule.getRecompositionCount("tag")
 
 // Stream recomposition events to Logcat (filter: "Dejavu")
@@ -169,8 +169,8 @@ All tracking runs in the app process on the main thread, directly accessible to 
 | 2024.06.00 | 1.6.x | 2.0.x | Tested |
 | 2024.09.00 | 1.7.x | 2.0.x | Tested |
 | 2025.01.01 | 1.8.x | 2.0.x | Tested |
-| 2026.01.01 | 1.10.x | 2.0.x | Tested |
-| 2026.03.01 | 1.10.x | 2.0.x | Baseline |
+| 2026.01.01 | 1.10.x | 2.1.x+ | Tested |
+| 2026.03.01 | 1.10.x | 2.1.x+ | Baseline |
 
 ## Kotlin Multiplatform
 
@@ -185,16 +185,21 @@ Dejavu supports Kotlin Multiplatform with the following targets:
 
 ### KMP Test Setup
 
-For non-Android platforms, use `runComposeUiTest` with `DejavuTestContent`:
+For non-Android platforms, use `runRecompositionTrackingUiTest` with `setTrackedContent`:
 
 ```kotlin
 @Test
-fun myComposable_isStable() = runComposeUiTest {
-    setContent { DejavuTestContent { MyComposable() } }
+fun myComposable_isStable() = runRecompositionTrackingUiTest {
+    setTrackedContent { MyComposable() }
     waitForIdle()
     onNodeWithTag("my_tag").assertStable()
 }
 ```
+
+`runRecompositionTrackingUiTest` is the KMP equivalent of Android's `createRecompositionTrackingRule()`.
+It handles all Dejavu lifecycle management automatically -- enabling the tracer, resetting state,
+and cleaning up after each test. `setTrackedContent` wraps `setContent` with the inspection tables
+and sub-composition layout required for tag-to-function mapping.
 
 ### Known Gaps
 
