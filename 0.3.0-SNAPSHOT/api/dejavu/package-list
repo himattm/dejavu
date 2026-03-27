@@ -6,6 +6,8 @@ $dokka.location:dejavu//assertStable/androidx.compose.ui.test.SemanticsNodeInter
 $dokka.location:dejavu//createRecompositionTrackingRule/#/PointingToDeclaration/dejavu/dejavu/[android]create-recomposition-tracking-rule.html
 $dokka.location:dejavu//getRecompositionCount/androidx.compose.ui.test.junit4.ComposeTestRule#kotlin.String/PointingToDeclaration/dejavu/dejavu/get-recomposition-count.html
 $dokka.location:dejavu//resetRecompositionCounts/androidx.compose.ui.test.junit4.ComposeTestRule#/PointingToDeclaration/dejavu/dejavu/reset-recomposition-counts.html
+$dokka.location:dejavu//runRecompositionTrackingUiTest/#kotlin.Function1[androidx.compose.ui.test.ComposeUiTest,kotlin.Unit]/PointingToDeclaration/dejavu/dejavu/run-recomposition-tracking-ui-test.html
+$dokka.location:dejavu//setTrackedContent/androidx.compose.ui.test.ComposeUiTest#kotlin.Function0[kotlin.Unit]/PointingToDeclaration/dejavu/dejavu/set-tracked-content.html
 $dokka.location:dejavu/Dejavu///PointingToDeclaration/dejavu/dejavu/-dejavu/index.html
 $dokka.location:dejavu/Dejavu/disable/#/PointingToDeclaration/dejavu/dejavu/-dejavu/disable.html
 $dokka.location:dejavu/Dejavu/enable/#android.app.Application#kotlin.Boolean/PointingToDeclaration/dejavu/dejavu/-dejavu/enable.html

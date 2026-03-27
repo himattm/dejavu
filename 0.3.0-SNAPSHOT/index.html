@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Lock in Compose performance. Catch recomposition regressions before your users.">
+        <meta name="description" content="Lock in Compose UI efficiency. Catch recomposition regressions before your users.">
       
       
       
@@ -777,7 +777,7 @@
 <p>Dejavu is a test-only library that turns recomposition behavior into assertions. Tag your composables with standard <code>Modifier.testTag()</code>, write expectations against recomposition counts, and get structured diagnostics when something changes — whether from a teammate, a library upgrade, an AI agent rewriting your UI code, or a refactor that silently destabilizes a lambda.</p>
 <ul>
 <li><strong>Zero production code changes</strong> — just <code>Modifier.testTag()</code></li>
-<li><strong>One-line test setup</strong> — <code>createRecompositionTrackingRule&lt;Activity&gt;()</code></li>
+<li><strong>One-line test setup</strong> — <code>createRecompositionTrackingRule()</code></li>
 <li><strong>Rich diagnostics</strong> — source location, recomposition timeline, parameter diffs, causality analysis</li>
 <li><strong>Per-instance tracking</strong> — multiple instances of the same composable get independent counters</li>
 </ul>
