@@ -52,6 +52,7 @@ public fun runRecompositionTrackingUiTest(
         runComposeUiTest(block = block)
     } finally {
         DejavuTracer.enabled = false
+        Composer.setTracer(null)
         isDebugInspectorInfoEnabled = false
         synchronized(DejavuTracer.inspectionTablesLock) { DejavuTracer.inspectionTables.clear() }
     }
