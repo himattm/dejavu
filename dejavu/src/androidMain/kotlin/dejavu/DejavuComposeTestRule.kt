@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.rules.ActivityScenarioRule
+import dejavu.internal.Runtime
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
@@ -25,6 +26,7 @@ public class DejavuComposeTestRule<A : ComponentActivity>(
         return delegate.apply(object : Statement() {
             override fun evaluate() {
                 Dejavu.enable(delegate.activity.application)
+                Runtime.seedActiveActivity(delegate.activity)
                 delegate.waitForIdle()
                 DejavuTest.resetCounts()
                 base.evaluate()

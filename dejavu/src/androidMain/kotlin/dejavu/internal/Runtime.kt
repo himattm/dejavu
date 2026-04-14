@@ -157,12 +157,7 @@ internal object Runtime {
       }
 
       override fun onActivityResumed(activity: Activity) {
-        lastResumedRef = WeakReference(activity)
-        ensureInspectionTag(activity)
-        Choreographer.getInstance().postFrameCallback { _ ->
-          ensureInspectionTag(activity)
-        }
-        ensureFrameLoop()
+        seedActiveActivity(activity)
       }
 
       override fun onActivityPaused(activity: Activity) { /* no-op */
@@ -220,6 +215,22 @@ internal object Runtime {
     frameCallback?.let { Choreographer.getInstance().removeFrameCallback(it) }
     frameCallback = null
     appRef = null
+  }
+
+  /**
+   * Seeds the active activity reference when the activity was already
+   * resumed before [enable] registered lifecycle callbacks.
+   * Idempotent — safe to call even if onActivityResumed fires later.
+   */
+  internal fun seedActiveActivity(activity: Activity) {
+    if (!enabled) return
+    if (lastResumedRef?.get() === activity) return
+    lastResumedRef = WeakReference(activity)
+    ensureInspectionTag(activity)
+    Choreographer.getInstance().postFrameCallback { _ ->
+      ensureInspectionTag(activity)
+    }
+    ensureFrameLoop()
   }
 
   fun getPendingCause(): RecomposeCause? = pendingCause
