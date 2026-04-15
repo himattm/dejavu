@@ -125,4 +125,19 @@ class DejavuLibraryCorrectnessTest {
         composeTestRule.onNodeWithTag("inc_button").performClick()
         composeTestRule.onNodeWithTag("counter_title").assertStable()
     }
+
+    @Test
+    fun reEnable_onAlreadyResumedActivity_restoresTrackedTagLookups() {
+        // Repro: enable() is called while the activity is already resumed, so
+        // onActivityResumed does not fire again to seed the active activity.
+        composeTestRule.runOnUiThread { Dejavu.disable() }
+        composeTestRule.runOnUiThread { Dejavu.enable(composeTestRule.activity.application) }
+        composeTestRule.waitForIdle()
+
+        // If the active activity is not reseeded, tag lookup for counter_value
+        // breaks here and the recomposition assertion fails.
+        composeTestRule.resetRecompositionCounts()
+        composeTestRule.onNodeWithTag("inc_button").performClick()
+        composeTestRule.onNodeWithTag("counter_value").assertRecompositions(exactly = 1)
+    }
 }
