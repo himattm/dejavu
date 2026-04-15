@@ -335,6 +335,11 @@ internal object Runtime {
     return out
   }
 
+  internal fun setActiveActivity(activity: Activity) {
+    lastResumedRef = WeakReference(activity)
+    ensureInspectionTag(activity)
+  }
+
   private fun collectCompositionDataFromView(view: View): Set<Any> {
     val out: MutableSet<Any> = Collections.newSetFromMap(IdentityHashMap())
     // Read the inspection slot table set tag populated by Compose (on this view)
