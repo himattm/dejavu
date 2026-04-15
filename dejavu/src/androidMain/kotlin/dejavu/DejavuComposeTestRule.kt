@@ -25,6 +25,7 @@ public class DejavuComposeTestRule<A : ComponentActivity>(
         return delegate.apply(object : Statement() {
             override fun evaluate() {
                 Dejavu.enable(delegate.activity.application)
+                dejavu.internal.Runtime.setActiveActivity(delegate.activity)
                 delegate.waitForIdle()
                 DejavuTest.resetCounts()
                 base.evaluate()
