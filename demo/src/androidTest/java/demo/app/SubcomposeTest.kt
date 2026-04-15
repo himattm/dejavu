@@ -47,6 +47,7 @@ class SubcomposeTest {
         composeTestRule.mainClock.advanceTimeBy(500)
 
         // Reset and wait more — animation should be done, no more recomps
+        composeTestRule.waitForIdle()
         composeTestRule.resetRecompositionCounts()
         composeTestRule.mainClock.advanceTimeBy(500)
         composeTestRule.onNodeWithTag("anim_value_reader").assertStable()
@@ -92,5 +93,9 @@ class SubcomposeTest {
         composeTestRule.onNodeWithTag("non_restartable").assertRecompositions(atLeast = 2)
         // Regular composable with unchanged params skips via strong skipping
         composeTestRule.onNodeWithTag("regular_child").assertStable()
+    }
+    @org.junit.After
+    fun tearDown() {
+        composeTestRule.mainClock.autoAdvance = true
     }
 }

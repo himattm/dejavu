@@ -84,4 +84,8 @@ class ToggleMorphTest {
         composeTestRule.onNodeWithTag("toggle_btn").assertStable()
         composeTestRule.onNodeWithTag("static_morph_sibling").assertStable()
     }
+    @org.junit.After
+    fun tearDown() {
+        composeTestRule.mainClock.autoAdvance = true
+    }
 }
