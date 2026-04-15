@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-04-15
+
+### Fixed
+- Android tag-mapping failure when `Dejavu.enable()` is called after the test activity is already resumed (#52)
+  - `seedActiveActivity()` now explicitly seeds the current activity from `DejavuComposeTestRule`, so `onActivityResumed` does not need to re-fire
+  - Added `@Volatile` to `lastResumedRef` for safe cross-thread reads
+  - `onActivityDestroyed` now clears `lastResumedRef` when the tracked activity is destroyed
+
+### Added
+- `runRecompositionTrackingUiTest` and `setTrackedContent` public APIs for KMP test setup (JVM, iOS, WasmJs)
+- Dokka API documentation generation
+- Regression test for disable/re-enable cycle on a resumed activity
+
 ### Changed
 - Bump Kotlin from 2.2.20 to 2.3.20
 - Bump AGP from 8.13.2 to 9.1.0
@@ -14,14 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump Compose Multiplatform from 1.10.1 to 1.10.3
 - Bump Compose BOM from 2026.01.01 to 2026.03.00
 - Bump Activity Compose from 1.7.0 to 1.13.0
-- Bump atomicfu from 0.27.0 to 0.32.0
+- Bump atomicfu from 0.27.0 to 0.32.1
 - Bump Robolectric from 4.14.1 to 4.16.1
 - Bump core-ktx from 1.17.0 to 1.18.0
+- Bump Dokka from 2.1.0 to 2.2.0
+- Bump Gradle Actions from 4 to 6
+- Bump mkdocs-material from 9.7.4 to 9.7.6
+- Bump mike from 2.1.3 to 2.1.4
 - Update compatibility tables and CI matrix for 2026.03.01 BOM baseline
-
-### Added
-- `runRecompositionTrackingUiTest` and `setTrackedContent` public APIs for KMP test setup (JVM, iOS, WasmJs)
-- Dokka API documentation generation
 
 ## [0.3.0] - 2026-03-22
 

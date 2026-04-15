@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "me.mmckenna.dejavu"
-version = "0.3.0"
+version = "0.3.1"
 
 kotlin {
   explicitApi()
