@@ -40,7 +40,9 @@ internal object Runtime {
   private var observer: ObserverDelegate = NoOpObserver
 
   private var lifecycleCallbacks: Application.ActivityLifecycleCallbacks? = null
+  @Volatile
   private var lastResumedRef: WeakReference<Activity>? = null
+  private val knownActivities = mutableListOf<WeakReference<Activity>>()
 
   // Per-recomposer change count tracking
   private val recomposerChangeCount = IdentityHashMap<Any, Long>()
@@ -74,6 +76,9 @@ internal object Runtime {
     enabled = true
     this.logToLogcat = logToLogcat
     appRef = app
+    snapshotCandidateActivities().firstOrNull()?.let { activity ->
+      seedActiveActivity(activity)
+    }
 
     // Load the real observer delegate if Compose observer API is available
     observer = try {
@@ -149,20 +154,17 @@ internal object Runtime {
         activity: Activity,
         savedInstanceState: Bundle?
       ) {
+        rememberActivity(activity)
         ensureInspectionTag(activity)
       }
 
       override fun onActivityStarted(activity: Activity) {
+        rememberActivity(activity)
         ensureInspectionTag(activity)
       }
 
       override fun onActivityResumed(activity: Activity) {
-        lastResumedRef = WeakReference(activity)
-        ensureInspectionTag(activity)
-        Choreographer.getInstance().postFrameCallback { _ ->
-          ensureInspectionTag(activity)
-        }
-        ensureFrameLoop()
+        seedActiveActivity(activity)
       }
 
       override fun onActivityPaused(activity: Activity) { /* no-op */
@@ -177,7 +179,8 @@ internal object Runtime {
       ) { /* no-op */
       }
 
-      override fun onActivityDestroyed(activity: Activity) { /* no-op */
+      override fun onActivityDestroyed(activity: Activity) {
+        forgetActivity(activity)
       }
     }
     app.registerActivityLifecycleCallbacks(callbacks)
@@ -228,6 +231,21 @@ internal object Runtime {
     val root = activity.window?.decorView ?: return
     val tagId = androidx.compose.ui.R.id.inspection_slot_table_set
     seedInspectionTagRecursively(root, tagId)
+  }
+
+  internal fun seedActiveActivity(activity: Activity) {
+    if (!enabled) return
+    rememberActivity(activity)
+    if (lastResumedRef?.get() === activity) return
+    lastResumedRef = WeakReference(activity)
+    ensureInspectionTag(activity)
+    Choreographer.getInstance().postFrameCallback { _ ->
+      if (!enabled) return@postFrameCallback
+      if (lastResumedRef?.get() === activity) {
+        ensureInspectionTag(activity)
+      }
+    }
+    ensureFrameLoop()
   }
 
   private fun seedInspectionTagRecursively(
@@ -326,18 +344,56 @@ internal object Runtime {
   }
 
   internal fun currentCompositionsSnapshot(): Set<CompositionData> {
-    val activity = lastResumedRef?.get() ?: return emptySet()
-    val root = activity.window?.decorView ?: return emptySet()
     val out: MutableSet<CompositionData> = Collections.newSetFromMap(IdentityHashMap())
-    collectCompositionDataFromView(root).forEach { any ->
-      if (any is CompositionData) out.add(any)
+    for (activity in snapshotCandidateActivities()) {
+      ensureInspectionTag(activity)
+      val root = activity.window?.decorView ?: continue
+      collectCompositionDataFromView(root).forEach { any ->
+        if (any is CompositionData) out.add(any)
+      }
+      if (out.isNotEmpty()) {
+        if (lastResumedRef?.get() == null) {
+          lastResumedRef = WeakReference(activity)
+        }
+        return out
+      }
     }
     return out
   }
 
-  internal fun setActiveActivity(activity: Activity) {
-    lastResumedRef = WeakReference(activity)
-    ensureInspectionTag(activity)
+  private fun rememberActivity(activity: Activity) {
+    synchronized(knownActivities) {
+      knownActivities.removeAll { ref ->
+        val existing = ref.get()
+        existing == null || existing === activity
+      }
+      knownActivities.add(WeakReference(activity))
+    }
+  }
+
+  private fun forgetActivity(activity: Activity) {
+    synchronized(knownActivities) {
+      knownActivities.removeAll { ref ->
+        val existing = ref.get()
+        existing == null || existing === activity
+      }
+    }
+    if (lastResumedRef?.get() === activity) {
+      lastResumedRef = null
+    }
+  }
+
+  private fun snapshotCandidateActivities(): List<Activity> {
+    val resumed = lastResumedRef?.get()
+    val snapshot = synchronized(knownActivities) {
+      knownActivities.mapNotNull { it.get() }
+    }
+    return buildList {
+      if (resumed != null) add(resumed)
+      snapshot.asReversed().forEach { activity ->
+        if (activity !== resumed) add(activity)
+      }
+    }
   }
 
   private fun collectCompositionDataFromView(view: View): Set<Any> {
