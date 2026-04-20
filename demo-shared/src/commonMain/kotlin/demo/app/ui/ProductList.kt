@@ -43,10 +43,9 @@ import androidx.compose.ui.unit.dp
 // FIX: Make CartSummary a data class so equals() is structural.
 // ============================================================
 
-// ISSUE: Unstable class — uses identity-based equality (Object.equals),
-// causing recomposition even when the logical content is the same.
-// Making this a `data class` would fix the problem.
-class CartSummary(val itemCount: Int, val totalPrice: String)
+// FIXED: data class — uses structural equality (data class equals),
+// avoiding recomposition when the logical content is the same.
+data class CartSummary(val itemCount: Int, val totalPrice: String)
 
 @Composable
 fun ProductListScreen() {
