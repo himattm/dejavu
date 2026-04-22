@@ -1,0 +1,3 @@
+## 2024-05-24 - Unstable class parameter causing unnecessary recomposition
+**Learning:** In Compose, regular classes passed as parameters to Composables are compared using reference equality by default (`Object.equals`). This means a new instance of the class will trigger recomposition even if the logical content is exactly the same, causing unnecessary recompositions of child components.
+**Action:** When creating state wrapper classes to pass to Composables, use `data class` instead of `class`. This ensures that `equals()` performs structural equality, so Compose can skip recomposition if the logical content hasn't changed.
