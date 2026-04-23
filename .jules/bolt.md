@@ -1,0 +1,3 @@
+## 2023-10-27 - [Compose Performance] Structural Equality with Data Classes
+**Learning:** In Compose, passing regular classes (which use reference/identity equality) as state parameters can cause unnecessary recompositions. When a parent recomposes, it might create a new instance of the class even if the fields are identical. The child composable sees a new reference and recomposes unnecessarily.
+**Action:** Always use `data class` for state objects passed as parameters in Compose to ensure structural equality (`equals()` checks fields instead of references) and allow Compose to skip recomposition when the content hasn't changed.
