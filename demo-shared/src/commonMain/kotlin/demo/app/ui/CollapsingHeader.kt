@@ -15,6 +15,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,7 +35,12 @@ fun CollapsingHeaderScreen() {
   SideEffect { GroundTruthCounters.increment("collapsing_header_root") }
   val scrollState = rememberScrollState()
   val coroutineScope = rememberCoroutineScope()
-  val collapseFraction = (scrollState.value / 400f).coerceIn(0f, 1f)
+
+  // OPTIMIZATION: Use derivedStateOf to prevent recomposition when scrolling past the collapse threshold.
+  // Without this, every pixel of scroll causes a recomposition of the root component, even when the header is fully collapsed.
+  val collapseFraction by remember {
+    derivedStateOf { (scrollState.value / 400f).coerceIn(0f, 1f) }
+  }
 
   Box(modifier = Modifier
     .testTag("collapsing_header_root")
