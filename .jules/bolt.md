@@ -1,3 +1,6 @@
 ## 2024-05-19 - Compose Stability with Data Classes
 **Learning:** In Jetpack Compose, using regular classes (instead of data classes) for state parameters causes unnecessary recompositions. Regular classes use identity-based equality (Object.equals), meaning every new instance is considered different, even if the fields are identical. This causes the parent and any dependent composables to recompose unexpectedly.
 **Action:** Always use `data class` for state objects passed as parameters to ensure structural equality and prevent unnecessary recompositions.
+## 2024-05-19 - Intentional Anti-patterns in Demo Apps
+**Learning:** The `CartSummary` class was intentionally designed as a regular class (not a `data class`) to serve as a pedagogical example of a recomposition anti-pattern that the `dejavu` library is built to detect. Fixing it removed the demo's purpose.
+**Action:** When working in a "demo" or "example" application (especially one demonstrating a testing or diagnostic library), carefully read the surrounding comments and tests before "fixing" performance issues. Some performance issues or unstable classes are intentionally placed there to demonstrate what the library detects. Do not "optimize" code that is explicitly meant to be unoptimized for educational purposes.
