@@ -1,3 +1,3 @@
-## 2024-04-21 - Compose data class equality
-**Learning:** Using regular classes instead of data classes for UI state in Jetpack Compose causes unnecessary recompositions because Compose uses reference equality by default.
-**Action:** Always use data classes for objects passed as parameters to Compose components to enable structural equality and allow Compose to skip recomposition when content hasn't changed.
+## 2024-04-21 - Rejected Optimization (Intentional pedagogical anti-pattern)
+**Learning:** The unstable class `CartSummary` in `demo-shared/src/commonMain/kotlin/demo/app/ui/ProductList.kt` is an intentional pedagogical example of a recomposition anti-pattern that the 'Dejavu' library is meant to detect.
+**Action:** Do not attempt to optimize the intentional anti-patterns in the demo app (like "ISSUE 2" in `ProductList.kt` and its tests in `RecompositionRegressionTest.kt`) as they are designed to showcase the library's capabilities. Always check surrounding comments for "ISSUE" markers indicating intentional demo code.
