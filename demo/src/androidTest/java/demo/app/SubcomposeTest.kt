@@ -44,11 +44,15 @@ class SubcomposeTest {
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.onNodeWithTag("animate_btn").performClick()
         // Let animation complete
+        composeTestRule.mainClock.advanceTimeByFrame()
         composeTestRule.mainClock.advanceTimeBy(500)
+        composeTestRule.waitForIdle()
 
         // Reset and wait more — animation should be done, no more recomps
         composeTestRule.resetRecompositionCounts()
+        composeTestRule.mainClock.advanceTimeByFrame()
         composeTestRule.mainClock.advanceTimeBy(500)
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("anim_value_reader").assertStable()
     }
 
