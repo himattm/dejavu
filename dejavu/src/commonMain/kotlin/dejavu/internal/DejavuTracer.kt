@@ -538,12 +538,12 @@ internal object DejavuTracer : CompositionTracer {
             try {
                 buildTagMappingFromFrameLoop(snapshots)
             } catch (_: Throwable) {
-                // On Android, this can fail during Activity transitions or mainClock
-                // manipulation with ComposeRuntimeError("Cannot start a writer when a reader is pending").
+                // On Android, this can fail during Activity transitions with
+                // ComposeRuntimeError("Cannot start a writer when a reader is pending").
                 // Silently skip baseline capture — the frame callback will
                 // establish baselines later.
+                return
             }
-
             // Clear counts from baseline capture — only post-reset changes should count.
             synchronized(recompositionCountsLock) { recompositionCounts.clear() }
             synchronized(recompositionEventsLock) { recompositionEvents.clear() }
