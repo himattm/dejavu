@@ -45,6 +45,7 @@ class SubcomposeTest {
         composeTestRule.onNodeWithTag("animate_btn").performClick()
         // Let animation complete
         composeTestRule.mainClock.advanceTimeBy(500)
+        composeTestRule.waitForIdle()
 
         // Reset and wait more — animation should be done, no more recomps
         composeTestRule.resetRecompositionCounts()
