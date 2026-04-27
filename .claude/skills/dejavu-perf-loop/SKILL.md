@@ -61,7 +61,10 @@ The baseline's job is not to pass — it's to capture a real number you can shri
 
 Run the appropriate gradle command (see `dejavu-test-writer` "Run the test").
 - If `atMost = 10` passes, lower it progressively (`5`, `3`, `2`, `1`) and re-run
-  until it FAILS. The first failing `N - 1` is the current actual count.
+  until it FAILS. If `atMost = N` is the first to fail and `atMost = M` (M > N)
+  was the previous pass, the actual count is in `[N + 1, M]`. To pin the exact
+  number, narrow the bracket with further probes (or, on Android, read it
+  directly via `composeTestRule.getRecompositionCount(tag)`).
 - When it fails, capture the **full** error block. Every section in
   `docs/error-messages.md` is a diagnostic input.
 
