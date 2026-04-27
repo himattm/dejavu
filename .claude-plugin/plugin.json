@@ -1,0 +1,20 @@
+{
+  "name": "dejavu",
+  "description": "AI agent skills for authoring Compose UI recomposition tests with the Dejavu library and running a closed-loop perf optimization workflow.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Matt McKenna",
+    "url": "https://github.com/himattm"
+  },
+  "homepage": "https://dejavu.mmckenna.me",
+  "repository": "https://github.com/himattm/dejavu",
+  "license": "Apache-2.0",
+  "keywords": [
+    "compose",
+    "android",
+    "kotlin-multiplatform",
+    "ui-testing",
+    "recomposition",
+    "skills"
+  ]
+}

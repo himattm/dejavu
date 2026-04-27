@@ -189,8 +189,7 @@ After writing or editing a test:
 
 1. Run the matching gradle command above and fix failures.
 2. **If the count exceeds your assertion, do NOT loosen it** — invoke the
-   `dejavu-perf-loop` skill (at `.claude/skills/dejavu-perf-loop/SKILL.md`) to
-   diagnose and fix the underlying recomposition cause, then come back with a
-   tightened assertion.
+   `dejavu-perf-loop` skill to diagnose and fix the underlying recomposition
+   cause, then come back with a tightened assertion.
 3. Leave at least one `assertStable()` on a sibling composable that should not
    be affected — it locks in the scoping guarantee and catches setup mistakes.

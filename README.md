@@ -102,7 +102,14 @@ When you optimize a composable — extracting a lambda, adding `remember`, switc
 
 AI coding agents can refactor composables and restructure state, but they have no way to know whether their changes made recomposition better or worse. Dejavu gives them that signal. When an agent runs your tests and a Dejavu assertion fails, the structured error message tells it exactly which composable regressed, by how much, and why — turning recomposition count into an optimization metric the agent can target directly.
 
-This repo ships two Claude Code skills under [`.claude/skills/`](.claude/skills/) — `dejavu-test-writer` (author or extend Dejavu UI tests) and `dejavu-perf-loop` (iteratively optimize a composable's recomposition behavior using Dejavu as the validator). Sessions opened in this repo auto-load them; downstream consumers can copy the directory into their own project to use the same skills.
+This repo ships two Claude Code skills — `dejavu-test-writer` (author or extend Dejavu UI tests) and `dejavu-perf-loop` (iteratively optimize a composable's recomposition behavior using Dejavu as the validator). Install them globally in Claude Code:
+
+```
+/plugin marketplace add himattm/dejavu
+/plugin install dejavu@dejavu
+```
+
+Sessions opened inside the Dejavu repo also auto-load the same skills from [`.claude/skills/`](.claude/skills/) without installing the plugin.
 
 ### Guardrail Against Unexpected Changes
 
