@@ -23,9 +23,10 @@ regression guard.
 ## Companion skill
 
 This skill assumes a Dejavu test exists or can be written. To author or extend
-the test, **invoke the `dejavu-test-writer` skill** — read its `SKILL.md` at
-`.claude/skills/dejavu-test-writer/SKILL.md` and follow its workflow, then
-return here with a working test that has a baseline assertion.
+the test, **invoke the `dejavu-test-writer` skill** and follow its workflow,
+then return here with a working test that has a baseline assertion. Both
+skills ship together — in-repo at `.claude/skills/dejavu-test-writer/SKILL.md`,
+and as the `dejavu` plugin when installed elsewhere.
 
 ## Workflow
 

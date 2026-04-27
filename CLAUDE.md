@@ -52,4 +52,14 @@ This repo ships two skills under `.claude/skills/` for AI agents working with De
 - `dejavu-test-writer` — author Compose UI recomposition tests using Dejavu's APIs.
 - `dejavu-perf-loop` — closed-loop optimization of a composable's recomposition behavior, using Dejavu as the validator. Invokes `dejavu-test-writer` to establish the baseline test.
 
-Both skills point at the canonical docs in `docs/` and the canonical test patterns in `dejavu/src/commonTest/kotlin/dejavu/*PatternTest.kt` rather than duplicating them. They auto-load for sessions opened in this repo; downstream consumers can copy them into their own `.claude/skills/`.
+Both skills point at the canonical docs in `docs/` and the canonical test patterns in `dejavu/src/commonTest/kotlin/dejavu/*PatternTest.kt` rather than duplicating them. They auto-load for sessions opened in this repo.
+
+### Plugin layout
+
+The same skills are also packaged as a Claude Code plugin so users outside this repo can install them globally:
+
+- `.claude-plugin/plugin.json` — plugin manifest (`name: dejavu`).
+- `.claude-plugin/marketplace.json` — single-plugin marketplace listing.
+- `skills/dejavu-test-writer/`, `skills/dejavu-perf-loop/` — symlinks into `.claude/skills/` so the canonical SKILL.md files have one source of truth. Edit the canonical files under `.claude/skills/`; the plugin layout picks up the change via symlink.
+
+Install instructions for end-users live in `README.md`.
