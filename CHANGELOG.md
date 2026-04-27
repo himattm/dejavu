@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Bundled Claude Code skills `dejavu-test-writer` and `dejavu-perf-loop` in `.claude/skills/` to help AI agents author Dejavu tests and run an iterative recomposition-optimization loop using Dejavu as the validator.
+
 ## [0.3.1] - 2026-04-15
 
 ### Fixed
