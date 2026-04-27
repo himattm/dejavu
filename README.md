@@ -92,6 +92,24 @@ dejavu.UnexpectedRecompositionsError: Recomposition assertion failed for testTag
 
 See [Error Messages Guide](https://dejavu.mmckenna.me/error-messages/) for how to read and act on each section.
 
+## Claude Code Skills (for AI Agents)
+
+Dejavu ships four Claude Code skills that teach AI agents how to use it:
+
+- **`dejavu-onboarding`** — add Dejavu to a project from scratch (gradle dependency, first `Modifier.testTag`, smallest possible passing test).
+- **`dejavu-test-writer`** — author Compose UI recomposition tests using Dejavu's APIs (Android JUnit4 or KMP `commonTest`).
+- **`dejavu-error-triage`** — diagnose a single failing `UnexpectedRecompositionsError`: walks the error sections, names the pattern, points at the canonical fix.
+- **`dejavu-perf-loop`** — closed-loop optimization of a composable's recomposition behavior, using Dejavu as the validator. Embeds an error-pattern → fix decision tree (data class, Boolean narrowing, `derivedStateOf`, hoisted reads, `key()`, `CompositionLocal`).
+
+Install them globally in Claude Code so they're available in any project:
+
+```
+/plugin marketplace add himattm/dejavu
+/plugin install dejavu@dejavu
+```
+
+Sessions opened inside this repo also auto-load the same skills from [`.claude/skills/`](.claude/skills/) without installing the plugin.
+
 ## Use Cases
 
 ### Lock In Efficiency Gains
@@ -101,6 +119,8 @@ When you optimize a composable — extracting a lambda, adding `remember`, switc
 ### Give AI Agents a Recomposition Signal
 
 AI coding agents can refactor composables and restructure state, but they have no way to know whether their changes made recomposition better or worse. Dejavu gives them that signal. When an agent runs your tests and a Dejavu assertion fails, the structured error message tells it exactly which composable regressed, by how much, and why — turning recomposition count into an optimization metric the agent can target directly.
+
+For Claude Code users, the bundled `dejavu-test-writer` and `dejavu-perf-loop` skills (see [Claude Code Skills](#claude-code-skills-for-ai-agents) above) teach the agent how to author Dejavu tests and run an iterative perf-optimization loop without re-deriving the API from docs.
 
 ### Guardrail Against Unexpected Changes
 

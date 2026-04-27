@@ -41,6 +41,26 @@ dejavu.UnexpectedRecompositionsError: Recomposition assertion failed for testTag
 
 The agent gets a clear, structured signal: which composable regressed, by how much, and why. It can use this to iterate — adjusting its approach until the assertion passes. This turns recomposition count into an optimization metric that an AI agent can target directly, rather than relying on vague heuristics about Compose best practices.
 
+### Claude Code skills
+
+For Claude Code users, Dejavu ships four skills as a Claude Code plugin so the agent knows how to adopt Dejavu, write tests, triage failures, and run an iterative perf-optimization loop without re-deriving the API from docs:
+
+- **`dejavu-onboarding`** — add Dejavu to a project from scratch (gradle dependency, first `Modifier.testTag`, smallest possible passing test).
+- **`dejavu-test-writer`** — author Compose UI recomposition tests using Dejavu's APIs (Android JUnit4 or KMP `commonTest`).
+- **`dejavu-error-triage`** — diagnose a single failing `UnexpectedRecompositionsError`: walks the error sections, names the pattern, points at the canonical fix.
+- **`dejavu-perf-loop`** — closed-loop optimization of a composable's recomposition behavior, using Dejavu as the validator. Embeds an error-pattern → fix decision tree (data class, Boolean narrowing, `derivedStateOf`, hoisted reads, `key()`, `CompositionLocal`).
+
+Install:
+
+```
+/plugin marketplace add himattm/dejavu
+/plugin install dejavu@dejavu
+```
+
+Sessions opened inside the [Dejavu repo](https://github.com/himattm/dejavu) auto-load the same skills from `.claude/skills/` without installing the plugin.
+
+### Programmatic checks
+
 You can also use `getRecompositionCount()` to let agents make programmatic decisions:
 
 ```kotlin

@@ -35,3 +35,14 @@ Dejavu is a test-only library that turns recomposition behavior into assertions.
 - [Examples](examples.md) — test patterns for common scenarios
 - [API Reference](api-reference.md) — all assertions and utilities
 - [How It Works](how-it-works.md) — internals, compatibility, and limitations
+
+## Using Claude Code?
+
+Install the bundled Dejavu skills globally — they cover initial install (`dejavu-onboarding`), authoring tests (`dejavu-test-writer`), diagnosing single failures (`dejavu-error-triage`), and the iterative perf-optimization loop (`dejavu-perf-loop`):
+
+```
+/plugin marketplace add himattm/dejavu
+/plugin install dejavu@dejavu
+```
+
+See [Use Cases → Give AI Agents a Recomposition Signal](use-cases.md#give-ai-agents-a-recomposition-signal) for what each skill does.
