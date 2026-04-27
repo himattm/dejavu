@@ -94,9 +94,11 @@ See [Error Messages Guide](https://dejavu.mmckenna.me/error-messages/) for how t
 
 ## Claude Code Skills (for AI Agents)
 
-Dejavu ships two Claude Code skills that teach AI agents how to use it:
+Dejavu ships four Claude Code skills that teach AI agents how to use it:
 
+- **`dejavu-onboarding`** — add Dejavu to a project from scratch (gradle dependency, first `Modifier.testTag`, smallest possible passing test).
 - **`dejavu-test-writer`** — author Compose UI recomposition tests using Dejavu's APIs (Android JUnit4 or KMP `commonTest`).
+- **`dejavu-error-triage`** — diagnose a single failing `UnexpectedRecompositionsError`: walks the error sections, names the pattern, points at the canonical fix.
 - **`dejavu-perf-loop`** — closed-loop optimization of a composable's recomposition behavior, using Dejavu as the validator. Embeds an error-pattern → fix decision tree (data class, Boolean narrowing, `derivedStateOf`, hoisted reads, `key()`, `CompositionLocal`).
 
 Install them globally in Claude Code so they're available in any project:

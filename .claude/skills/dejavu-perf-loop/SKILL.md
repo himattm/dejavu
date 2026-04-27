@@ -20,13 +20,16 @@ regression guard.
 - `docs/examples.md` — Examples 2 (Boolean narrowing, lines 89–124), 3 (data
   class, lines 132–171), 8 (`derivedStateOf`, lines 462–493).
 
-## Companion skill
+## Companion skills
 
-This skill assumes a Dejavu test exists or can be written. To author or extend
-the test, **invoke the `dejavu-test-writer` skill** and follow its workflow,
-then return here with a working test that has a baseline assertion. Both
-skills ship together — in-repo at `.claude/skills/dejavu-test-writer/SKILL.md`,
-and as the `dejavu` plugin when installed elsewhere.
+- **`dejavu-test-writer`** — author or extend the baseline test if one
+  doesn't exist yet. Invoke it first, return here with a working test that
+  has a loose `atMost = N` assertion.
+- **`dejavu-error-triage`** — for one-shot "explain this single failure"
+  questions where the user just wants the diagnosis and one fix, not an
+  iterative loop.
+- **`dejavu-onboarding`** — only if the project doesn't have Dejavu wired up
+  at all. Run that first.
 
 ## Workflow
 
