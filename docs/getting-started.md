@@ -54,3 +54,14 @@ dejavu.UnexpectedRecompositionsError: Recomposition assertion failed for testTag
 ```
 
 See the [Error Messages Guide](error-messages.md) for how to read and act on each section.
+
+## Optional: Install the Claude Code skills
+
+If you use Claude Code, you can install the bundled `dejavu-test-writer` and `dejavu-perf-loop` skills globally so they're available in any project. The first authors Dejavu tests for you; the second iteratively optimizes a composable's recomposition behavior using Dejavu as the validator.
+
+```
+/plugin marketplace add himattm/dejavu
+/plugin install dejavu@dejavu
+```
+
+Sessions opened inside the [Dejavu repo](https://github.com/himattm/dejavu) auto-load the same skills from `.claude/skills/` without installing the plugin. See [Use Cases → Give AI Agents a Recomposition Signal](use-cases.md#give-ai-agents-a-recomposition-signal) for what the skills do in practice.
