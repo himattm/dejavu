@@ -9,7 +9,8 @@
 .externalNativeBuild
 .cxx
 local.properties
-.claude/
+.claude/*
+!.claude/skills/
 .kotlin/
 site/
 docs/api/

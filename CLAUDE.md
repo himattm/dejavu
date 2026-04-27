@@ -44,3 +44,12 @@ Minimum verification after any code change:
 ## Gradle
 
 Always run with `-q --console=plain`.
+
+## Bundled Claude skills
+
+This repo ships two skills under `.claude/skills/` for AI agents working with Dejavu:
+
+- `dejavu-test-writer` — author Compose UI recomposition tests using Dejavu's APIs.
+- `dejavu-perf-loop` — closed-loop optimization of a composable's recomposition behavior, using Dejavu as the validator. Invokes `dejavu-test-writer` to establish the baseline test.
+
+Both skills point at the canonical docs in `docs/` and the canonical test patterns in `dejavu/src/commonTest/kotlin/dejavu/*PatternTest.kt` rather than duplicating them. They auto-load for sessions opened in this repo; downstream consumers can copy them into their own `.claude/skills/`.
