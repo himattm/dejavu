@@ -9,10 +9,14 @@ Dejavu turns Compose recomposition behavior into JUnit/kotlin.test assertions. T
 skill picks the right setup, points at canonical examples, and gives you the API
 surface in one screen so you can write a correct test on the first try.
 
-This skill teaches you how to **write a test**. It is a companion to
-`dejavu-perf-loop`, which uses these tests as a closed-loop validator to optimize
-recomposition behavior. If a count exceeds your assertion, do **not** loosen the
-assertion — invoke `dejavu-perf-loop` instead.
+This skill assumes Dejavu is already installed in the project. If it isn't,
+use **`dejavu-onboarding`** first to add the gradle dependency and prove the
+setup with a smallest-possible test, then come back here.
+
+This skill teaches you how to **write a test**. Companion skills:
+- **`dejavu-error-triage`** — diagnose a single failing assertion.
+- **`dejavu-perf-loop`** — iteratively reduce a composable's recomposition
+  count. If a count exceeds your assertion, do **not** loosen it — escalate.
 
 ## Reference docs (read first)
 

@@ -38,7 +38,7 @@ Dejavu is a test-only library that turns recomposition behavior into assertions.
 
 ## Using Claude Code?
 
-Install the bundled `dejavu-test-writer` and `dejavu-perf-loop` skills globally:
+Install the bundled Dejavu skills globally — they cover initial install (`dejavu-onboarding`), authoring tests (`dejavu-test-writer`), diagnosing single failures (`dejavu-error-triage`), and the iterative perf-optimization loop (`dejavu-perf-loop`):
 
 ```
 /plugin marketplace add himattm/dejavu

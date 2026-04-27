@@ -57,7 +57,7 @@ See the [Error Messages Guide](error-messages.md) for how to read and act on eac
 
 ## Optional: Install the Claude Code skills
 
-If you use Claude Code, you can install the bundled `dejavu-test-writer` and `dejavu-perf-loop` skills globally so they're available in any project. The first authors Dejavu tests for you; the second iteratively optimizes a composable's recomposition behavior using Dejavu as the validator.
+If you use Claude Code, you can install the bundled Dejavu skills globally so they're available in any project. The skill set covers the full lifecycle: `dejavu-onboarding` (initial install), `dejavu-test-writer` (author tests), `dejavu-error-triage` (diagnose a single failure), and `dejavu-perf-loop` (iteratively optimize a composable's recomposition behavior using Dejavu as the validator).
 
 ```
 /plugin marketplace add himattm/dejavu
