@@ -1,0 +1,3 @@
+## 2024-04-29 - Data classes and precise parameter scoping prevent unnecessary recompositions
+**Learning:** Using regular classes for UI state leads to identity-based equality checks, causing unnecessary recompositions. Similarly, passing broader state (e.g., an `Int` count) to a composable that only needs a derived boolean triggers recompositions on every state change.
+**Action:** Always use `data class` for state objects passed as parameters to ensure structural equality (`equals()`). Scope composable parameters to the smallest required type (e.g., passing a derived `Boolean` instead of the raw `Int` state) to minimize recompositions.
