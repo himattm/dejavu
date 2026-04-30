@@ -506,6 +506,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#optional-install-the-claude-code-skills" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional: Install the Claude Code skills
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -735,6 +746,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#optional-install-the-claude-code-skills" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional: Install the Claude Code skills
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -805,6 +827,12 @@
 <a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    Parameter/parent change detected (dirty bits set)
 </code></pre></div>
 <p>See the <a href="../error-messages/">Error Messages Guide</a> for how to read and act on each section.</p>
+<h2 id="optional-install-the-claude-code-skills">Optional: Install the Claude Code skills<a class="headerlink" href="#optional-install-the-claude-code-skills" title="Permanent link">&para;</a></h2>
+<p>If you use Claude Code, you can install the bundled Dejavu skills globally so they're available in any project. The skill set covers the full lifecycle: <code>dejavu-onboarding</code> (initial install), <code>dejavu-test-writer</code> (author tests), <code>dejavu-error-triage</code> (diagnose a single failure), and <code>dejavu-perf-loop</code> (iteratively optimize a composable's recomposition behavior using Dejavu as the validator).</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>/plugin marketplace add himattm/dejavu
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>/plugin install dejavu@dejavu
+</code></pre></div>
+<p>Sessions opened inside the <a href="https://github.com/himattm/dejavu">Dejavu repo</a> auto-load the same skills from <code>.claude/skills/</code> without installing the plugin. See <a href="../use-cases/#give-ai-agents-a-recomposition-signal">Use Cases → Give AI Agents a Recomposition Signal</a> for what the skills do in practice.</p>
 
 
 
