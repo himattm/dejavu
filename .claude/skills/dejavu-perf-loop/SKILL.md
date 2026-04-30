@@ -5,11 +5,17 @@ description: Optimize a Compose composable's recomposition behavior using Dejavu
 
 # Dejavu Perf Loop
 
-Iteratively optimize the recomposition behavior of a Compose composable using
-Dejavu as the validator. The loop is: write/extend a test → run → read the
-failure → apply ONE fix → re-run → tighten the assertion → repeat until the
-target hits its theoretical recomposition minimum. The final test is the
-regression guard.
+Iteratively shape the recomposition behavior of a Compose composable until it
+matches what's *actually correct* for that composable, then lock the count
+in. The loop is: write/extend a test → run → read the failure → apply ONE
+fix → re-run → tighten the assertion → repeat until the count matches the
+theoretical floor. The final test is the regression guard.
+
+**The floor may not be zero.** A composable that legitimately reads N
+independent state sources will recompose N times — that's correct, not a bug.
+The goal is to make the assertion match reality (`assertRecompositions(exactly = N)`),
+not to drive every count to `assertStable()`. Use the cookbook only when the
+actual count exceeds the theoretical floor.
 
 ## Reference docs (read before fixing)
 
@@ -72,16 +78,32 @@ Run the appropriate gradle command (see `dejavu-test-writer` "Run the test").
 - When it fails, capture the **full** error block. Every section in
   `docs/error-messages.md` is a diagnostic input.
 
-### 4. Compute the theoretical minimum
+### 4. Compute the theoretical floor (which may not be zero)
 
-For the interaction you triggered:
-- 0 state changes that the target reads → `assertStable()` should hold
-- 1 state change the target reads → `1` is the floor
-- N independent state changes the target reads → `N` is the floor (unless coalesced)
+For the interaction you triggered, count what the target composable
+*legitimately* reads:
 
-If actual > theoretical, proceed to Step 5. Otherwise tighten and commit.
+- 0 state sources read by the target → floor is 0; `assertStable()` should hold
+- 1 state source read by the target → floor is 1
+- N independent state sources read by the target → floor is N (unless coalesced
+  by `derivedStateOf` or batched by `Snapshot.withMutableSnapshot`)
+
+If actual == floor, **you're done with the optimization phase** — skip step 5
+and go to step 6 to tighten the assertion to `exactly = floor` (or
+`assertStable()` if the floor is 0).
+
+If actual > floor, proceed to step 5 to find the waste.
+
+If actual < floor, something is suspicious — the test isn't exercising what
+you think it is, or `Modifier.testTag` is on the wrong node. Re-check the
+test before celebrating.
 
 ### 5. Apply the decision tree below — ONE fix at a time
+
+This step only applies when **actual > floor**. The cookbook is for finding
+unnecessary recompositions; if the count is already correct for what the
+composable does, don't try to "optimize" it further — that's how you end up
+with brittle tests or subtle bugs.
 
 Read the Dejavu error and match against the table. Apply exactly one fix per
 iteration. Multiple fixes at once make it impossible to attribute the count
@@ -89,21 +111,26 @@ change.
 
 ### 6. Tighten the assertion after each successful fix
 
-- Actual dropped to 0 → replace `atMost` with `assertStable()`
-- Actual dropped to known N → replace `atMost` with `assertRecompositions(exactly = N)`
-- Still bounded but lower → lower `atMost`, leave a TODO to tighten further
+Always end with an **exact** assertion — never `atMost`:
+
+- Floor is N (any non-zero value) → `assertRecompositions(exactly = N)`
+- Floor is 0 → `assertStable()` (alias for `exactly = 0`, clearer intent)
+- Still bounded but lower than the previous run → lower `atMost` and leave a
+  TODO; keep iterating
 
 **Never raise `atMost` to make a test pass.** That's a regression, not an
 optimization.
 
 ### 7. Repeat until convergence
 
-Convergence = actual equals theoretical minimum AND assertion is `exactly` /
-`assertStable()`.
+Convergence = actual equals the floor AND the assertion is `exactly = N` (or
+`assertStable()` when the floor is 0). Loose `atMost` bounds are not
+convergent; they're a "still in progress" marker.
 
 ### 8. Commit the locked-in test as a regression guard
 
-Add a one-line comment naming the cookbook entry the test guards. Don't commit
+Add a one-line comment naming the cookbook entry the test guards (or noting
+that the count was already at floor and just needed locking in). Don't commit
 unless the user asks.
 
 ## Decision tree: error pattern → fix
@@ -139,13 +166,19 @@ Apply the **first matching row**. Re-run the test after every fix.
 
 The final, locked-in test should:
 
-- Use `assertStable()` or `assertRecompositions(exactly = N)` — never `atMost`.
-- Have at least one sibling `assertStable()` to prove scoping.
+- Use `assertRecompositions(exactly = N)` when the floor is non-zero, or
+  `assertStable()` when the floor is 0. **Never `atMost`.** The exact count
+  reflects the composable's actual contract.
+- Have at least one sibling `assertStable()` (or `exactly = N` for siblings
+  that should also have a known floor) to prove scoping.
 - Carry a one-line comment naming the cookbook entry it guards
-  (e.g. `// Locks in row #3 (Boolean narrowing) for ProductHeader`).
+  (e.g. `// Locks in row #3 (Boolean narrowing): ProductHeader recomposes once per visibility flip`),
+  or noting "already at floor; locked in" if no fix was needed.
 
 When reporting back to the user, surface:
 
-- Before / after recomposition counts.
-- The specific cookbook row applied (and the fix's `examples.md` line range).
+- Before / after recomposition counts (and the floor — so it's clear when the
+  count was already correct vs. reduced).
+- The specific cookbook row applied, if any (and the fix's `examples.md` line
+  range).
 - The exact gradle command that proves the regression guard works.
