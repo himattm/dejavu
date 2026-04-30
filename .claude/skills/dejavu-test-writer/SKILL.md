@@ -110,6 +110,57 @@ and the actual interaction under test (`docs/examples.md` Tips section).
 val n: Int = composeTestRule.getRecompositionCount("my_tag")
 ```
 
+## First: are there existing Compose UI tests for this composable?
+
+Before writing anything new, search the project's test source sets for tests
+that already exercise the target composable:
+
+- `grep -rE "onNodeWithTag\(.<your-tag>.\)" src/*Test*` (or use the project's
+  test directory layout).
+- Look for a sibling test file (`MyScreen.kt` → `MyScreenTest.kt` /
+  `MyScreenInstrumentedTest.kt`).
+- Skim for tests that drive the same interaction you want to assert on
+  (`performClick`, `performTextInput`, etc.).
+
+**If matches exist, ask the user which path to take BEFORE changing code:**
+
+> I found existing Compose UI tests that cover `<Composable>` in
+> `<TestFile>.kt`. Do you want to:
+> 1. **Augment** them — swap to `createRecompositionTrackingRule` and add
+>    `assertStable()` / `assertRecompositions(...)` calls inside the existing
+>    test methods. Co-locates behavior + recomposition checks. No new files.
+> 2. **Add new tests** — keep the existing tests untouched and create a
+>    parallel `<Composable>RecompositionTest.kt`. Cleaner separation; some
+>    setup duplication.
+>
+> Which would you prefer?
+
+If no matches exist, default to a new test and continue with the workflow
+below.
+
+### Augmenting an existing test (if the user picks path 1)
+
+Three changes; the rest of the workflow's tagging / assertion / `waitForIdle`
+/ reset / run steps still apply.
+
+1. **Swap the rule.** Drop-in replacement, no test logic changes.
+   - Android: `createAndroidComposeRule()` → `createRecompositionTrackingRule()`
+     (both forms accept a generic activity type, e.g.
+     `createRecompositionTrackingRule<MainActivity>()`).
+   - KMP: `runComposeUiTest { … }` → `runRecompositionTrackingUiTest { … }`
+     and inside, `setContent { … }` → `setTrackedContent { … }`.
+2. **Add `Modifier.testTag(...)`** to any composable you want to assert on
+   that doesn't already have one. Outermost user modifier; snake_case tags.
+3. **Add Dejavu assertions** alongside the existing ones (don't replace
+   them). For multi-phase tests, call
+   `composeTestRule.resetRecompositionCounts()` between the setup actions
+   and the measured interaction.
+
+Don't add `assertStable()` / `assertRecompositions(...)` to every node — pick
+the ones that have a clear "should be stable" or "should recompose exactly N"
+intuition for the interaction under test, plus at least one stable-sibling
+guard (see the wrap-up).
+
 ## Workflow
 
 ### 1. Decide where the test lives
