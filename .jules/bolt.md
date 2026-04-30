@@ -1,0 +1,3 @@
+## 2024-10-24 - Unstable Classes Cause Unnecessary Recompositions
+**Learning:** In Jetpack Compose, using a standard class (not a `data class`) for state objects passed as parameters causes identity-based equality checks (`Object.equals`). This leads to unnecessary recompositions of child components when the parent recomposes for unrelated reasons, because every instance creation is seen as a new, different parameter.
+**Action:** Always use `data class` for state objects passed as parameters to ensure structural equality (`equals()`) instead of reference equality, thereby preventing unnecessary recompositions.
