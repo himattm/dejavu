@@ -115,8 +115,10 @@ val n: Int = composeTestRule.getRecompositionCount("my_tag")
 Before writing anything new, search the project's test source sets for tests
 that already exercise the target composable:
 
-- `grep -rE "onNodeWithTag\(.<your-tag>.\)" src/*Test*` (or use the project's
-  test directory layout).
+- Grep recursively in the test source sets for `onNodeWithTag(`, e.g.
+  `grep -rEn 'onNodeWithTag\(' src/test src/androidTest src/commonTest 2>/dev/null`.
+  Substitute the project's actual test directory layout. Narrow with the
+  specific tag name (`'onNodeWithTag\("my_tag"\)'`) once you have one.
 - Look for a sibling test file (`MyScreen.kt` → `MyScreenTest.kt` /
   `MyScreenInstrumentedTest.kt`).
 - Skim for tests that drive the same interaction you want to assert on
@@ -126,7 +128,7 @@ that already exercise the target composable:
 
 > I found existing Compose UI tests that cover `<Composable>` in
 > `<TestFile>.kt`. Do you want to:
-> 1. **Augment** them — swap to `createRecompositionTrackingRule` and add
+> 1. **Augment** them — swap the rule for the Dejavu equivalent and add
 >    `assertStable()` / `assertRecompositions(...)` calls inside the existing
 >    test methods. Co-locates behavior + recomposition checks. No new files.
 > 2. **Add new tests** — keep the existing tests untouched and create a
@@ -143,12 +145,15 @@ below.
 Three changes; the rest of the workflow's tagging / assertion / `waitForIdle`
 / reset / run steps still apply.
 
-1. **Swap the rule.** Drop-in replacement, no test logic changes.
-   - Android: `createAndroidComposeRule()` → `createRecompositionTrackingRule()`
-     (both forms accept a generic activity type, e.g.
-     `createRecompositionTrackingRule<MainActivity>()`).
-   - KMP: `runComposeUiTest { … }` → `runRecompositionTrackingUiTest { … }`
-     and inside, `setContent { … }` → `setTrackedContent { … }`.
+1. **Swap the rule.** Branch on which factory the existing test uses — the
+   wrong swap won't compile or will silently change the test host.
+
+   | Existing rule | Swap to | Notes |
+   |---|---|---|
+   | `createAndroidComposeRule()` / `createAndroidComposeRule<A>()` | `createRecompositionTrackingRule()` / `createRecompositionTrackingRule<A>()` | Drop-in. Same Activity type. |
+   | `createComposeRule()` (no Activity — used for `mainClock.advanceTimeBy()` or pure-Compose modules) | **No public drop-in.** Either (a) migrate the test body to `runRecompositionTrackingUiTest { setTrackedContent { … } }` (loses the Activity; gains tracer setup), or (b) keep the rule and add `Dejavu.enable(app)` in `@Before` and `Dejavu.disable()` in `@After` manually. | Don't blindly swap to `createRecompositionTrackingRule()` — it requires an Activity. |
+   | `runComposeUiTest { … }` (KMP `commonTest`) | `runRecompositionTrackingUiTest { … }`, plus inside, `setContent { … }` → `setTrackedContent { … }` | Drop-in. |
+
 2. **Add `Modifier.testTag(...)`** to any composable you want to assert on
    that doesn't already have one. Outermost user modifier; snake_case tags.
 3. **Add Dejavu assertions** alongside the existing ones (don't replace
@@ -162,6 +167,12 @@ intuition for the interaction under test, plus at least one stable-sibling
 guard (see the wrap-up).
 
 ## Workflow
+
+The numbered steps below cover writing a NEW test. If the user picked
+augmentation above, the existing test's location and module are already
+settled — skip step 1, skip step 2 for any composable that already has a
+`testTag`, and start at step 3 (assertion mode) for the new assertions.
+Steps 4 (`waitForIdle`), 5 (mid-test reset), and 6 (run) apply to both paths.
 
 ### 1. Decide where the test lives
 
@@ -203,13 +214,15 @@ When the test has setup actions plus a measured interaction, reset between them
 so the assertion only counts the interaction under test:
 
 ```kotlin
-composeTestRule.onNodeWithTag("select_0_btn").performClick()
+// Setup phase: get the UI into the right state, then forget the counts.
+composeTestRule.onNodeWithTag("setup_action").performClick()
 composeTestRule.waitForIdle()
-composeTestRule.resetRecompositionCounts()                 // forget setup
+composeTestRule.resetRecompositionCounts()
 
-composeTestRule.onNodeWithTag("select_all_btn").performClick()
+// Measurement phase: only this interaction's recompositions are counted.
+composeTestRule.onNodeWithTag("measured_action").performClick()
 composeTestRule.waitForIdle()
-composeTestRule.onNodeWithTag("derived_banner").assertStable()
+composeTestRule.onNodeWithTag("target").assertStable()
 ```
 
 ### 6. Run the test
