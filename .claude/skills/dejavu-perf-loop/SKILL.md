@@ -1,6 +1,6 @@
 ---
 name: dejavu-perf-loop
-description: Optimize a Compose composable's recomposition behavior using Dejavu as a closed-loop validator. Use when the user asks to reduce recompositions, find why a composable recomposes, lock in a recomposition optimization, hit a recomposition budget, fix a header/banner cascade, investigate "Possible cause" / "Recomposition timeline" output, or apply derivedStateOf / @Immutable / data class fixes driven by failing Dejavu assertions.
+description: Optimize a Compose composable's recomposition behavior using Dejavu as a closed-loop validator. Use when the user asks to reduce recompositions, set or tighten a recomposition budget, lock in a recomposition optimization across multiple iterations, fix a recomposition cascade, or apply derivedStateOf / @Immutable / data class fixes iteratively across multiple test runs until the count hits its theoretical floor.
 ---
 
 # Dejavu Perf Loop
