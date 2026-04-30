@@ -58,14 +58,29 @@ dependencies {
 }
 ```
 
-For Kotlin Multiplatform:
+For Kotlin Multiplatform — pick the form that matches the project's existing
+gradle DSL:
 
 ```kotlin
-// shared/build.gradle.kts
+// shared/build.gradle.kts (Kotlin 2.0+ accessor DSL)
 kotlin {
     sourceSets {
         commonTest.dependencies {
             implementation("me.mmckenna.dejavu:dejavu:0.3.1")
+        }
+    }
+}
+```
+
+Older builds (or projects that haven't migrated their gradle scripts) use:
+
+```kotlin
+kotlin {
+    sourceSets {
+        val commonTest by getting {
+            dependencies {
+                implementation("me.mmckenna.dejavu:dejavu:0.3.1")
+            }
         }
     }
 }
@@ -142,7 +157,7 @@ import kotlin.test.Test
 class MyFirstDejavuTest {
     @Test
     fun staticTitle_isStable() = runRecompositionTrackingUiTest {
-        setTrackedContent { MyScreen() }
+        setTrackedContent { StaticTitle() }   // the composable from step 5
         waitForIdle()
         onNodeWithTag("static_title").assertStable()
     }
