@@ -163,18 +163,19 @@ composeTestRule.onNodeWithTag("derived_banner").assertStable()
 
 ### 6. Run the test
 
-This repo's convention (`CLAUDE.md` "Gradle"):
+Substitute `<module>` with the gradle module that holds the test (`:app:`,
+`:shared:`, `:feature-foo:`, etc.). In the Dejavu repo itself, that's
+`:dejavu:` for KMP common tests and `:demo:` for Android instrumented tests
+(`CLAUDE.md` "Gradle"; pass `-q --console=plain` by convention there).
 
 ```bash
-./gradlew -q --console=plain :dejavu:jvmTest                    # Desktop JVM (KMP common)
-./gradlew -q --console=plain :dejavu:testDebugUnitTest           # Android unit tests
-./gradlew -q --console=plain :dejavu:iosSimulatorArm64Test       # iOS sim (KMP common)
-./gradlew -q --console=plain :dejavu:wasmJsBrowserTest           # Wasm headless browser
-./gradlew -q --console=plain :demo:connectedDebugAndroidTest     # Android instrumented
-./gradlew -q --console=plain apiCheck                            # API compat
+./gradlew :<module>:jvmTest                   # Desktop JVM (KMP common)
+./gradlew :<module>:testDebugUnitTest          # Android unit tests (Robolectric)
+./gradlew :<module>:iosSimulatorArm64Test      # iOS sim (KMP common)
+./gradlew :<module>:wasmJsBrowserTest          # Wasm headless browser
+./gradlew :<module>:connectedDebugAndroidTest  # Android instrumented
+./gradlew apiCheck                             # API compat
 ```
-
-Always pass `-q --console=plain`.
 
 ## Common gotchas
 

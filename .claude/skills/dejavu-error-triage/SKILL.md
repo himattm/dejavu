@@ -1,13 +1,14 @@
 ---
 name: dejavu-error-triage
-description: Triage a single Dejavu recomposition assertion failure. Use when the user pastes a UnexpectedRecompositionsError block, asks why a composable recomposed, mentions "Possible cause" / "Recomposition timeline" / "All tracked composables" output, or wants to understand what a Dejavu error means and apply one fix — without setting up an iterative optimization loop.
+description: Diagnose and fix a Dejavu test failure. Use when a Compose UI test failed with UnexpectedRecompositionsError, when CI or a local gradle/IDE test run shows a Dejavu assertion failure, when the user pastes the failure output (sections like "Possible cause", "Recomposition timeline", "All tracked composables"), or when the user asks why a Dejavu test is failing and how to fix it — without setting up an iterative optimization loop.
 ---
 
 # Dejavu Error Triage
 
-You have ONE failing Dejavu assertion. This skill walks the error
-section-by-section, names the underlying recomposition pattern, and points at
-the canonical fix. Apply the fix, re-run the test, done — no iteration loop.
+A Compose UI test failed with `UnexpectedRecompositionsError`. This skill walks
+the failure output section-by-section, names the underlying recomposition
+pattern, and points at the canonical fix. Apply the fix, re-run the failing
+test, done — no iteration loop.
 
 If the goal is iterative optimization (loose `atMost = N` baseline → tighten
 to `assertStable()`), use the **`dejavu-perf-loop`** skill instead.
@@ -20,6 +21,19 @@ If no Dejavu test exists yet, use **`dejavu-test-writer`** first.
   (lines 168–256).
 - `docs/causality-analysis.md` — what each "Possible cause" line means,
   including same-value writes and dirty-bit signals.
+
+## Locate the failure in the test output
+
+The error block is what the test runner (gradle, Robolectric, the IDE runner,
+CI logs) prints when a Dejavu assertion throws. Look for:
+
+- `dejavu.UnexpectedRecompositionsError:` — the exception class line.
+- The failing test method (e.g. `MyTest > assertionFailed FAILED`).
+- The full multi-line block that follows, ending with the semantic tree dump.
+
+Capture the **complete** block — every section is diagnostic input. Truncated
+output (just the exception message) hides the cause. If the user pasted only a
+header, ask for the full output.
 
 ## Read the error in this order
 
@@ -39,11 +53,11 @@ Don't guess. Read all five before naming a cause.
 
 ## Diagnosis → fix table
 
-Apply the **first matching row**. After applying, re-run the test once.
+Apply the **first matching row**. After applying, re-run the failing test once.
 
 | # | Signal in the error | Diagnosis | Fix |
 |---|---|---|---|
-| 1 | `Possible cause:` includes `same-value write` | State written to a value equal to current; reference inequality still triggered recomposition | `data class` for the state holder, OR `mutableStateOf(value, policy = structuralEqualityPolicy())`, OR guard write site with `if (newValue != state.value) state.value = newValue` |
+| 1 | `Possible cause:` includes `same-value write` | Snapshot fired an apply notification even though the new value equaled the old one, so the consumer recomposed unnecessarily | `data class` for the state holder, OR `mutableStateOf(value, policy = structuralEqualityPolicy())`, OR guard write site with `if (newValue != state.value) state.value = newValue` |
 | 2 | `Parameter/parent change detected (dirty bits set)` AND `param slots changed: [N]` AND the param at slot N is a non-data-class | Reference equality on an unstable type; new instance ≠ old instance even with identical fields | Convert param's class to `data class`, or annotate `@Immutable` / `@Stable` |
 | 3 | Multiple recompositions on a single interaction; param type broader than what the function actually uses (e.g. `Int` only used in `> 0`) | Type granularity is too coarse | Narrow the parameter type (`Int → Boolean`, `List → Boolean`/`size`) |
 | 4 | Same as #3 but the consumer reads a fine-grained value at every parent recomposition AND a derived signal flips less often | Fine-grained state should be coalesced before the boundary | `val coarse by remember { derivedStateOf { fineState.someProperty } }`; pass `coarse` |
@@ -77,7 +91,12 @@ Report back to the user with:
    and line.
 3. **Whether to apply it now** — only edit code if the user explicitly asked
    for a fix, not just a diagnosis. If you're unsure, ask.
-4. **Whether iteration is needed** — if the count is much higher than expected
+4. **How to verify** — re-run the specific failing test, not the full suite.
+   For gradle:
+   `./gradlew :<module>:<task> --tests "<ClassName>.<testName>"`. The fix
+   worked iff the assertion that previously threw now passes and no other
+   asserts regressed.
+5. **Whether iteration is needed** — if the count is much higher than expected
    (e.g. expected `exactly = 0`, actual `7`) and one fix likely won't get all
    the way to the floor, recommend invoking `dejavu-perf-loop` instead of
    guessing the next fix.
