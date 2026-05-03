@@ -37,6 +37,7 @@ class SubcomposeTest {
         composeTestRule.onNodeWithTag("animate_btn").performClick()
         composeTestRule.mainClock.advanceTimeBy(500)
         composeTestRule.onNodeWithTag("anim_value_reader").assertRecompositions(atLeast = 2)
+        composeTestRule.mainClock.autoAdvance = true
     }
 
     @Test
@@ -50,6 +51,7 @@ class SubcomposeTest {
         composeTestRule.resetRecompositionCounts()
         composeTestRule.mainClock.advanceTimeBy(500)
         composeTestRule.onNodeWithTag("anim_value_reader").assertStable()
+        composeTestRule.mainClock.autoAdvance = true
     }
 
     @Test
@@ -92,5 +94,6 @@ class SubcomposeTest {
         composeTestRule.onNodeWithTag("non_restartable").assertRecompositions(atLeast = 2)
         // Regular composable with unchanged params skips via strong skipping
         composeTestRule.onNodeWithTag("regular_child").assertStable()
+        composeTestRule.mainClock.autoAdvance = true
     }
 }
