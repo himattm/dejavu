@@ -133,7 +133,7 @@ fun contrast_headerVsOptimizedHeader_onRepeatedSelections() {
 
 ```kotlin
 // ISSUE: Regular class -- uses Object.equals (reference identity)
-class CartSummary(val itemCount: Int, val totalPrice: String)
+data class CartSummary(val itemCount: Int, val totalPrice: String)
 
 @Composable
 fun CartBanner(summary: CartSummary, tag: String) {
