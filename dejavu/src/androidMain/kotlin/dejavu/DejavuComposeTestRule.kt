@@ -25,8 +25,14 @@ public class DejavuComposeTestRule<A : ComponentActivity>(
     override fun apply(base: Statement, description: Description): Statement {
         return delegate.apply(object : Statement() {
             override fun evaluate() {
-                Dejavu.enable(delegate.activity.application)
-                Runtime.seedActiveActivity(delegate.activity)
+                // Setup touches Choreographer (via Runtime.seedActiveActivity), which
+                // requires a thread with a Looper. The wrapped Statement runs on
+                // compose-ui-test's TestDispatcher coroutine thread (no Looper), so
+                // hop to the instrumentation main thread for setup.
+                delegate.runOnUiThread {
+                    Dejavu.enable(delegate.activity.application)
+                    Runtime.seedActiveActivity(delegate.activity)
+                }
                 delegate.waitForIdle()
                 DejavuTest.resetCounts()
                 base.evaluate()
