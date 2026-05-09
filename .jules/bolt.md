@@ -1,3 +1,3 @@
-## 2025-05-09 - Compose Unstable Class Parameter
-**Learning:** In Jetpack Compose, passing a regular class as a parameter to a `@Composable` function can cause unnecessary recompositions. Regular classes use identity-based equality (`Object.equals`), so even if the underlying logical state hasn't changed, a new instance is considered "different" from the old one, triggering a recomposition.
-**Action:** When passing complex state objects to `@Composable` functions, ensure they are defined as `data class`es. This allows Compose to perform structural equality checks (`equals()` based on properties) and skip recomposition if the logical state is unchanged, improving performance.
+## 2025-05-09 - Demo App Optimization Limits
+**Learning:** The demo app in this repository serves as a fixture for the Dejavu library's tests. Optimizing intentional inefficiencies in the demo app (like changing a regular `class` to a `data class` to fix recomposition issues) can break the very regression tests that rely on those inefficiencies to exist.
+**Action:** Before optimizing anything in the `demo` or `demo-shared` modules, carefully check the associated tests (especially UI/Accuracy validation tests) to determine if the "inefficient" pattern is intentionally used as a test fixture. Do not optimize away patterns that are explicitly tested for.
