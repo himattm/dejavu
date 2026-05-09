@@ -116,12 +116,12 @@ class RecompositionRegressionTest {
         composeTestRule.onNodeWithTag("refresh_button").performClick()
 
         // ISSUE: CartBanner recomposes despite no logical change to the cart
-        composeTestRule.onNodeWithTag("cart_banner").assertRecompositions(atLeast = 1)
+        composeTestRule.onNodeWithTag("cart_banner").assertStable()
 
         // FIX: If CartSummary were a `data class`, equals() would compare
         // fields structurally. CartSummary(0, "$0.0") == CartSummary(0, "$0.0")
         // would be true, and Compose would SKIP the recomposition.
-        // The fixed assertion would be: assertFirstComposition()
+        // The fixed assertion would be: assertStable()
     }
 
     // ============================================================
@@ -163,7 +163,7 @@ class RecompositionRegressionTest {
         // recomposition because CartSummary is unstable. That's 5 total
         // recompositions (2 from selects + 3 from refreshes).
         // Budget: at most 5 -- bounded at 1:1 with parent recompositions.
-        composeTestRule.onNodeWithTag("cart_banner").assertRecompositions(atMost = 5)
+        composeTestRule.onNodeWithTag("cart_banner").assertRecompositions(exactly = 2)
 
         // FIX: With `data class CartSummary`, only the 2 select clicks
         // would cause recomposition (the content actually changes).
@@ -201,7 +201,7 @@ class RecompositionRegressionTest {
         // because each parent recomposition creates a new CartSummary instance.
         // FIX: With `data class CartSummary`, only the 2 selects would cause
         // recomposition. The fixed assertion would be: assertRecomposesExactly(2)
-        composeTestRule.onNodeWithTag("cart_banner").assertRecompositions(atLeast = 3)
+        composeTestRule.onNodeWithTag("cart_banner").assertRecompositions(exactly = 2)
     }
 
     // ============================================================

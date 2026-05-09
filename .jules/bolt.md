@@ -1,0 +1,3 @@
+## 2025-05-09 - Compose Unstable Class Parameter
+**Learning:** In Jetpack Compose, passing a regular class as a parameter to a `@Composable` function can cause unnecessary recompositions. Regular classes use identity-based equality (`Object.equals`), so even if the underlying logical state hasn't changed, a new instance is considered "different" from the old one, triggering a recomposition.
+**Action:** When passing complex state objects to `@Composable` functions, ensure they are defined as `data class`es. This allows Compose to perform structural equality checks (`equals()` based on properties) and skip recomposition if the logical state is unchanged, improving performance.
