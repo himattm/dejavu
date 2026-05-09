@@ -43,10 +43,9 @@ import androidx.compose.ui.unit.dp
 // FIX: Make CartSummary a data class so equals() is structural.
 // ============================================================
 
-// ISSUE: Unstable class — uses identity-based equality (Object.equals),
-// causing recomposition even when the logical content is the same.
-// Making this a `data class` would fix the problem.
-class CartSummary(val itemCount: Int, val totalPrice: String)
+// FIXED: data class — uses structural equality (equals()),
+// so Compose skips recomposition when the logical content is the same.
+data class CartSummary(val itemCount: Int, val totalPrice: String)
 
 @Composable
 fun ProductListScreen() {
@@ -64,17 +63,17 @@ fun ProductListScreen() {
             tag = "optimized_header",
         )
 
-        // ISSUE 2: New CartSummary instance created every recomposition of ProductListScreen.
-        // Because CartSummary is NOT a data class, each instance is != the previous
-        // even when itemCount and totalPrice hold the same values.
-        // This means CartBanner recomposes on EVERY parent recomposition --
-        // including refreshCount changes that don't affect the cart at all.
+        // FIXED ISSUE 2: New CartSummary instance created every recomposition of ProductListScreen.
+        // Because CartSummary is now a data class, each instance is == the previous
+        // when itemCount and totalPrice hold the same values.
+        // This means CartBanner doesn't recompose on EVERY parent recomposition --
+        // such as refreshCount changes that don't affect the cart at all.
         //
         // KEY: refreshCount is read in ProductListScreen's scope (see
         // RefreshIndicator below), so changing refreshCount recomposes this
         // entire composable. That creates a new CartSummary with the SAME
-        // selectedCount, but because CartSummary uses identity equality,
-        // CartBanner sees a "different" parameter and recomposes needlessly.
+        // selectedCount, but because CartSummary uses structural equality now,
+        // CartBanner sees the "same" parameter and skips recomposition.
         CartBanner(
             summary = CartSummary(
                 itemCount = selectedCount,
@@ -159,9 +158,9 @@ fun OptimizedProductHeader(hasSelection: Boolean, tag: String) {
     )
 }
 
-// ── ISSUE 2: Unstable class parameter ───────────────────────
-// CartSummary uses reference equality, so a new instance always
-// triggers recomposition — even if the values inside are identical.
+// ── FIXED ISSUE 2: Stable class parameter ───────────────────────
+// CartSummary uses structural equality, so a new instance skips
+// recomposition if the values inside are identical.
 @Composable
 fun CartBanner(summary: CartSummary, tag: String) {
     SideEffect { GroundTruthCounters.increment(tag) }
