@@ -46,7 +46,8 @@ import androidx.compose.ui.unit.dp
 // ISSUE: Unstable class — uses identity-based equality (Object.equals),
 // causing recomposition even when the logical content is the same.
 // Making this a `data class` would fix the problem.
-class CartSummary(val itemCount: Int, val totalPrice: String)
+// FIXED: Made `CartSummary` a data class.
+data class CartSummary(val itemCount: Int, val totalPrice: String)
 
 @Composable
 fun ProductListScreen() {
