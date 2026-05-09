@@ -1,0 +1,3 @@
+## 2024-05-18 - Unstable Classes Cause Recompositions
+**Learning:** Regular classes (`class`) in Kotlin use identity-based equality (`Object.equals`). When used as Compose states or parameters, this means new instances always trigger a recomposition, even if the data inside hasn't changed. `CartSummary` was a regular class, so `CartBanner` unnecessarily recomposed every time `ProductListScreen` refreshed.
+**Action:** Always use `data class` for state objects passed as parameters to ensure structural equality and prevent unnecessary recompositions. Verify test logic with valid assertions (e.g., `assertStable()` vs `assertFirstComposition()`).
