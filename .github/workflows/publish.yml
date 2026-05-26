@@ -88,7 +88,7 @@ jobs:
         run: ./gradlew :dejavu:jvmTest
 
       - name: Compile iOS targets
-        run: ./gradlew :dejavu:compileKotlinIosArm64 :dejavu:compileKotlinIosSimulatorArm64 :dejavu:compileKotlinIosX64
+        run: ./gradlew :dejavu:compileKotlinIosArm64 :dejavu:compileKotlinIosSimulatorArm64
 
       - name: Run WasmJs tests
         run: ./gradlew :dejavu:wasmJsBrowserTest
