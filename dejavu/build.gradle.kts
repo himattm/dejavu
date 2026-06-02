@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "me.mmckenna.dejavu"
-version = "0.3.1"
+version = "0.4.0"
 
 kotlin {
   explicitApi()
@@ -36,7 +36,6 @@ kotlin {
 
   iosArm64()
   iosSimulatorArm64()
-  iosX64()
 
   wasmJs { browser() }
 
@@ -46,14 +45,12 @@ kotlin {
     }
     val iosArm64Main by getting { dependsOn(iosMain) }
     val iosSimulatorArm64Main by getting { dependsOn(iosMain) }
-    val iosX64Main by getting { dependsOn(iosMain) }
 
     val iosTest by creating {
       dependsOn(commonTest.get())
     }
     val iosArm64Test by getting { dependsOn(iosTest) }
     val iosSimulatorArm64Test by getting { dependsOn(iosTest) }
-    val iosX64Test by getting { dependsOn(iosTest) }
 
     commonMain.dependencies {
       compileOnly(compose.runtime)
@@ -143,13 +140,6 @@ android {
       }
     }
   }
-
-  // CompositionObserver integration lives in src/observerAndroid/kotlin/ and requires
-  // Compose runtime 1.7+ (observer API). Exclude with -PexcludeCompositionObserver=true
-  // when compiling against older Compose BOMs that lack these APIs.
-  if (project.findProperty("excludeCompositionObserver") != "true") {
-    sourceSets["main"].kotlin.srcDir("src/observerAndroid/kotlin")
-  }
 }
 
 // Compose BOM for version alignment (overridable via -PcomposeBomVersion=...)
@@ -171,19 +161,18 @@ composeCompiler {
 
 // ── Aggregate verification tasks ────────────────────────────────────────
 //
-// ./gradlew :dejavu:compileAll      — compile every KMP target (no tests)
+// ./gradlew :dejavu:compileAll      — compile every supported KMP target (no tests)
 // ./gradlew :dejavu:testAll         — run compose UI + unit tests on every runnable target
 // ./gradlew :dejavu:verifyAll       — compileAll + testAll + apiCheck + lint
 
 tasks.register("compileAll") {
   group = "verification"
-  description = "Compile all KMP targets (Android, JVM, iOS arm64/simulatorArm64/x64, WasmJs)"
+  description = "Compile all KMP targets (Android, JVM, iOS arm64/simulatorArm64, WasmJs)"
   dependsOn(
     "compileDebugKotlinAndroid",
     "compileKotlinJvm",
     "compileKotlinIosArm64",
     "compileKotlinIosSimulatorArm64",
-    "compileKotlinIosX64",
     "compileKotlinWasmJs",
   )
 }

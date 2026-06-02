@@ -9,7 +9,7 @@ import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import dejavu.internal.DejavuTracer
 import kotlinx.atomicfu.locks.synchronized
 
@@ -83,6 +83,17 @@ public fun ComposeUiTest.setTrackedContent(content: @Composable () -> Unit) {
     setContent {
         DejavuTrackedContent(content)
     }
+}
+
+/**
+ * Resets recomposition counts while preserving the active composition history.
+ *
+ * Use this after initial composition and before the interaction whose
+ * recomposition budget is being asserted.
+ */
+@OptIn(ExperimentalTestApi::class)
+public fun ComposeUiTest.resetRecompositionCounts() {
+    DejavuTest.resetCounts()
 }
 
 /**

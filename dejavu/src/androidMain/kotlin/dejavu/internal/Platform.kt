@@ -2,6 +2,7 @@ package dejavu.internal
 
 import android.util.Log
 import androidx.compose.runtime.tooling.CompositionData
+import kotlinx.atomicfu.locks.synchronized
 
 internal actual fun currentTimeMillis(): Long = System.currentTimeMillis()
 
@@ -17,11 +18,18 @@ internal actual fun getPendingCause(): RecomposeCause? = Runtime.getPendingCause
 
 internal actual fun isLoggingEnabled(): Boolean = Runtime.isLoggingEnabled
 
-internal actual fun currentCompositionsSnapshot(): Set<CompositionData> =
-    Runtime.currentCompositionsSnapshot()
+internal actual fun currentCompositionsSnapshot(): Set<CompositionData> {
+    val runtimeSnapshots = Runtime.currentCompositionsSnapshot()
+    if (runtimeSnapshots.isNotEmpty()) return runtimeSnapshots
+
+    return synchronized(DejavuTracer.inspectionTablesLock) {
+        DejavuTracer.inspectionTables.toSet()
+    }
+}
 
 internal actual fun platformBuildTagMapping(compositionData: Set<CompositionData>) {
     TagMapping.buildTagMapping(compositionData)
+    CommonTagMapping.buildTagMapping(compositionData, onlyUnmappedTags = true)
 }
 
 internal actual class PlatformThreadLocal<T> actual constructor(private val initial: () -> T) {

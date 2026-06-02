@@ -10,21 +10,22 @@ permissions:
 
 jobs:
   resolve-bom:
-    name: Resolve Latest Compose BOM
+    name: Resolve Release Compose BOM
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.latest.outputs.version }}
+      version: ${{ steps.release.outputs.version }}
     steps:
-      - name: Get latest BOM from Google Maven
-        id: latest
-        run: |
-          LATEST=$(curl -sf https://dl.google.com/dl/android/maven2/androidx/compose/compose-bom/maven-metadata.xml \
-            | grep '<release>' \
-            | sed 's/.*<release>\(.*\)<\/release>/\1/')
-          echo "version=$LATEST" >> "$GITHUB_OUTPUT"
-          echo "Latest stable BOM: $LATEST"
+      - uses: actions/checkout@v4
 
-  verify-latest-bom:
+      - name: Get release BOM from version catalog
+        id: release
+        run: |
+          RELEASE=$(grep '^composeBom' gradle/libs.versions.toml \
+            | sed 's/composeBom = "\(.*\)"/\1/')
+          echo "version=$RELEASE" >> "$GITHUB_OUTPUT"
+          echo "Release BOM: $RELEASE"
+
+  verify-release-bom:
     name: Verify against Compose BOM ${{ needs.resolve-bom.outputs.version }}
     needs: resolve-bom
     runs-on: ubuntu-latest
@@ -39,10 +40,10 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
-      - name: Compile with latest BOM
+      - name: Compile with release BOM
         run: ./gradlew :dejavu:compileDebugKotlin -PcomposeBomVersion=${{ needs.resolve-bom.outputs.version }}
 
-      - name: Run unit tests with latest BOM
+      - name: Run unit tests with release BOM
         run: ./gradlew :dejavu:testDebugUnitTest -PcomposeBomVersion=${{ needs.resolve-bom.outputs.version }}
 
       - name: Enable KVM
@@ -51,23 +52,25 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Build test APKs with latest BOM
-        run: ./gradlew :demo:assembleDebug :demo:assembleDebugAndroidTest -PcomposeBomVersion=${{ needs.resolve-bom.outputs.version }}
+      - name: Build test APKs with release BOM
+        run: ./gradlew :demo:assembleDebug :demo:assembleDebugAndroidTest :compose-experimental:assembleDebug :compose-experimental:assembleDebugAndroidTest -PcomposeBomVersion=${{ needs.resolve-bom.outputs.version }}
 
-      - name: Run instrumented tests with latest BOM
+      - name: Run instrumented tests with release BOM
         uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2
         with:
           api-level: 31
           arch: x86_64
           target: google_apis
-          script: ./gradlew :demo:connectedDebugAndroidTest -PcomposeBomVersion=${{ needs.resolve-bom.outputs.version }}
+          script: ./gradlew :demo:connectedDebugAndroidTest :compose-experimental:connectedDebugAndroidTest -PcomposeBomVersion=${{ needs.resolve-bom.outputs.version }}
 
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: publish-bom-verification-reports
-          path: demo/build/reports/androidTests/
+          path: |
+            demo/build/reports/androidTests/
+            compose111-regression/build/reports/androidTests/
           retention-days: 14
 
   verify-kmp-targets:
@@ -83,19 +86,29 @@ jobs:
           java-version: 17
 
       - uses: gradle/actions/setup-gradle@v6
+      - name: Xcode preflight
+        run: |
+          if [ -d /Applications/Xcode_26.5.app ]; then
+            sudo xcode-select -s /Applications/Xcode_26.5.app/Contents/Developer
+          fi
+          xcodebuild -version
+          xcrun --sdk iphonesimulator --show-sdk-version
 
       - name: Run JVM Desktop tests
-        run: ./gradlew :dejavu:jvmTest
+        run: ./gradlew :dejavu:jvmTest :compose-experimental:jvmTest
 
       - name: Compile iOS targets
-        run: ./gradlew :dejavu:compileKotlinIosArm64 :dejavu:compileKotlinIosSimulatorArm64 :dejavu:compileKotlinIosX64
+        run: ./gradlew :dejavu:compileKotlinIosArm64 :dejavu:compileKotlinIosSimulatorArm64
+
+      - name: Run iOS simulator regression tests
+        run: ./gradlew :dejavu:iosSimulatorArm64Test :compose-experimental:iosSimulatorArm64Test
 
       - name: Run WasmJs tests
-        run: ./gradlew :dejavu:wasmJsBrowserTest
+        run: ./gradlew :dejavu:wasmJsBrowserTest :compose-experimental:wasmJsBrowserTest
 
   publish:
     name: Publish
-    needs: [verify-latest-bom, verify-kmp-targets]
+    needs: [verify-release-bom, verify-kmp-targets]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v7

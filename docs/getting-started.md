@@ -5,7 +5,7 @@
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    androidTestImplementation("me.mmckenna.dejavu:dejavu:0.3.1")
+    androidTestImplementation("me.mmckenna.dejavu:dejavu:0.4.0")
 }
 ```
 
@@ -31,6 +31,8 @@ fun incrementCounter_onlyValueRecomposes() {
 ```
 
 `createRecompositionTrackingRule` wraps `createAndroidComposeRule` and resets counts before each test. For `createComposeRule()` or other rule types, see [Examples](examples.md).
+
+To reset counts mid-test — after initial composition but before the interaction you want to measure — call `composeTestRule.resetRecompositionCounts()`. On non-Android targets (JVM, iOS, WasmJs), the same helper is available as `resetRecompositionCounts()` inside `runRecompositionTrackingUiTest`.
 
 ## What a Failure Looks Like
 

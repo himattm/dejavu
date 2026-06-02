@@ -11,6 +11,9 @@ pluginManagement {
     gradlePluginPortal()
   }
 }
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+}
 dependencyResolutionManagement {
   // PREFER_PROJECT allows the Kotlin/Wasm plugin to register its Node.js/Yarn
   // ivy repos at project level (FAIL_ON_PROJECT_REPOS blocks them; KT-68533)
@@ -24,4 +27,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Dejavu"
-include(":dejavu", ":demo", ":demo-shared", ":demo-desktop", ":demo-wasm")
+include(":dejavu", ":demo", ":demo-shared", ":demo-desktop", ":demo-wasm", ":compose-experimental")

@@ -20,10 +20,10 @@ internal object CommonTagMapping {
      * Walks all [CompositionData] snapshots and builds tag → function mappings.
      * Updates [DejavuTracer]'s tag-related maps.
      */
-    fun buildTagMapping(compositionData: Set<CompositionData>) {
+    fun buildTagMapping(compositionData: Set<CompositionData>, onlyUnmappedTags: Boolean = false) {
         for (cd in compositionData) {
             for (group in cd.compositionGroups) {
-                walkGroup(group, enclosingFunctionName = null, enclosingKey = null)
+                walkGroup(group, enclosingFunctionName = null, enclosingKey = null, onlyUnmappedTags)
             }
         }
     }
@@ -35,7 +35,12 @@ internal object CommonTagMapping {
      * @param enclosingFunctionName The nearest ancestor user composable's qualified name
      * @param enclosingKey The nearest ancestor user composable's compiler key (for per-instance tracking)
      */
-    private fun walkGroup(group: CompositionGroup, enclosingFunctionName: String?, enclosingKey: Int?) {
+    private fun walkGroup(
+        group: CompositionGroup,
+        enclosingFunctionName: String?,
+        enclosingKey: Int?,
+        onlyUnmappedTags: Boolean,
+    ) {
         val resolved = resolveUserComposable(group)
         val currentFunctionName: String?
         val currentKey: Int?
@@ -49,13 +54,20 @@ internal object CommonTagMapping {
 
         // Check if this group has a LayoutNode with testTag
         val testTag = extractTestTag(group)
-        if (testTag != null && currentFunctionName != null) {
+        val shouldRegister = if (testTag != null && onlyUnmappedTags) {
+            synchronized(DejavuTracer.testTagToFunctionLock) {
+                DejavuTracer.testTagToFunction[testTag] == null
+            }
+        } else {
+            testTag != null
+        }
+        if (testTag != null && currentFunctionName != null && shouldRegister) {
             registerTag(testTag, currentFunctionName, currentKey, group)
         }
 
         // Recurse into children
         for (child in group.compositionGroups) {
-            walkGroup(child, currentFunctionName, currentKey)
+            walkGroup(child, currentFunctionName, currentKey, onlyUnmappedTags)
         }
     }
 

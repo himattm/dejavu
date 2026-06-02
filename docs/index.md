@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/himattm/dejavu/actions/workflows/ci.yml/badge.svg)](https://github.com/himattm/dejavu/actions/workflows/ci.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/me.mmckenna.dejavu/dejavu)](https://central.sonatype.com/artifact/me.mmckenna.dejavu/dejavu)
-[![Compose](https://img.shields.io/badge/Compose-1.6.x–1.10.x-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/develop/ui/compose)
+[![Compose](https://img.shields.io/badge/Compose-1.10%2B-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/develop/ui/compose)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 **[GitHub Repository](https://github.com/himattm/dejavu)**
@@ -27,6 +27,13 @@ Dejavu is a test-only library that turns recomposition behavior into assertions.
 - **One-line test setup** — `createRecompositionTrackingRule()`
 - **Rich diagnostics** — source location, recomposition timeline, parameter diffs, causality analysis
 - **Per-instance tracking** — multiple instances of the same composable get independent counters
+
+Supports Compose 1.10+ (BOM 2026.01.01 → 2026.05.00); the baseline is Compose 1.11 (BOM 2026.05.00).
+For older Compose (1.6–1.9), use Dejavu 0.3.x. The test harness uses the Compose testing v2
+APIs (which default to `StandardTestDispatcher`). Instrumented BOM gates run the supported BOM
+range, and the `compose-experimental` module (a staging area for experimental-API
+recomposition coverage) validates Dejavu against Compose 1.11's new composables (`Grid`, `FlexBox`,
+`derivedMediaQuery`, the Styles API) and the LinkBuffer runtime path. See [How It Works](how-it-works.md) for the full compatibility table and details.
 
 ## Next Steps
 

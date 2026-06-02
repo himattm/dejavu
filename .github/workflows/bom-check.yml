@@ -76,7 +76,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Build test APKs with new BOM
-        run: ./gradlew :demo:assembleDebug :demo:assembleDebugAndroidTest -PcomposeBomVersion=${{ needs.check-bom.outputs.latest }}
+        run: ./gradlew :demo:assembleDebug :demo:assembleDebugAndroidTest :compose-experimental:assembleDebug :compose-experimental:assembleDebugAndroidTest -PcomposeBomVersion=${{ needs.check-bom.outputs.latest }}
 
       - name: Run instrumented tests with new BOM
         uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2
@@ -84,14 +84,16 @@ jobs:
           api-level: 31
           arch: x86_64
           target: google_apis
-          script: ./gradlew :demo:connectedDebugAndroidTest -PcomposeBomVersion=${{ needs.check-bom.outputs.latest }}
+          script: ./gradlew :demo:connectedDebugAndroidTest :compose-experimental:connectedDebugAndroidTest -PcomposeBomVersion=${{ needs.check-bom.outputs.latest }}
 
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: bom-${{ needs.check-bom.outputs.latest }}-test-reports
-          path: demo/build/reports/androidTests/
+          path: |
+            demo/build/reports/androidTests/
+            compose111-regression/build/reports/androidTests/
           retention-days: 14
 
   open-issue:
@@ -147,7 +149,7 @@ jobs:
                 ``,
                 `### Test Results`,
                 ``,
-                `${emoji} Full instrumented test suite **${status}** against BOM \`${latest}\`.`,
+                `${emoji} Demo and Compose 1.11 regression instrumented test suites **${status}** against BOM \`${latest}\`.`,
                 ``,
                 status === 'passed'
                   ? `The new BOM is compatible. Update \`composeBom\` in \`gradle/libs.versions.toml\` and add \`${latest}\` to the \`compose-compat\` CI matrix.`
