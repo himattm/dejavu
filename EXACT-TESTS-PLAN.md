@@ -1,11 +1,15 @@
 # Plan: Make recomposition assertions exact across the legacy test suites
 
-**Status:** In progress (branch `feat/exact-tests`, stacked on #100). Created 2026-06-02.
-`dejavu/commonTest` fully converted and green on JVM/iOS/Wasm/Android-unit + apiCheck. `demo/androidTest`
-converted; final emulator verification in progress. Per-module mechanics landed as designed: commonTest
-uses the internal `GroundTruth` helper + `DejavuTracer` function-level fallback for keyless-loop/multi-tag
-nodes on non-Android; demo pins exact per-instance counts (Android per-tag tracking is complete) with no
-app-source instrumentation.
+**Status:** Complete (PR #101, branch `feat/exact-tests`, stacked on #100). Created 2026-06-02.
+Both suites converted and green on every target: `:dejavu:jvmTest` (227), `:dejavu:iosSimulatorArm64Test`
+(227), `:dejavu:wasmJsBrowserTest` (227), `:dejavu:testDebugUnitTest` (26), `apiCheck`, and
+`:demo:connectedDebugAndroidTest` (223; 0 failures, 1 pre-existing `assumeTrue`-skipped shuffle test).
+Per-module mechanics landed as designed: commonTest uses the internal `GroundTruth` helper + a
+`DejavuTracer` function-level assertion for keyless-loop/multi-tag nodes (per-instance counts only resolve
+on Android); demo pins exact per-instance counts (Android per-tag tracking is complete) with no app-source
+instrumentation. Documented-directional exceptions: the assertion-API coverage tests, `AnimationStressTest`,
+and continuous animation/scroll frame-count nodes (moving targets). Three Android-only framework
+recompositions (Dialog window attachment, Crossfade settle) were pinned to their real count of 1.
 **Goal:** Eliminate weak/directional recomposition assertions in the legacy `dejavu` pattern tests
 and `demo` instrumented tests so every test either (a) pins an exact behavioral budget
 (`exactly = N` / `assertStable()`), or (b) self-validates Dejavu's count against a `SideEffect`
