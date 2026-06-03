@@ -31,8 +31,9 @@ class ImplicitTrackingTest {
 
         // Click increment
         composeTestRule.onNodeWithTag("inc_button").performClick()
+        composeTestRule.waitForIdle()
 
-        // CounterValue should have recomposed once
+        // 1: one increment (count 0->1) recomposes the value reader exactly once.
         composeTestRule.onNodeWithTag("counter_value").assertRecompositions(exactly = 1)
     }
 
@@ -41,9 +42,10 @@ class ImplicitTrackingTest {
         // Click increment multiple times
         repeat(3) {
             composeTestRule.onNodeWithTag("inc_button").performClick()
+            composeTestRule.waitForIdle()
         }
 
-        // CounterTitle should never recompose (no inputs changed)
+        // The parameterless title never reads the count, so no increment recomposes it.
         composeTestRule.onNodeWithTag("counter_title").assertStable()
     }
 
@@ -52,19 +54,22 @@ class ImplicitTrackingTest {
         // Click 3 times
         repeat(3) {
             composeTestRule.onNodeWithTag("inc_button").performClick()
+            composeTestRule.waitForIdle()
         }
 
-        // CounterValue should have recomposed at least 3 times
-        composeTestRule.onNodeWithTag("counter_value").assertRecompositions(atLeast = 3)
+        // 3: three increments each change the count once -> exactly three value recompositions.
+        composeTestRule.onNodeWithTag("counter_value").assertRecompositions(exactly = 3)
     }
 
     @Test
     fun reset_tracksRecomposition() {
         // Click inc then reset
         composeTestRule.onNodeWithTag("inc_button").performClick()
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("reset_button").performClick()
+        composeTestRule.waitForIdle()
 
-        // CounterValue should have recomposed at least twice
-        composeTestRule.onNodeWithTag("counter_value").assertRecompositions(atLeast = 2)
+        // 2: increment (0->1) recomposes the value once; reset (1->0) is a real value change -> once more.
+        composeTestRule.onNodeWithTag("counter_value").assertRecompositions(exactly = 2)
     }
 }

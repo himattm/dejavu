@@ -20,30 +20,38 @@ class DonutChartTest {
     @Test
     fun chart_recomposes_on_data_change() {
         composeTestRule.onNodeWithTag("change_data_btn").performClick()
-        composeTestRule.onNodeWithTag("donut_chart").assertRecompositions(atLeast = 1)
+        composeTestRule.waitForIdle()
+        // 1: changing the data set hands DonutChart a new `data` list, recomposing it once.
+        composeTestRule.onNodeWithTag("donut_chart").assertRecompositions(exactly = 1)
     }
 
     @Test
     fun chart_legend_recomposes_on_data_change() {
         composeTestRule.onNodeWithTag("change_data_btn").performClick()
-        composeTestRule.onNodeWithTag("chart_legend").assertRecompositions(atLeast = 1)
+        composeTestRule.waitForIdle()
+        // 1: changing the data set hands ChartLegend a new `data` list, recomposing it once.
+        composeTestRule.onNodeWithTag("chart_legend").assertRecompositions(exactly = 1)
     }
 
     @Test
     fun chart_selected_legend_item_recomposes() {
         composeTestRule.onNodeWithTag("select_segment_0_btn").performClick()
-        composeTestRule.onNodeWithTag("legend_item_0").assertRecompositions(atLeast = 1)
+        composeTestRule.waitForIdle()
+        // 1: selecting segment 0 flips legend_item_0's isSelected false->true, recomposing it once.
+        composeTestRule.onNodeWithTag("legend_item_0").assertRecompositions(exactly = 1)
     }
 
     @Test
     fun chart_unselected_legend_items_stable() {
         composeTestRule.onNodeWithTag("select_segment_0_btn").performClick()
-        // Unselected items may recompose once due to parent (ChartLegend) invalidation
-        // propagating new isSelected param. Verify they recompose at most once.
-        composeTestRule.onNodeWithTag("legend_item_1").assertRecompositions(atMost = 1)
-        composeTestRule.onNodeWithTag("legend_item_2").assertRecompositions(atMost = 1)
-        composeTestRule.onNodeWithTag("legend_item_3").assertRecompositions(atMost = 1)
-        composeTestRule.onNodeWithTag("legend_item_4").assertRecompositions(atMost = 1)
+        composeTestRule.waitForIdle()
+        // Only legend_item_0 changes (isSelected false->true); items 1-4 keep every param
+        // (index/label/color/percentage/isSelected all unchanged) so Compose skips them. With
+        // Android per-instance tracking each unselected item resolves to exactly 0 -> stable.
+        composeTestRule.onNodeWithTag("legend_item_1").assertStable()
+        composeTestRule.onNodeWithTag("legend_item_2").assertStable()
+        composeTestRule.onNodeWithTag("legend_item_3").assertStable()
+        composeTestRule.onNodeWithTag("legend_item_4").assertStable()
     }
 
     @Test
@@ -53,12 +61,15 @@ class DonutChartTest {
         composeTestRule.resetRecompositionCounts()
 
         composeTestRule.onNodeWithTag("clear_selection_btn").performClick()
-        composeTestRule.onNodeWithTag("legend_item_0").assertRecompositions(atLeast = 1)
+        composeTestRule.waitForIdle()
+        // 1: clearing selection flips legend_item_0's isSelected true->false, recomposing it once.
+        composeTestRule.onNodeWithTag("legend_item_0").assertRecompositions(exactly = 1)
     }
 
     @Test
     fun chart_change_data_button_stable() {
         composeTestRule.onNodeWithTag("change_data_btn").performClick()
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("change_data_btn").assertStable()
     }
 

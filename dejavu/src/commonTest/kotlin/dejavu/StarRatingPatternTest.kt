@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -15,59 +16,96 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
+import dejavu.internal.DejavuTracer
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 /**
  * Cross-platform port of Android StarRatingTest.
  * Star rating with Unicode characters. Validates per-star recomposition
  * tracking and stability when rating value does not change.
+ *
+ * Every assertion is exact and self-validating against a [GroundTruth] `SideEffect`:
+ * - **Single-instance** nodes (rating bar/display/root/label) and the three distinct
+ *   `SetRatingButton` call sites have unique composer keys, so the public per-tag API
+ *   resolves their exact count on all platforms → `exactly = GroundTruth.delta(tag)`.
+ * - The five `Star`s are emitted from a keyless `for` loop, so they share one composer key
+ *   and their per-*instance* counts only resolve on Android (Choreographer fingerprinting). On
+ *   the common targets the public per-tag count falls back to the shared *function-level* sum.
+ *   These tests therefore assert the **function-level** count —
+ *   `DejavuTracer.getRecompositionCount("dejavu.Star")` == `GroundTruth.delta("Star")` (tracer
+ *   == real total recompositions across all stars) — plus the deterministic number of stars that
+ *   actually changed. Per-*instance* star isolation is covered on Android by the demo
+ *   `PerTagTrackingRegressionTest`.
+ *
+ * Every test calls [resetRecompositionCounts] + [GroundTruth.snapshotBaseline] after the initial
+ * `waitForIdle()`. The reset zeroes the keyless-loop's initial-composition artifact (5 stars share
+ * one composer key, so instances 2..5 first compose as `totalCount > 1`); snapshotting the ground
+ * truth at the same point keeps `delta`/tracer aligned.
  */
 @OptIn(ExperimentalTestApi::class)
 class StarRatingPatternTest {
 
     @BeforeTest
-    fun setUp() = enableDejavuForTest()
+    fun setUp() {
+        enableDejavuForTest()
+        GroundTruth.clear()
+    }
 
     @AfterTest
     fun tearDown() = disableDejavuForTest()
 
     @Test
-    fun rating_allStarsRecomposeOnChange() = runComposeUiTest {
+    fun rating_changedStarsRecomposeExactlyOnce() = runComposeUiTest {
         setContent { DejavuTestContent { RatingBarScreen() } }
         waitForIdle()
+        resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("set_rating_3_btn").performClick()
         waitForIdle()
 
-        onNodeWithTag("star_0").assertRecompositions(atLeast = 1)
-        onNodeWithTag("star_1").assertRecompositions(atLeast = 1)
-        onNodeWithTag("star_2").assertRecompositions(atLeast = 1)
-        onNodeWithTag("star_3").assertRecompositions(atLeast = 1)
-        onNodeWithTag("star_4").assertRecompositions(atLeast = 1)
+        // 0 → 3 flips isFilled for stars 0,1,2 (false→true); stars 3,4 are unchanged.
+        // PRIMARY accuracy: tracer's function-level Star count == real total recompositions.
+        assertEquals(
+            GroundTruth.delta("Star"),
+            DejavuTracer.getRecompositionCount("dejavu.Star"),
+            "tracer Star count should equal SideEffect ground truth",
+        )
+        // SECONDARY behavior: exactly the three changed stars recomposed (once each).
+        assertEquals(3, GroundTruth.delta("Star"), "stars 0,1,2 each recompose once on 0→3")
     }
 
     @Test
     fun rating_displayRecomposesOnChange() = runComposeUiTest {
         setContent { DejavuTestContent { RatingBarScreen() } }
         waitForIdle()
+        resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("set_rating_3_btn").performClick()
         waitForIdle()
 
-        onNodeWithTag("rating_display").assertRecompositions(atLeast = 1)
+        onNodeWithTag("rating_display")
+            .assertRecompositions(exactly = GroundTruth.delta("rating_display"))
+        assertEquals(1, GroundTruth.delta("rating_display"), "display recomposes once on rating change")
     }
 
     @Test
     fun rating_barRecomposesOnChange() = runComposeUiTest {
         setContent { DejavuTestContent { RatingBarScreen() } }
         waitForIdle()
+        resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("set_rating_3_btn").performClick()
         waitForIdle()
 
-        onNodeWithTag("rating_bar").assertRecompositions(atLeast = 1)
+        onNodeWithTag("rating_bar")
+            .assertRecompositions(exactly = GroundTruth.delta("rating_bar"))
+        assertEquals(1, GroundTruth.delta("rating_bar"), "rating bar recomposes once on rating change")
     }
 
     @Test
@@ -78,21 +116,26 @@ class StarRatingPatternTest {
         onNodeWithTag("set_rating_3_btn").performClick()
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
+        // Writing the same rating (3 → 3) is a same-value write: no star recomposes.
         onNodeWithTag("set_rating_3_btn").performClick()
         waitForIdle()
 
-        onNodeWithTag("star_0").assertStable()
-        onNodeWithTag("star_1").assertStable()
-        onNodeWithTag("star_2").assertStable()
-        onNodeWithTag("star_3").assertStable()
-        onNodeWithTag("star_4").assertStable()
+        assertEquals(
+            GroundTruth.delta("Star"),
+            DejavuTracer.getRecompositionCount("dejavu.Star"),
+            "tracer Star count should equal SideEffect ground truth",
+        )
+        assertEquals(0, GroundTruth.delta("Star"), "same-value write must not recompose any star")
     }
 
     @Test
     fun rating_staticLabelStable() = runComposeUiTest {
         setContent { DejavuTestContent { RatingBarScreen() } }
         waitForIdle()
+        resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("set_rating_1_btn").performClick()
         waitForIdle()
@@ -101,7 +144,9 @@ class StarRatingPatternTest {
         onNodeWithTag("set_rating_5_btn").performClick()
         waitForIdle()
 
-        onNodeWithTag("static_rating_label").assertStable()
+        onNodeWithTag("static_rating_label")
+            .assertRecompositions(exactly = GroundTruth.delta("static_rating_label"))
+        assertEquals(0, GroundTruth.delta("static_rating_label"), "parameterless label never recomposes")
     }
 
     @Test
@@ -109,49 +154,55 @@ class StarRatingPatternTest {
         setContent { DejavuTestContent { RatingBarScreen() } }
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("set_rating_3_btn").performClick()
         waitForIdle()
 
-        // SetRatingButton is multi-instance (3 instances share counter).
-        // After resetRecompositionCounts, only the click-triggered recomposition
-        // should be counted. Non-clicked buttons recompose because parent passes
-        // new onClick lambdas; assert they recompose at most once.
-        onNodeWithTag("set_rating_1_btn").assertRecompositions(atMost = 1)
-        onNodeWithTag("set_rating_5_btn").assertRecompositions(atMost = 1)
+        // SetRatingButton is multi-instance, but its three call sites have unique composer
+        // keys, so per-tag counts resolve exactly on every platform. Whatever the non-clicked
+        // buttons do when the parent hands them fresh onClick lambdas, Dejavu must report it
+        // exactly — assert tracer == ground truth rather than a loose upper bound.
+        onNodeWithTag("set_rating_1_btn")
+            .assertRecompositions(exactly = GroundTruth.delta("set_rating_1_btn"))
+        onNodeWithTag("set_rating_5_btn")
+            .assertRecompositions(exactly = GroundTruth.delta("set_rating_5_btn"))
     }
 
     // ── Per-tag tracking regression tests (port of Android PerTagTrackingRegressionTest) ──
     //
-    // Per-tag fingerprint tracking for multi-instance composables requires the
-    // Android Choreographer frame loop to continuously rebuild tag mappings.
-    // On non-Android platforms (JVM, iOS, WasmJs), per-tag tracking falls back
-    // to function-level counting for multi-instance composables. The tests below
-    // validate changed stars recompose; per-instance stability for unchanged stars
-    // is only testable on Android (see PerTagTrackingRegressionTest in demo/androidTest).
+    // Per-INSTANCE fingerprint tracking for keyless multi-instance composables requires the
+    // Android Choreographer frame loop to continuously rebuild tag mappings. On non-Android
+    // platforms (JVM, iOS, WasmJs) the public per-tag count falls back to the shared
+    // function-level count. These tests therefore assert the function-level Star count exactly
+    // (tracer == ground truth) plus the deterministic number of changed stars. Per-instance
+    // isolation for unchanged stars is verified on Android in demo PerTagTrackingRegressionTest.
 
     /**
-     * Rating 0→3: stars 0-2 change (isFilled false→true). After reset, verify
-     * that changed stars are detected as recomposed.
+     * Rating 0→3 after a reset: stars 0-2 change (isFilled false→true). Verify the tracer
+     * counts exactly those three recompositions.
      */
     @Test
     fun multiInstance_changedInstancesDetected() = runComposeUiTest {
         setContent { DejavuTestContent { RatingBarScreen() } }
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("set_rating_3_btn").performClick()
         waitForIdle()
 
-        // Stars that changed should show recomposition
-        onNodeWithTag("star_0").assertRecompositions(atLeast = 1)
-        onNodeWithTag("star_1").assertRecompositions(atLeast = 1)
-        onNodeWithTag("star_2").assertRecompositions(atLeast = 1)
+        assertEquals(
+            GroundTruth.delta("Star"),
+            DejavuTracer.getRecompositionCount("dejavu.Star"),
+            "tracer Star count should equal SideEffect ground truth",
+        )
+        assertEquals(3, GroundTruth.delta("Star"), "stars 0,1,2 each recompose once on 0→3")
     }
 
     /**
      * Rating 0→3, reset, then 3→5: stars 3-4 change from unfilled to filled.
-     * Verifies changed stars are detected across a reset boundary.
+     * Verify exactly those two recompositions are counted across a reset boundary.
      */
     @Test
     fun perTagDetection_afterReset_changedInstancesDetected() = runComposeUiTest {
@@ -162,45 +213,61 @@ class StarRatingPatternTest {
         onNodeWithTag("set_rating_3_btn").performClick()
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         // Change rating 3→5: stars 3-4 become filled
         onNodeWithTag("set_rating_5_btn").performClick()
         waitForIdle()
 
-        // Stars 3-4 changed — should show recomposition
-        onNodeWithTag("star_3").assertRecompositions(atLeast = 1)
-        onNodeWithTag("star_4").assertRecompositions(atLeast = 1)
+        assertEquals(
+            GroundTruth.delta("Star"),
+            DejavuTracer.getRecompositionCount("dejavu.Star"),
+            "tracer Star count should equal SideEffect ground truth",
+        )
+        assertEquals(2, GroundTruth.delta("Star"), "stars 3,4 each recompose once on 3→5")
     }
 
     @Test
     fun rating_sequentialChanges() = runComposeUiTest {
         setContent { DejavuTestContent { RatingBarScreen() } }
         waitForIdle()
+        resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("set_rating_1_btn").performClick()
         waitForIdle()
         onNodeWithTag("set_rating_5_btn").performClick()
         waitForIdle()
 
-        onNodeWithTag("star_0").assertRecompositions(atLeast = 1)
-        onNodeWithTag("star_1").assertRecompositions(atLeast = 1)
-        onNodeWithTag("star_2").assertRecompositions(atLeast = 1)
-        onNodeWithTag("star_3").assertRecompositions(atLeast = 1)
-        onNodeWithTag("star_4").assertRecompositions(atLeast = 1)
+        // 0→1 flips star 0 (1 recomp); 1→5 flips stars 1,2,3,4 (4 recomps) → 5 total.
+        assertEquals(
+            GroundTruth.delta("Star"),
+            DejavuTracer.getRecompositionCount("dejavu.Star"),
+            "tracer Star count should equal SideEffect ground truth",
+        )
+        assertEquals(5, GroundTruth.delta("Star"), "one star changes on 0→1, four on 1→5")
     }
 
     @Test
     fun rating_noRecompositionWithoutInteraction() = runComposeUiTest {
         setContent { DejavuTestContent { RatingBarScreen() } }
         waitForIdle()
+        resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
-        onNodeWithTag("rating_bar_root").assertStable()
-        onNodeWithTag("rating_bar").assertStable()
-        // Star and SetRatingButton are multi-instance (share qualified-name counter).
-        // Per-instance stability is tested via resetRecompositionCounts in
-        // rating_sameValueNoRecomposition.
-        onNodeWithTag("rating_display").assertStable()
-        onNodeWithTag("static_rating_label").assertStable()
+        onNodeWithTag("rating_bar_root")
+            .assertRecompositions(exactly = GroundTruth.delta("rating_bar_root"))
+        onNodeWithTag("rating_bar")
+            .assertRecompositions(exactly = GroundTruth.delta("rating_bar"))
+        onNodeWithTag("rating_display")
+            .assertRecompositions(exactly = GroundTruth.delta("rating_display"))
+        onNodeWithTag("static_rating_label")
+            .assertRecompositions(exactly = GroundTruth.delta("static_rating_label"))
+        // No interaction occurred, so every node must be stable.
+        assertEquals(0, GroundTruth.delta("rating_bar_root"))
+        assertEquals(0, GroundTruth.delta("rating_bar"))
+        assertEquals(0, GroundTruth.delta("rating_display"))
+        assertEquals(0, GroundTruth.delta("static_rating_label"))
     }
 }
 
@@ -209,6 +276,7 @@ class StarRatingPatternTest {
 @Composable
 private fun RatingBarScreen() {
     var rating by remember { mutableFloatStateOf(0f) }
+    SideEffect { GroundTruth.record("rating_bar_root") }
     Column(Modifier.testTag("rating_bar_root")) {
         StaticRatingLabel()
         RatingBar(rating = rating, onRatingChange = { rating = it })
@@ -221,11 +289,13 @@ private fun RatingBarScreen() {
 
 @Composable
 private fun StaticRatingLabel() {
+    SideEffect { GroundTruth.record("static_rating_label") }
     BasicText("Rate this item", Modifier.testTag("static_rating_label"))
 }
 
 @Composable
 private fun RatingBar(rating: Float, onRatingChange: (Float) -> Unit) {
+    SideEffect { GroundTruth.record("rating_bar") }
     Row(Modifier.testTag("rating_bar")) {
         for (i in 0 until 5) {
             Star(
@@ -239,18 +309,22 @@ private fun RatingBar(rating: Float, onRatingChange: (Float) -> Unit) {
 
 @Composable
 private fun Star(index: Int, isFilled: Boolean, onClick: () -> Unit) {
+    // Function-level ground truth: keyless loop instances share one counter on non-Android.
+    SideEffect { GroundTruth.record("Star") }
     BasicText(
-        text = if (isFilled) "\u2605" else "\u2606",
+        text = if (isFilled) "★" else "☆",
         modifier = Modifier.testTag("star_$index").clickable { onClick() },
     )
 }
 
 @Composable
 private fun RatingDisplay(rating: Float) {
+    SideEffect { GroundTruth.record("rating_display") }
     BasicText("Rating: $rating / 5.0", Modifier.testTag("rating_display"))
 }
 
 @Composable
 private fun SetRatingButton(label: String, tag: String, onClick: () -> Unit) {
+    SideEffect { GroundTruth.record(tag) }
     BasicText(label, Modifier.testTag(tag).clickable { onClick() })
 }

@@ -25,7 +25,14 @@ class ToggleMorphTest {
 
         composeTestRule.onNodeWithTag("toggle_btn").performClick()
         composeTestRule.mainClock.advanceTimeBy(200)
+        // Drive the finite morph animation to completion, then settle.
+        composeTestRule.mainClock.autoAdvance = true
+        composeTestRule.waitForIdle()
 
+        // KEEP: morph animation frame count is platform-dependent. ToggleThumb/ToggleTrack each run
+        // multiple animate*AsState animations whose per-frame recomposition tally depends on the
+        // device's frame timing, so an exact literal would be flaky. We pin the stable fact instead:
+        // both animated nodes did recompose during the animation.
         composeTestRule.onNodeWithTag("toggle_thumb").assertRecompositions(atLeast = 1)
         composeTestRule.onNodeWithTag("toggle_track").assertRecompositions(atLeast = 1)
     }
@@ -36,6 +43,8 @@ class ToggleMorphTest {
         composeTestRule.resetRecompositionCounts()
 
         composeTestRule.onNodeWithTag("toggle_btn").performClick()
+        composeTestRule.waitForIdle()
+        // 1: a single toggle flips isOn once; ToggleLabel reads isOn, so it recomposes exactly once.
         composeTestRule.onNodeWithTag("toggle_label").assertRecompositions(exactly = 1)
     }
 
@@ -65,7 +74,13 @@ class ToggleMorphTest {
 
         composeTestRule.onNodeWithTag("toggle_btn").performClick()
         composeTestRule.mainClock.advanceTimeBy(200)
+        // Drive the finite morph animation to completion, then settle.
+        composeTestRule.mainClock.autoAdvance = true
+        composeTestRule.waitForIdle()
 
+        // KEEP: morph animation frame count is platform-dependent. The thumb/track animate*AsState
+        // recomposition tally is a moving target tied to frame timing, so we pin the stable fact
+        // (both animated parts recomposed) rather than a flaky exact literal.
         composeTestRule.onNodeWithTag("toggle_thumb").assertRecompositions(atLeast = 1)
         composeTestRule.onNodeWithTag("toggle_track").assertRecompositions(atLeast = 1)
     }

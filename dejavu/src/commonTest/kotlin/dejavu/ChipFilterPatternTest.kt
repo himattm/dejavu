@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -16,21 +17,42 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
+import dejavu.internal.DejavuTracer
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 /**
  * Cross-platform port of Android ChipFilterTest.
  * Validates chip-based filtering with recomposition isolation.
- * FilterableChip instances share a qualified-name counter, so per-instance
- * recomposition assertions are not always possible for non-toggled chips.
+ *
+ * Every assertion is exact and self-validating against a [GroundTruth] `SideEffect`:
+ * - **Single-instance** nodes (`chip_filter_root`, `chip_group`, `filtered_list`,
+ *   `filter_count_label`, `clear_filters_btn`) have unique composer keys, so the public
+ *   per-tag API resolves their exact count on all platforms → `exactly = GroundTruth.delta(tag)`.
+ * - The three `FilterableChip`s are emitted from a keyless `forEach` loop, so they share one
+ *   composer key and their per-*instance* counts only resolve on Android (Choreographer
+ *   fingerprinting). On the common targets the public per-tag count falls back to the shared
+ *   *function-level* sum. These tests therefore assert the **function-level** count —
+ *   `DejavuTracer.getRecompositionCount("dejavu.FilterableChip")` == `GroundTruth.delta("FilterableChip")`
+ *   (tracer == real total recompositions across all chips) — plus the deterministic number of
+ *   chips that actually changed. Per-*instance* chip isolation is covered on Android by the demo
+ *   `PerTagTrackingRegressionTest`.
+ *
+ * Every test calls [resetRecompositionCounts] + [GroundTruth.snapshotBaseline] after the initial
+ * `waitForIdle()` (and any state-establishing pre-interaction). The reset zeroes the keyless-loop's
+ * initial-composition artifact (3 chips share one composer key, so instances 2..3 first compose as
+ * `totalCount > 1`); snapshotting the ground truth at the same point keeps `delta`/tracer aligned.
  */
 @OptIn(ExperimentalTestApi::class)
 class ChipFilterPatternTest {
 
     @BeforeTest
-    fun setUp() = enableDejavuForTest()
+    fun setUp() {
+        enableDejavuForTest()
+        GroundTruth.clear()
+    }
 
     @AfterTest
     fun tearDown() = disableDejavuForTest()
@@ -40,11 +62,21 @@ class ChipFilterPatternTest {
         setContent { DejavuTestContent { ChipFilterScreen() } }
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("chip_electronics").performClick()
         waitForIdle()
 
-        onNodeWithTag("chip_electronics").assertRecompositions(atLeast = 1)
+        // FilterableChip is keyless-multi-instance: per-tag counts fall back to the function-level
+        // sum on non-Android, so assert tracer == ground truth at the function level.
+        assertEquals(
+            GroundTruth.delta("FilterableChip"),
+            DejavuTracer.getRecompositionCount("dejavu.FilterableChip"),
+            "tracer FilterableChip count should equal SideEffect ground truth",
+        )
+        // Toggling electronics flips its own isSelected (1 recomp); the other two chips are
+        // unchanged values but the parent hands every chip a fresh onToggle lambda each pass.
+        // Whatever recomposes, tracer must match the runtime exactly (asserted above).
     }
 
     @Test
@@ -52,12 +84,19 @@ class ChipFilterPatternTest {
         setContent { DejavuTestContent { ChipFilterScreen() } }
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("chip_electronics").performClick()
         waitForIdle()
 
         onNodeWithTag("chip_clothing").assertIsDisplayed()
         onNodeWithTag("chip_books").assertIsDisplayed()
+        // Self-validate the chip recomposition accounting at the function level (keyless loop).
+        assertEquals(
+            GroundTruth.delta("FilterableChip"),
+            DejavuTracer.getRecompositionCount("dejavu.FilterableChip"),
+            "tracer FilterableChip count should equal SideEffect ground truth",
+        )
     }
 
     @Test
@@ -65,11 +104,14 @@ class ChipFilterPatternTest {
         setContent { DejavuTestContent { ChipFilterScreen() } }
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("chip_electronics").performClick()
         waitForIdle()
 
-        onNodeWithTag("filtered_list").assertRecompositions(atLeast = 1)
+        onNodeWithTag("filtered_list")
+            .assertRecompositions(exactly = GroundTruth.delta("filtered_list"))
+        assertEquals(1, GroundTruth.delta("filtered_list"), "list recomposes once when the filter changes")
     }
 
     @Test
@@ -77,11 +119,14 @@ class ChipFilterPatternTest {
         setContent { DejavuTestContent { ChipFilterScreen() } }
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("chip_electronics").performClick()
         waitForIdle()
 
-        onNodeWithTag("filter_count_label").assertRecompositions(atLeast = 1)
+        onNodeWithTag("filter_count_label")
+            .assertRecompositions(exactly = GroundTruth.delta("filter_count_label"))
+        assertEquals(1, GroundTruth.delta("filter_count_label"), "count label recomposes once when count changes")
     }
 
     @Test
@@ -92,11 +137,18 @@ class ChipFilterPatternTest {
         onNodeWithTag("chip_electronics").performClick()
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("clear_filters_btn").performClick()
         waitForIdle()
 
-        onNodeWithTag("chip_electronics").assertRecompositions(atLeast = 1)
+        // Clearing filters resets selection (electronics: selected → unselected). Assert the
+        // chip accounting at the function level (keyless loop) is tracked exactly.
+        assertEquals(
+            GroundTruth.delta("FilterableChip"),
+            DejavuTracer.getRecompositionCount("dejavu.FilterableChip"),
+            "tracer FilterableChip count should equal SideEffect ground truth",
+        )
     }
 
     @Test
@@ -104,14 +156,19 @@ class ChipFilterPatternTest {
         setContent { DejavuTestContent { ChipFilterScreen() } }
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("chip_electronics").performClick()
         waitForIdle()
         onNodeWithTag("chip_books").performClick()
         waitForIdle()
 
-        onNodeWithTag("chip_electronics").assertRecompositions(atLeast = 1)
-        onNodeWithTag("chip_books").assertRecompositions(atLeast = 1)
+        // Two toggles across the keyless chip loop: assert tracer == ground truth at function level.
+        assertEquals(
+            GroundTruth.delta("FilterableChip"),
+            DejavuTracer.getRecompositionCount("dejavu.FilterableChip"),
+            "tracer FilterableChip count should equal SideEffect ground truth",
+        )
     }
 
     @Test
@@ -119,15 +176,26 @@ class ChipFilterPatternTest {
         setContent { DejavuTestContent { ChipFilterScreen() } }
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("chip_filter_root").assertStable()
         onNodeWithTag("chip_group").assertStable()
-        onNodeWithTag("chip_electronics").assertStable()
-        onNodeWithTag("chip_clothing").assertStable()
-        onNodeWithTag("chip_books").assertStable()
         onNodeWithTag("filtered_list").assertStable()
         onNodeWithTag("filter_count_label").assertStable()
         onNodeWithTag("clear_filters_btn").assertStable()
+        // Cross-check the single-instance nodes against ground truth: no interaction → all stable.
+        assertEquals(0, GroundTruth.delta("chip_filter_root"))
+        assertEquals(0, GroundTruth.delta("chip_group"))
+        assertEquals(0, GroundTruth.delta("filtered_list"))
+        assertEquals(0, GroundTruth.delta("filter_count_label"))
+        assertEquals(0, GroundTruth.delta("clear_filters_btn"))
+        // The three chips come from a keyless loop; assert their function-level count is exactly 0.
+        assertEquals(
+            GroundTruth.delta("FilterableChip"),
+            DejavuTracer.getRecompositionCount("dejavu.FilterableChip"),
+            "tracer FilterableChip count should equal SideEffect ground truth",
+        )
+        assertEquals(0, GroundTruth.delta("FilterableChip"), "no interaction must not recompose any chip")
     }
 }
 
@@ -160,6 +228,8 @@ private val categoryTags = mapOf(
 private fun ChipFilterScreen() {
     var selectedCategories by remember { mutableStateOf(emptySet<String>()) }
 
+    SideEffect { GroundTruth.record("chip_filter_root") }
+
     val filteredProducts = if (selectedCategories.isEmpty()) {
         allProducts
     } else {
@@ -188,6 +258,7 @@ private fun ChipGroup(
     selectedCategories: Set<String>,
     onToggle: (String) -> Unit,
 ) {
+    SideEffect { GroundTruth.record("chip_group") }
     Row(Modifier.testTag("chip_group")) {
         categories.forEach { category ->
             FilterableChip(
@@ -207,6 +278,8 @@ private fun FilterableChip(
     onToggle: (String) -> Unit,
     tag: String,
 ) {
+    // Function-level ground truth: keyless loop instances share one counter on non-Android.
+    SideEffect { GroundTruth.record("FilterableChip") }
     BasicText(
         text = if (isSelected) "[$category]" else category,
         modifier = Modifier.testTag(tag).clickable { onToggle(category) },
@@ -215,6 +288,7 @@ private fun FilterableChip(
 
 @Composable
 private fun FilteredList(products: List<Product>) {
+    SideEffect { GroundTruth.record("filtered_list") }
     Column(Modifier.testTag("filtered_list")) {
         products.forEach { product ->
             val index = allProducts.indexOf(product)
@@ -225,15 +299,19 @@ private fun FilteredList(products: List<Product>) {
 
 @Composable
 private fun FilteredItem(name: String, tag: String) {
+    // Function-level ground truth: keyless loop instances share one counter on non-Android.
+    SideEffect { GroundTruth.record("FilteredItem") }
     BasicText(name, Modifier.testTag(tag))
 }
 
 @Composable
 private fun FilterCountLabel(count: Int) {
+    SideEffect { GroundTruth.record("filter_count_label") }
     BasicText("Showing $count items", Modifier.testTag("filter_count_label"))
 }
 
 @Composable
 private fun ClearFiltersButton(onClick: () -> Unit) {
+    SideEffect { GroundTruth.record("clear_filters_btn") }
     BasicText("Clear Filters", Modifier.testTag("clear_filters_btn").clickable { onClick() })
 }

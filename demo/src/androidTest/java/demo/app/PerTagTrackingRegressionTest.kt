@@ -52,10 +52,14 @@ class PerTagTrackingRegressionTest_Identity {
     @Test
     fun singleInstanceWithMultipleTags_usesCorrectTrackingPath() {
         composeTestRule.onNodeWithTag("deep_inc_btn").performClick()
+        composeTestRule.waitForIdle()
 
         // Both tags belong to the same composable instance — the root tag should
-        // see the recomposition via per-tag tracking, not be inflated by shared counts
-        composeTestRule.onNodeWithTag("deep_root").assertRecompositions(atLeast = 1)
+        // see the recomposition via per-tag tracking, not be inflated by shared counts.
+        // 1: a single increment threads `count` through DeepNestingStressScreen (which owns
+        // the state and reads it), so the deep_root-tagged instance recomposes exactly once
+        // — not the inflated shared count that the multi-instance fallback would report.
+        composeTestRule.onNodeWithTag("deep_root").assertRecompositions(exactly = 1)
     }
 }
 
@@ -78,11 +82,14 @@ class PerTagTrackingRegressionTest_NullFallback {
     @Test
     fun multiInstance_unchangedInstancesReportZero() {
         composeTestRule.onNodeWithTag("set_rating_3_btn").performClick()
+        composeTestRule.waitForIdle()
 
-        // Stars that changed should show recomposition
-        composeTestRule.onNodeWithTag("star_0").assertRecompositions(atLeast = 1)
+        // Stars that changed should show recomposition.
+        // 1: isFilled flips false→true exactly once for star_0 on the single 0→3 change.
+        composeTestRule.onNodeWithTag("star_0").assertRecompositions(exactly = 1)
 
-        // Stars that didn't change should be stable (not inherit shared count)
+        // Stars that didn't change should be stable (not inherit shared count).
+        // star_3/star_4 keep isFilled = false on 0→3, so per-instance tracking reports them stable.
         composeTestRule.onNodeWithTag("star_3").assertStable()
         composeTestRule.onNodeWithTag("star_4").assertStable()
     }
@@ -104,15 +111,18 @@ class PerTagTrackingRegressionTest_NullFallback {
 
         // Change rating 3→5: stars 0-2 stay filled, stars 3-4 become filled
         composeTestRule.onNodeWithTag("set_rating_5_btn").performClick()
+        composeTestRule.waitForIdle()
 
         // Stars 0-2 didn't change — should be stable even after reset
+        // (isFilled stays true on 3→5).
         composeTestRule.onNodeWithTag("star_0").assertStable()
         composeTestRule.onNodeWithTag("star_1").assertStable()
         composeTestRule.onNodeWithTag("star_2").assertStable()
 
-        // Stars 3-4 changed — should show recomposition
-        composeTestRule.onNodeWithTag("star_3").assertRecompositions(atLeast = 1)
-        composeTestRule.onNodeWithTag("star_4").assertRecompositions(atLeast = 1)
+        // Stars 3-4 changed — should show recomposition.
+        // 1: isFilled flips false→true exactly once for each on the single 3→5 change.
+        composeTestRule.onNodeWithTag("star_3").assertRecompositions(exactly = 1)
+        composeTestRule.onNodeWithTag("star_4").assertRecompositions(exactly = 1)
     }
 }
 
@@ -135,13 +145,16 @@ class PerTagTrackingRegressionTest_RuntimeInternals {
     @Test
     fun loopItems_noFalsePositiveFromRuntimeInternals() {
         composeTestRule.onNodeWithTag("add_loop_btn").performClick()
+        composeTestRule.waitForIdle()
 
-        // Existing items should be stable — their parameters haven't changed
+        // Existing items should be stable — their parameters (index) haven't changed,
+        // and runtime internals in group.data must not produce false-positive fingerprints.
         composeTestRule.onNodeWithTag("loop_item_0").assertStable()
         composeTestRule.onNodeWithTag("loop_item_1").assertStable()
         composeTestRule.onNodeWithTag("loop_item_2").assertStable()
 
-        // The count label should recompose (item count changed)
+        // The count label should recompose (item count changed).
+        // 1: loopCount increments once, so the label's count argument changes exactly once.
         composeTestRule.onNodeWithTag("loop_count_label").assertRecompositions(exactly = 1)
     }
 }

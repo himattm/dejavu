@@ -21,9 +21,12 @@ class StarRatingTest {
     fun rating_changed_stars_recompose_unchanged_stable() {
         // Rating 0 → 3: stars 0-2 change isFilled (false→true), stars 3-4 stay false
         composeTestRule.onNodeWithTag("set_rating_3_btn").performClick()
-        composeTestRule.onNodeWithTag("star_0").assertRecompositions(atLeast = 1)
-        composeTestRule.onNodeWithTag("star_1").assertRecompositions(atLeast = 1)
-        composeTestRule.onNodeWithTag("star_2").assertRecompositions(atLeast = 1)
+        composeTestRule.waitForIdle()
+        // 1: isFilled flips false→true once for each of the lower three stars.
+        composeTestRule.onNodeWithTag("star_0").assertRecompositions(exactly = 1)
+        composeTestRule.onNodeWithTag("star_1").assertRecompositions(exactly = 1)
+        composeTestRule.onNodeWithTag("star_2").assertRecompositions(exactly = 1)
+        // 0: isFilled stays false; per-instance tracking reports these as stable.
         composeTestRule.onNodeWithTag("star_3").assertStable()
         composeTestRule.onNodeWithTag("star_4").assertStable()
     }
@@ -31,7 +34,9 @@ class StarRatingTest {
     @Test
     fun rating_display_recomposes_on_change() {
         composeTestRule.onNodeWithTag("set_rating_3_btn").performClick()
-        composeTestRule.onNodeWithTag("rating_display").assertRecompositions(atLeast = 1)
+        composeTestRule.waitForIdle()
+        // 1: rating changes 0f→3f once; the display reads rating, so it recomposes once.
+        composeTestRule.onNodeWithTag("rating_display").assertRecompositions(exactly = 1)
     }
 
     @Test
@@ -65,13 +70,18 @@ class StarRatingTest {
 
     @Test
     fun rating_sequential_changes() {
+        // 0→1 flips star_0 (false→true); 1→5 flips stars 1-4 (false→true).
         composeTestRule.onNodeWithTag("set_rating_1_btn").performClick()
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("set_rating_5_btn").performClick()
-        composeTestRule.onNodeWithTag("star_0").assertRecompositions(atLeast = 1)
-        composeTestRule.onNodeWithTag("star_1").assertRecompositions(atLeast = 1)
-        composeTestRule.onNodeWithTag("star_2").assertRecompositions(atLeast = 1)
-        composeTestRule.onNodeWithTag("star_3").assertRecompositions(atLeast = 1)
-        composeTestRule.onNodeWithTag("star_4").assertRecompositions(atLeast = 1)
+        composeTestRule.waitForIdle()
+        // 1 each: every star's isFilled flips exactly once across the two rating changes
+        // (star_0 on 0→1; stars 1-4 on 1→5).
+        composeTestRule.onNodeWithTag("star_0").assertRecompositions(exactly = 1)
+        composeTestRule.onNodeWithTag("star_1").assertRecompositions(exactly = 1)
+        composeTestRule.onNodeWithTag("star_2").assertRecompositions(exactly = 1)
+        composeTestRule.onNodeWithTag("star_3").assertRecompositions(exactly = 1)
+        composeTestRule.onNodeWithTag("star_4").assertRecompositions(exactly = 1)
     }
 
     @Test

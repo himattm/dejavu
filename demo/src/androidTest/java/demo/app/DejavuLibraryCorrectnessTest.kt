@@ -22,7 +22,9 @@ class DejavuLibraryCorrectnessTest {
     fun reset_clearsCounts() {
         // Click to generate recompositions
         composeTestRule.onNodeWithTag("inc_button").performClick()
-        composeTestRule.onNodeWithTag("counter_value").assertRecompositions(atLeast = 1)
+        composeTestRule.waitForIdle()
+        // 1: one click increments `count`, which only CounterValue reads → 1 recomposition
+        composeTestRule.onNodeWithTag("counter_value").assertRecompositions(exactly = 1)
 
         // Reset should zero out counts
         composeTestRule.resetRecompositionCounts()
@@ -32,7 +34,9 @@ class DejavuLibraryCorrectnessTest {
 
         // New interactions should still register
         composeTestRule.onNodeWithTag("inc_button").performClick()
-        composeTestRule.onNodeWithTag("counter_value").assertRecompositions(atLeast = 1)
+        composeTestRule.waitForIdle()
+        // 1: one click after reset recomposes the value exactly once
+        composeTestRule.onNodeWithTag("counter_value").assertRecompositions(exactly = 1)
     }
 
     @Test
@@ -47,9 +51,11 @@ class DejavuLibraryCorrectnessTest {
         // Click multiple times — counterTitle has no inputs that change
         repeat(3) {
             composeTestRule.onNodeWithTag("inc_button").performClick()
+            composeTestRule.waitForIdle()
         }
 
         // counter_title should stay at 0 recompositions across all clicks
+        // (parameterless title reads nothing that changes)
         composeTestRule.onNodeWithTag("counter_title").assertStable()
     }
 
@@ -58,9 +64,11 @@ class DejavuLibraryCorrectnessTest {
         // 3 clicks should produce 3 recompositions on counter_value
         repeat(3) {
             composeTestRule.onNodeWithTag("inc_button").performClick()
+            composeTestRule.waitForIdle()
         }
 
-        composeTestRule.onNodeWithTag("counter_value").assertRecompositions(atLeast = 3)
+        // 3: each click changes `count`, recomposing the value node once → 3 cumulative
+        composeTestRule.onNodeWithTag("counter_value").assertRecompositions(exactly = 3)
     }
 
     // ── Lifecycle tests ─────────────────────────────────────────────
@@ -69,7 +77,9 @@ class DejavuLibraryCorrectnessTest {
     fun disable_stopsTracking() {
         // Verify tracking works initially
         composeTestRule.onNodeWithTag("inc_button").performClick()
-        composeTestRule.onNodeWithTag("counter_value").assertRecompositions(atLeast = 1)
+        composeTestRule.waitForIdle()
+        // 1: one click recomposes the value node once
+        composeTestRule.onNodeWithTag("counter_value").assertRecompositions(exactly = 1)
 
         // Disable tracking (must run on UI thread for Choreographer access)
         composeTestRule.runOnUiThread { Dejavu.disable() }
@@ -79,7 +89,9 @@ class DejavuLibraryCorrectnessTest {
 
         // Perform more clicks while disabled
         composeTestRule.onNodeWithTag("inc_button").performClick()
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("inc_button").performClick()
+        composeTestRule.waitForIdle()
 
         // Tracking is stopped, so counter_value should show 0 recompositions
         composeTestRule.onNodeWithTag("counter_value").assertStable()
@@ -96,19 +108,24 @@ class DejavuLibraryCorrectnessTest {
 
         // Tracking should still work correctly
         composeTestRule.onNodeWithTag("inc_button").performClick()
-        composeTestRule.onNodeWithTag("counter_value").assertRecompositions(atLeast = 1)
+        composeTestRule.waitForIdle()
+        // 1: one click recomposes the value node once
+        composeTestRule.onNodeWithTag("counter_value").assertRecompositions(exactly = 1)
     }
 
     @Test
     fun enableDisableEnable_cycle() {
         // Phase 1: Tracking works
         composeTestRule.onNodeWithTag("inc_button").performClick()
-        composeTestRule.onNodeWithTag("counter_value").assertRecompositions(atLeast = 1)
+        composeTestRule.waitForIdle()
+        // 1: one click recomposes the value node once
+        composeTestRule.onNodeWithTag("counter_value").assertRecompositions(exactly = 1)
 
         // Phase 2: Disable and verify tracking stops
         composeTestRule.runOnUiThread { Dejavu.disable() }
         composeTestRule.resetRecompositionCounts()
         composeTestRule.onNodeWithTag("inc_button").performClick()
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("counter_value").assertStable()
 
         // Phase 3: Re-enable completes without error
@@ -123,6 +140,7 @@ class DejavuLibraryCorrectnessTest {
         // still report correctly (counter_title has 0 recompositions either way)
         composeTestRule.resetRecompositionCounts()
         composeTestRule.onNodeWithTag("inc_button").performClick()
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("counter_title").assertStable()
     }
 
@@ -138,6 +156,8 @@ class DejavuLibraryCorrectnessTest {
         // breaks here and the recomposition assertion fails.
         composeTestRule.resetRecompositionCounts()
         composeTestRule.onNodeWithTag("inc_button").performClick()
+        composeTestRule.waitForIdle()
+        // 1: one click recomposes the value node once
         composeTestRule.onNodeWithTag("counter_value").assertRecompositions(exactly = 1)
     }
 }

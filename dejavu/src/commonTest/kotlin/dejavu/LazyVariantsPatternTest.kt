@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -25,28 +26,44 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
+import dejavu.internal.DejavuTracer
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 /**
  * Cross-platform port of Android LazyVariantsTest.
  * LazyRow + LazyVerticalGrid with set-based selection.
+ *
+ * Every assertion is exact and self-validating against a [GroundTruth] `SideEffect` (the runtime
+ * runs the effect after every successful composition, so it is the real composition count):
+ * - **Single-instance** nodes (`RowSelectionCount`/`row_selection_count`,
+ *   `GridHighlightCount`/`grid_highlight_count`) have unique composer keys, so the public per-tag
+ *   API resolves their exact count on all platforms → `exactly = GroundTruth.delta(tag)`.
+ * - `RowItem` and `GridCell` are emitted from Lazy `items {}` loops (one call site each), so their
+ *   per-*instance* counts only resolve on Android. On the common targets the public per-tag count
+ *   falls back to the shared *function-level* sum, so those tests assert the function-level count —
+ *   `DejavuTracer.getRecompositionCount("dejavu.RowItem"/"dejavu.GridCell")` ==
+ *   `GroundTruth.delta(...)` (tracer == real total recompositions across all loop items).
+ *
+ * All tests in this file render LazyVariantsScreen which contains a LazyVerticalGrid. The Compose
+ * runtime slot table hash crashes on iOS/Native and WasmJs — upstream bug. The existing
+ * `isIos`/`isWasmJs` guards skip the entire file on affected platforms and are preserved as-is.
  */
 @OptIn(ExperimentalTestApi::class)
 class LazyVariantsPatternTest {
 
     @BeforeTest
-    fun setUp() = enableDejavuForTest()
+    fun setUp() {
+        enableDejavuForTest()
+        GroundTruth.clear()
+    }
 
     @AfterTest
     fun tearDown() = disableDejavuForTest()
 
     // --- LazyRow tests ---
-
-    // All tests in this file render LazyVariantsScreen which contains a LazyVerticalGrid.
-    // The Compose runtime slot table hash crashes on iOS/Native and WasmJs — upstream bug.
-    // Skip the entire file on affected platforms.
 
     @Test
     fun lazyRow_tagMappingWorks() = runComposeUiTest {
@@ -54,8 +71,18 @@ class LazyVariantsPatternTest {
         setContent { DejavuTestContent { LazyVariantsScreen() } }
         waitForIdle()
         refreshTagMapping()
+        resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
-        onNodeWithTag("row_item_0").assertRecompositions(atLeast = 0)
+        // RowItem is loop-emitted (Lazy items), so per-instance counts are Android-only; on the
+        // common targets the per-tag count falls back to the function-level sum. No interaction
+        // occurred, so the function-level RowItem count must equal the ground truth (both 0).
+        assertEquals(
+            GroundTruth.delta("RowItem"),
+            DejavuTracer.getRecompositionCount("dejavu.RowItem"),
+            "tracer RowItem count should equal SideEffect ground truth",
+        )
+        assertEquals(0, GroundTruth.delta("RowItem"), "no row item composes without interaction")
     }
 
     @Test
@@ -64,11 +91,15 @@ class LazyVariantsPatternTest {
         setContent { DejavuTestContent { LazyVariantsScreen() } }
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("select_row_btn").performClick()
         waitForIdle()
 
-        onNodeWithTag("row_selection_count").assertRecompositions(exactly = 1)
+        // Adding item 0 changes selectedRowItems.size 0 → 1, recomposing the single-instance count.
+        onNodeWithTag("row_selection_count")
+            .assertRecompositions(exactly = GroundTruth.delta("row_selection_count"))
+        assertEquals(1, GroundTruth.delta("row_selection_count"), "row selection count recomposes once when size changes")
     }
 
     @Test
@@ -77,10 +108,15 @@ class LazyVariantsPatternTest {
         setContent { DejavuTestContent { LazyVariantsScreen() } }
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("select_row_btn").performClick()
         waitForIdle()
 
+        // Selecting a row item does not touch highlightedGridCells, so the grid count is stable.
+        onNodeWithTag("grid_highlight_count")
+            .assertRecompositions(exactly = GroundTruth.delta("grid_highlight_count"))
+        assertEquals(0, GroundTruth.delta("grid_highlight_count"), "grid count must not recompose on a row-only change")
         onNodeWithTag("grid_highlight_count").assertStable()
     }
 
@@ -89,7 +125,13 @@ class LazyVariantsPatternTest {
         if (isIos || isWasmJs) { println("SKIP: slot table crash on iOS/WasmJs (upstream bug)"); return@runComposeUiTest }
         setContent { DejavuTestContent { LazyVariantsScreen() } }
         waitForIdle()
+        resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
+        // No interaction occurred, so the single-instance row count must be stable.
+        onNodeWithTag("row_selection_count")
+            .assertRecompositions(exactly = GroundTruth.delta("row_selection_count"))
+        assertEquals(0, GroundTruth.delta("row_selection_count"), "row count is stable without interaction")
         onNodeWithTag("row_selection_count").assertStable()
     }
 
@@ -101,8 +143,18 @@ class LazyVariantsPatternTest {
         setContent { DejavuTestContent { LazyVariantsScreen() } }
         waitForIdle()
         refreshTagMapping()
+        resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
-        onNodeWithTag("grid_cell_0").assertRecompositions(atLeast = 0)
+        // GridCell is loop-emitted (Lazy grid items), so per-instance counts are Android-only; on the
+        // common targets the per-tag count falls back to the function-level sum. No interaction
+        // occurred, so the function-level GridCell count must equal the ground truth (both 0).
+        assertEquals(
+            GroundTruth.delta("GridCell"),
+            DejavuTracer.getRecompositionCount("dejavu.GridCell"),
+            "tracer GridCell count should equal SideEffect ground truth",
+        )
+        assertEquals(0, GroundTruth.delta("GridCell"), "no grid cell composes without interaction")
     }
 
     @Test
@@ -111,11 +163,15 @@ class LazyVariantsPatternTest {
         setContent { DejavuTestContent { LazyVariantsScreen() } }
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("select_grid_btn").performClick()
         waitForIdle()
 
-        onNodeWithTag("grid_highlight_count").assertRecompositions(exactly = 1)
+        // Highlighting cell 0 changes highlightedGridCells.size 0 → 1, recomposing the count.
+        onNodeWithTag("grid_highlight_count")
+            .assertRecompositions(exactly = GroundTruth.delta("grid_highlight_count"))
+        assertEquals(1, GroundTruth.delta("grid_highlight_count"), "grid highlight count recomposes once when size changes")
     }
 
     @Test
@@ -124,10 +180,15 @@ class LazyVariantsPatternTest {
         setContent { DejavuTestContent { LazyVariantsScreen() } }
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("select_grid_btn").performClick()
         waitForIdle()
 
+        // Highlighting a grid cell does not touch selectedRowItems, so the row count is stable.
+        onNodeWithTag("row_selection_count")
+            .assertRecompositions(exactly = GroundTruth.delta("row_selection_count"))
+        assertEquals(0, GroundTruth.delta("row_selection_count"), "row count must not recompose on a grid-only change")
         onNodeWithTag("row_selection_count").assertStable()
     }
 
@@ -136,7 +197,13 @@ class LazyVariantsPatternTest {
         if (isIos || isWasmJs) { println("SKIP: slot table crash on iOS/WasmJs (upstream bug)"); return@runComposeUiTest }
         setContent { DejavuTestContent { LazyVariantsScreen() } }
         waitForIdle()
+        resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
+        // No interaction occurred, so the single-instance grid count must be stable.
+        onNodeWithTag("grid_highlight_count")
+            .assertRecompositions(exactly = GroundTruth.delta("grid_highlight_count"))
+        assertEquals(0, GroundTruth.delta("grid_highlight_count"), "grid count is stable without interaction")
         onNodeWithTag("grid_highlight_count").assertStable()
     }
 }
@@ -183,6 +250,10 @@ private fun LazyVariantsScreen() {
 
 @Composable
 private fun RowItem(index: Int, selected: Boolean) {
+    // One Lazy items {} call site emits every row item, so the tracer aggregates them under the
+    // shared compile-time key on non-Android. Record at the function level to match the
+    // function-level assertions (per-instance counts are Android-only).
+    SideEffect { GroundTruth.record("RowItem") }
     BasicText(
         text = if (selected) "R$index*" else "R$index",
         modifier = Modifier
@@ -194,6 +265,10 @@ private fun RowItem(index: Int, selected: Boolean) {
 
 @Composable
 private fun GridCell(index: Int, highlighted: Boolean) {
+    // One Lazy grid items {} call site emits every grid cell, so the tracer aggregates them under
+    // the shared compile-time key on non-Android. Record at the function level to match the
+    // function-level assertions (per-instance counts are Android-only).
+    SideEffect { GroundTruth.record("GridCell") }
     BasicText(
         text = if (highlighted) "G$index*" else "G$index",
         modifier = Modifier
@@ -204,11 +279,13 @@ private fun GridCell(index: Int, highlighted: Boolean) {
 
 @Composable
 private fun RowSelectionCount(count: Int) {
+    SideEffect { GroundTruth.record("row_selection_count") }
     BasicText("Row selected: $count", modifier = Modifier.testTag("row_selection_count"))
 }
 
 @Composable
 private fun GridHighlightCount(count: Int) {
+    SideEffect { GroundTruth.record("grid_highlight_count") }
     BasicText("Grid highlighted: $count", modifier = Modifier.testTag("grid_highlight_count"))
 }
 

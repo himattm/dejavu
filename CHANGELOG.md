@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Made the legacy recomposition test suites self-validating.** Replaced weak/directional
+  assertions (`assertRecompositions(atLeast = …/atMost = …)`, `atLeast = 0`) in the `dejavu`
+  pattern tests and the `demo` instrumented tests with exact assertions — either a pinned budget
+  (`exactly = N` / `assertStable()`) or, in `dejavu/commonTest`, a `SideEffect`-ground-truth
+  equality (`exactly = GroundTruth.delta(tag)` for single-instance / distinct-call-site nodes, and
+  `DejavuTracer.getRecompositionCount(fn) == GroundTruth.delta(fn)` at the function level for
+  keyless-loop / multi-tag composables whose per-instance counts only resolve on Android). This
+  proves the tracer's counts are *accurate*, not merely non-zero. Added a shared `GroundTruth`
+  test helper (`record`/`snapshotBaseline`/`delta`) mirroring the `compose-experimental` pattern.
+  Two narrow classes stay directional by design: the assertion-API coverage tests
+  (`AssertionApiPatternTest` / demo `AssertionApiTest`, which exercise `atLeast`/`atMost`/range)
+  and continuously-running animation / scroll-frame counts whose exact value is a moving target.
+
 ## [0.4.0] - 2026-06-02
 
 ### Added

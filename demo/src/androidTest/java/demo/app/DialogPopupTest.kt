@@ -20,13 +20,22 @@ class DialogPopupTest {
     @Test
     fun dialog_contentTrackedWhenVisible() {
         composeTestRule.onNodeWithTag("show_dialog_btn").performClick()
-        composeTestRule.onNodeWithTag("dialog_content").assertRecompositions(atLeast = 0)
+        composeTestRule.waitForIdle()
+        // Showing an Android Dialog attaches its own window + ViewTreeOwners to the sub-composition,
+        // which recomposes the dialog content exactly once after its initial composition. Dejavu
+        // counts that one recomposition (the non-Android common test has no real window, so there it
+        // is 0 — see DialogPopupPatternTest).
+        composeTestRule.onNodeWithTag("dialog_content").assertRecompositions(exactly = 1)
     }
 
     @Test
     fun dialog_innerChildTracked() {
         composeTestRule.onNodeWithTag("show_dialog_btn").performClick()
-        composeTestRule.onNodeWithTag("dialog_inner").assertRecompositions(atLeast = 0)
+        composeTestRule.waitForIdle()
+        // The inner child sits inside the dialog's window sub-composition, so it recomposes once on
+        // the same ViewTreeOwners attachment pass that recomposes the dialog content (1 on Android;
+        // 0 in the windowless common test).
+        composeTestRule.onNodeWithTag("dialog_inner").assertRecompositions(exactly = 1)
     }
 
     @Test
@@ -42,17 +51,21 @@ class DialogPopupTest {
         // Reset and show again
         composeTestRule.resetRecompositionCounts()
         composeTestRule.onNodeWithTag("show_dialog_btn").performClick()
+        composeTestRule.waitForIdle()
 
-        // New dialog is fresh composition; framework ViewTreeOwners attachment
-        // may cause up to 1 additional recomposition
-        composeTestRule.onNodeWithTag("dialog_content").assertRecompositions(atMost = 1)
+        // The reshown dialog is a brand-new composition: the old DialogContent was disposed on
+        // dismiss, and the fresh instance reuses the call site's compile-time key, so its first
+        // post-reset composition counts as exactly one recomposition.
+        composeTestRule.onNodeWithTag("dialog_content").assertRecompositions(exactly = 1)
     }
 
     @Test
     fun popup_contentTrackedWhenVisible() {
         composeTestRule.onNodeWithTag("show_popup_btn").performClick()
-        // Popup creates a separate window — may or may not be discoverable
-        composeTestRule.onNodeWithTag("popup_content").assertRecompositions(atLeast = 0)
+        composeTestRule.waitForIdle()
+        // Popup content composes into a separate window; its first composition is not a
+        // recomposition. With no further interaction after it is shown, it must be stable.
+        composeTestRule.onNodeWithTag("popup_content").assertStable()
     }
 
     @Test

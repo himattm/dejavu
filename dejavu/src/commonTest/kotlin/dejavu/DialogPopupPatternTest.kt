@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -23,17 +24,30 @@ import androidx.compose.ui.window.Popup
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 /**
  * Cross-platform port of Android DialogPopupTest.
  * Validates Dialog/Popup composition tracking and
  * staticCompositionLocalOf vs compositionLocalOf invalidation behavior.
+ *
+ * Every assertion is exact and self-validating against a [GroundTruth] `SideEffect`. All tracked
+ * composables here are single-instance (each emitted from one distinct call site — none from a
+ * loop), so their per-tag counts resolve exactly on every platform → `exactly = delta(tag)`, with
+ * a deterministic `assertEquals` documenting the expected number.
+ *
+ * Dialog/Popup content composes into a separate sub-composition/window; the public per-tag API
+ * still tracks and counts it. Each test `waitForIdle()`s after opening/closing the dialog or popup
+ * before asserting, and asserts on dialog/popup nodes only while they are open.
  */
 @OptIn(ExperimentalTestApi::class)
 class DialogPopupPatternTest {
 
     @BeforeTest
-    fun setUp() = enableDejavuForTest()
+    fun setUp() {
+        enableDejavuForTest()
+        GroundTruth.clear()
+    }
 
     @AfterTest
     fun tearDown() = disableDejavuForTest()
@@ -43,10 +57,17 @@ class DialogPopupPatternTest {
         setContent { DejavuTestContent { DialogPopupScreen() } }
         waitForIdle()
 
+        // Open the dialog (pre-interaction) so its content exists, then baseline.
         onNodeWithTag("show_dialog_btn").performClick()
         waitForIdle()
+        resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
-        onNodeWithTag("dialog_content").assertRecompositions(atLeast = 0)
+        // No further interaction after the baseline: the dialog content is tracked while visible
+        // but must not recompose. tracer == ground truth proves the count is exactly right.
+        onNodeWithTag("dialog_content")
+            .assertRecompositions(exactly = GroundTruth.delta("dialog_content"))
+        assertEquals(0, GroundTruth.delta("dialog_content"), "dialog content is stable while visible without interaction")
     }
 
     @Test
@@ -54,10 +75,17 @@ class DialogPopupPatternTest {
         setContent { DejavuTestContent { DialogPopupScreen() } }
         waitForIdle()
 
+        // Open the dialog (pre-interaction) so the inner child exists, then baseline.
         onNodeWithTag("show_dialog_btn").performClick()
         waitForIdle()
+        resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
-        onNodeWithTag("dialog_inner").assertRecompositions(atLeast = 0)
+        // No further interaction after the baseline: the inner child is tracked while visible but
+        // must not recompose. tracer == ground truth proves the count is exactly right.
+        onNodeWithTag("dialog_inner")
+            .assertRecompositions(exactly = GroundTruth.delta("dialog_inner"))
+        assertEquals(0, GroundTruth.delta("dialog_inner"), "dialog inner child is stable while visible without interaction")
     }
 
     @Test
@@ -73,13 +101,19 @@ class DialogPopupPatternTest {
         onNodeWithTag("dismiss_dialog_btn").performClick()
         waitForIdle()
 
-        // Reset and show again
+        // Reset and baseline, then show again
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
         onNodeWithTag("show_dialog_btn").performClick()
         waitForIdle()
 
-        // New dialog is fresh composition
-        onNodeWithTag("dialog_content").assertRecompositions(atMost = 1)
+        // The reshown dialog is a brand-new composition: the old DialogContent was disposed on
+        // dismiss, and the fresh instance reuses the call site's compile-time key, so its
+        // first post-baseline composition counts as exactly one recomposition. tracer == ground
+        // truth proves the count is exactly right.
+        onNodeWithTag("dialog_content")
+            .assertRecompositions(exactly = GroundTruth.delta("dialog_content"))
+        assertEquals(1, GroundTruth.delta("dialog_content"), "reshown dialog content composes exactly once after dismiss")
     }
 
     @Test
@@ -87,23 +121,38 @@ class DialogPopupPatternTest {
         setContent { DejavuTestContent { DialogPopupScreen() } }
         waitForIdle()
 
+        // Open the popup (pre-interaction) so its content exists, then baseline.
         onNodeWithTag("show_popup_btn").performClick()
         waitForIdle()
+        resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
-        onNodeWithTag("popup_content").assertRecompositions(atLeast = 0)
+        // No further interaction after the baseline: the popup content is tracked while visible
+        // but must not recompose. tracer == ground truth proves the count is exactly right.
+        onNodeWithTag("popup_content")
+            .assertRecompositions(exactly = GroundTruth.delta("popup_content"))
+        assertEquals(0, GroundTruth.delta("popup_content"), "popup content is stable while visible without interaction")
     }
 
     @Test
     fun staticLocalChange_allReadersRecompose() = runComposeUiTest {
         setContent { DejavuTestContent { DialogPopupScreen() } }
         waitForIdle()
+        resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("change_static_btn").performClick()
         waitForIdle()
 
-        onNodeWithTag("static_reader_a").assertRecompositions(exactly = 1)
-        onNodeWithTag("static_reader_b").assertRecompositions(exactly = 1)
-        onNodeWithTag("static_reader_c").assertRecompositions(exactly = 1)
+        onNodeWithTag("static_reader_a")
+            .assertRecompositions(exactly = GroundTruth.delta("static_reader_a"))
+        onNodeWithTag("static_reader_b")
+            .assertRecompositions(exactly = GroundTruth.delta("static_reader_b"))
+        onNodeWithTag("static_reader_c")
+            .assertRecompositions(exactly = GroundTruth.delta("static_reader_c"))
+        assertEquals(1, GroundTruth.delta("static_reader_a"), "static reader A recomposes once on static local change")
+        assertEquals(1, GroundTruth.delta("static_reader_b"), "static reader B recomposes once on static local change")
+        assertEquals(1, GroundTruth.delta("static_reader_c"), "static reader C recomposes once on static local change")
     }
 
     @Test
@@ -111,41 +160,62 @@ class DialogPopupPatternTest {
         // KEY: staticCompositionLocalOf invalidates ALL children in scope, even non-readers
         setContent { DejavuTestContent { DialogPopupScreen() } }
         waitForIdle()
+        resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("change_static_btn").performClick()
         waitForIdle()
 
-        onNodeWithTag("unrelated_static").assertRecompositions(exactly = 1)
+        onNodeWithTag("unrelated_static")
+            .assertRecompositions(exactly = GroundTruth.delta("unrelated_static"))
+        assertEquals(1, GroundTruth.delta("unrelated_static"), "static local invalidates even non-reader children once")
     }
 
     @Test
     fun dynamicChange_doesNotAffectStaticReaders() = runComposeUiTest {
         setContent { DejavuTestContent { DialogPopupScreen() } }
         waitForIdle()
+        resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("change_dynamic_btn").performClick()
         waitForIdle()
 
-        onNodeWithTag("dynamic_reader_d").assertRecompositions(exactly = 1)
+        onNodeWithTag("dynamic_reader_d")
+            .assertRecompositions(exactly = GroundTruth.delta("dynamic_reader_d"))
+        assertEquals(1, GroundTruth.delta("dynamic_reader_d"), "dynamic reader recomposes once on dynamic local change")
         onNodeWithTag("static_reader_a").assertStable()
         onNodeWithTag("static_reader_b").assertStable()
         onNodeWithTag("static_reader_c").assertStable()
+        assertEquals(0, GroundTruth.delta("static_reader_a"), "dynamic local change must not touch static reader A")
+        assertEquals(0, GroundTruth.delta("static_reader_b"), "dynamic local change must not touch static reader B")
+        assertEquals(0, GroundTruth.delta("static_reader_c"), "dynamic local change must not touch static reader C")
     }
 
     @Test
     fun multipleStaticChanges_countAccumulates() = runComposeUiTest {
         setContent { DejavuTestContent { DialogPopupScreen() } }
         waitForIdle()
+        resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         repeat(3) {
             onNodeWithTag("change_static_btn").performClick()
             waitForIdle()
         }
 
-        onNodeWithTag("static_reader_a").assertRecompositions(exactly = 3)
-        onNodeWithTag("static_reader_b").assertRecompositions(exactly = 3)
-        onNodeWithTag("static_reader_c").assertRecompositions(exactly = 3)
-        onNodeWithTag("unrelated_static").assertRecompositions(exactly = 3)
+        onNodeWithTag("static_reader_a")
+            .assertRecompositions(exactly = GroundTruth.delta("static_reader_a"))
+        onNodeWithTag("static_reader_b")
+            .assertRecompositions(exactly = GroundTruth.delta("static_reader_b"))
+        onNodeWithTag("static_reader_c")
+            .assertRecompositions(exactly = GroundTruth.delta("static_reader_c"))
+        onNodeWithTag("unrelated_static")
+            .assertRecompositions(exactly = GroundTruth.delta("unrelated_static"))
+        assertEquals(3, GroundTruth.delta("static_reader_a"), "three static changes accumulate to three recompositions (A)")
+        assertEquals(3, GroundTruth.delta("static_reader_b"), "three static changes accumulate to three recompositions (B)")
+        assertEquals(3, GroundTruth.delta("static_reader_c"), "three static changes accumulate to three recompositions (C)")
+        assertEquals(3, GroundTruth.delta("unrelated_static"), "three static changes accumulate to three recompositions (unrelated)")
     }
 }
 
@@ -193,35 +263,41 @@ private fun DialogPopupScreen() {
 
 @Composable
 private fun StaticReaderA() {
+    SideEffect { GroundTruth.record("static_reader_a") }
     val config = LocalStaticConfig.current
     BasicText("StaticA: $config", Modifier.testTag("static_reader_a"))
 }
 
 @Composable
 private fun StaticReaderB() {
+    SideEffect { GroundTruth.record("static_reader_b") }
     val config = LocalStaticConfig.current
     BasicText("StaticB: $config", Modifier.testTag("static_reader_b"))
 }
 
 @Composable
 private fun StaticReaderC() {
+    SideEffect { GroundTruth.record("static_reader_c") }
     val config = LocalStaticConfig.current
     BasicText("StaticC: $config", Modifier.testTag("static_reader_c"))
 }
 
 @Composable
 private fun DynamicReaderD() {
+    SideEffect { GroundTruth.record("dynamic_reader_d") }
     val value = LocalDynamicValue.current
     BasicText("Dynamic: $value", Modifier.testTag("dynamic_reader_d"))
 }
 
 @Composable
 private fun UnrelatedStaticChild() {
+    SideEffect { GroundTruth.record("unrelated_static") }
     BasicText("Unrelated", Modifier.testTag("unrelated_static"))
 }
 
 @Composable
 private fun DialogContent(onDismiss: () -> Unit) {
+    SideEffect { GroundTruth.record("dialog_content") }
     Column(Modifier.testTag("dialog_content")) {
         DialogInner()
         BasicText("Dismiss", Modifier.testTag("dismiss_dialog_btn").clickable { onDismiss() })
@@ -230,11 +306,13 @@ private fun DialogContent(onDismiss: () -> Unit) {
 
 @Composable
 private fun DialogInner() {
+    SideEffect { GroundTruth.record("dialog_inner") }
     BasicText("Dialog Inner", Modifier.testTag("dialog_inner"))
 }
 
 @Composable
 private fun PopupContent() {
+    SideEffect { GroundTruth.record("popup_content") }
     BasicText("Popup Content", Modifier.testTag("popup_content"))
 }
 
