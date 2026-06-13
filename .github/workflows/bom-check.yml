@@ -93,7 +93,7 @@ jobs:
           name: bom-${{ needs.check-bom.outputs.latest }}-test-reports
           path: |
             demo/build/reports/androidTests/
-            compose111-regression/build/reports/androidTests/
+            compose-experimental/build/reports/androidTests/
           retention-days: 14
 
   open-issue:
