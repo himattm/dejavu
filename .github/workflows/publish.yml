@@ -76,7 +76,7 @@ jobs:
   verify-kmp-targets:
     name: Verify KMP Targets
     needs: resolve-bom
-    runs-on: macos-latest
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v7
 
@@ -109,7 +109,7 @@ jobs:
   publish:
     name: Publish
     needs: [verify-release-bom, verify-kmp-targets]
-    runs-on: macos-latest
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v7
 

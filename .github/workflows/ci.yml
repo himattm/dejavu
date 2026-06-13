@@ -46,7 +46,7 @@ jobs:
 
   ios-tests:
     name: iOS Tests
-    runs-on: macos-latest
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v4
@@ -63,7 +63,7 @@ jobs:
           xcrun --sdk iphonesimulator --show-sdk-version
       - name: Compile all iOS targets
         # iosArm64 (device) is compile-only;
-        # only iosSimulatorArm64 can run tests on macos-latest (Apple Silicon).
+        # only iosSimulatorArm64 can run tests on the macOS runner (Apple Silicon).
         run: ./gradlew :dejavu:compileKotlinIosArm64 :dejavu:compileKotlinIosSimulatorArm64
       - name: Run iOS simulator tests
         run: ./gradlew :dejavu:iosSimulatorArm64Test :compose-experimental:iosSimulatorArm64Test
