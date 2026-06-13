@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Minimum supported Compose is now 1.10 (BOM 2026.01.01).** For Compose 1.6–1.9, use Dejavu 0.3.x.
 - Migrate the test harness to the Compose testing **v2** APIs (`androidx.compose.ui.test.v2.runComposeUiTest`, `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`), which default to `StandardTestDispatcher` (v1 used `UnconfinedTestDispatcher`). This completes the testing-v2 half of #63. Validated that recomposition counts are unchanged on JVM under the new dispatcher — no rebaselining was required.
-- Bump Compose Multiplatform from 1.10.3 to 1.11.0.
+- Bump Compose Multiplatform from 1.10.3 to 1.11.1.
 - Bump Compose BOM baseline from 2026.03.01 to 2026.05.00.
 - Drop `iosX64` from supported targets because Compose Multiplatform 1.11 no longer supports Apple x64 targets. iOS coverage remains via `iosArm64` (compile) and `iosSimulatorArm64` (tests).
 - Promote the LinkBuffer composer-path and `movableContentOf` regression tests into the cross-platform `compose-experimental` common test set (JVM, iOS, Wasm) alongside Android instrumented coverage.
