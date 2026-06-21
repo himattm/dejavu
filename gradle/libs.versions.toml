@@ -15,7 +15,7 @@ binary-compatibility-validator = "0.17.0"
 dokka = "2.2.0"
 robolectric = "4.16.1"
 truth = "1.4.4"
-vanniktech-maven-publish = "0.36.0"
+vanniktech-maven-publish = "0.37.0"
 
 [libraries]
 kotlinx-atomicfu = { group = "org.jetbrains.kotlinx", name = "atomicfu", version.ref = "atomicfu" }
