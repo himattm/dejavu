@@ -9,9 +9,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -28,19 +28,42 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
+import dejavu.internal.DejavuTracer
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 /**
  * Cross-platform port of Android DonutChartTest.
  * Canvas-based donut chart with legend items and segment selection.
+ *
+ * Every assertion is exact and self-validating against a [GroundTruth] `SideEffect` (the runtime
+ * runs the effect after every successful composition, so it is the real composition count). The
+ * donut animates its segment sweeps, but `animateFloatAsState`'s value is read inside the `Canvas`
+ * *draw* scope — animation frames drive redraws, not recompositions of `DonutChart` — so the chart
+ * settles under `waitForIdle()` and its recomposition count is deterministic.
+ *
+ * Instance classification:
+ * - **Single-instance** nodes (`donut_chart_root`, `donut_chart`, `chart_legend`, `change_data_btn`,
+ *   `clear_selection_btn`) and the two distinct `SelectSegmentButton` call sites
+ *   (`select_segment_0_btn`, `select_segment_2_btn`) have unique composer keys, so the public per-tag
+ *   API resolves their exact count on every platform → `exactly = GroundTruth.delta(tag)`.
+ * - The five `LegendItem`s are emitted from a keyless `forEachIndexed` loop, so they share one
+ *   composer key and their per-*instance* counts only resolve on Android. On the common targets the
+ *   public per-tag count falls back to the shared *function-level* sum, so these assert the
+ *   function-level count — `DejavuTracer.getRecompositionCount("dejavu.LegendItem")` ==
+ *   `GroundTruth.delta("LegendItem")`. Per-instance legend isolation is covered on Android by the
+ *   demo instrumented tests.
  */
 @OptIn(ExperimentalTestApi::class)
 class DonutChartPatternTest {
 
     @BeforeTest
-    fun setUp() = enableDejavuForTest()
+    fun setUp() {
+        enableDejavuForTest()
+        GroundTruth.clear()
+    }
 
     @AfterTest
     fun tearDown() = disableDejavuForTest()
@@ -50,11 +73,15 @@ class DonutChartPatternTest {
         setContent { DejavuTestContent { DonutChartScreen() } }
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("change_data_btn").performClick()
         waitForIdle()
 
-        onNodeWithTag("donut_chart").assertRecompositions(atLeast = 1)
+        // Changing the data set hands DonutChart a new `data` list, recomposing it once.
+        onNodeWithTag("donut_chart")
+            .assertRecompositions(exactly = GroundTruth.delta("donut_chart"))
+        assertEquals(1, GroundTruth.delta("donut_chart"), "chart recomposes once when its data changes")
     }
 
     @Test
@@ -62,11 +89,15 @@ class DonutChartPatternTest {
         setContent { DejavuTestContent { DonutChartScreen() } }
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("change_data_btn").performClick()
         waitForIdle()
 
-        onNodeWithTag("chart_legend").assertRecompositions(atLeast = 1)
+        // Changing the data set hands ChartLegend a new `data` list, recomposing it once.
+        onNodeWithTag("chart_legend")
+            .assertRecompositions(exactly = GroundTruth.delta("chart_legend"))
+        assertEquals(1, GroundTruth.delta("chart_legend"), "legend recomposes once when its data changes")
     }
 
     @Test
@@ -74,11 +105,20 @@ class DonutChartPatternTest {
         setContent { DejavuTestContent { DonutChartScreen() } }
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("select_segment_0_btn").performClick()
         waitForIdle()
 
-        onNodeWithTag("legend_item_0").assertRecompositions(atLeast = 1)
+        // Selecting segment 0 flips legend_item_0's isSelected (false→true); items 1-4 keep their
+        // params so Compose skips them. The legend items come from one call site, so on the common
+        // targets their counts aggregate at the function level — exactly one item composed.
+        assertEquals(
+            GroundTruth.delta("LegendItem"),
+            DejavuTracer.getRecompositionCount("dejavu.LegendItem"),
+            "tracer LegendItem count should equal SideEffect ground truth",
+        )
+        assertEquals(1, GroundTruth.delta("LegendItem"), "only the newly-selected legend item recomposes")
     }
 
     @Test
@@ -86,14 +126,26 @@ class DonutChartPatternTest {
         setContent { DejavuTestContent { DonutChartScreen() } }
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("select_segment_0_btn").performClick()
         waitForIdle()
 
-        onNodeWithTag("legend_item_1").assertRecompositions(atMost = 1)
-        onNodeWithTag("legend_item_2").assertRecompositions(atMost = 1)
-        onNodeWithTag("legend_item_3").assertRecompositions(atMost = 1)
-        onNodeWithTag("legend_item_4").assertRecompositions(atMost = 1)
+        // Only legend_item_0 changes (isSelected false→true); the other four keep their params and
+        // are skipped. The five items share one call site, so on the common targets their counts
+        // aggregate at the function level: a total of exactly 1 proves items 1-4 stayed stable (any
+        // unselected item recomposing would push the function-level total above 1). Per-instance
+        // isolation for the unchanged items is verified on Android in the demo instrumented tests.
+        assertEquals(
+            GroundTruth.delta("LegendItem"),
+            DejavuTracer.getRecompositionCount("dejavu.LegendItem"),
+            "tracer LegendItem count should equal SideEffect ground truth",
+        )
+        assertEquals(
+            1,
+            GroundTruth.delta("LegendItem"),
+            "only legend_item_0 recomposes; the four unselected items stay stable",
+        )
     }
 
     @Test
@@ -104,11 +156,19 @@ class DonutChartPatternTest {
         onNodeWithTag("select_segment_0_btn").performClick()
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("clear_selection_btn").performClick()
         waitForIdle()
 
-        onNodeWithTag("legend_item_0").assertRecompositions(atLeast = 1)
+        // Clearing selection flips legend_item_0's isSelected (true→false); items 1-4 keep their
+        // params and are skipped. Function-level: exactly one legend item composed.
+        assertEquals(
+            GroundTruth.delta("LegendItem"),
+            DejavuTracer.getRecompositionCount("dejavu.LegendItem"),
+            "tracer LegendItem count should equal SideEffect ground truth",
+        )
+        assertEquals(1, GroundTruth.delta("LegendItem"), "clearing selection recomposes only the previously-selected item")
     }
 
     @Test
@@ -116,10 +176,14 @@ class DonutChartPatternTest {
         setContent { DejavuTestContent { DonutChartScreen() } }
         waitForIdle()
         resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
 
         onNodeWithTag("change_data_btn").performClick()
         waitForIdle()
 
+        onNodeWithTag("change_data_btn")
+            .assertRecompositions(exactly = GroundTruth.delta("change_data_btn"))
+        assertEquals(0, GroundTruth.delta("change_data_btn"), "the clicked button's own composition does not change")
         onNodeWithTag("change_data_btn").assertStable()
     }
 
@@ -127,13 +191,32 @@ class DonutChartPatternTest {
     fun chart_no_recomposition_without_interaction() = runComposeUiTest {
         setContent { DejavuTestContent { DonutChartScreen() } }
         waitForIdle()
+        resetRecompositionCounts()
+        GroundTruth.snapshotBaseline()
+
+        // No interaction occurred, so every node must be stable. Single-instance nodes assert
+        // exactly against their per-tag delta; the loop-emitted legend items assert at the
+        // function level (per-instance counts are Android-only — see demo instrumented tests).
+        onNodeWithTag("donut_chart_root")
+            .assertRecompositions(exactly = GroundTruth.delta("donut_chart_root"))
+        onNodeWithTag("donut_chart")
+            .assertRecompositions(exactly = GroundTruth.delta("donut_chart"))
+        onNodeWithTag("chart_legend")
+            .assertRecompositions(exactly = GroundTruth.delta("chart_legend"))
+        assertEquals(0, GroundTruth.delta("donut_chart_root"))
+        assertEquals(0, GroundTruth.delta("donut_chart"))
+        assertEquals(0, GroundTruth.delta("chart_legend"))
+
+        assertEquals(
+            GroundTruth.delta("LegendItem"),
+            DejavuTracer.getRecompositionCount("dejavu.LegendItem"),
+            "tracer LegendItem count should equal SideEffect ground truth",
+        )
+        assertEquals(0, GroundTruth.delta("LegendItem"), "no legend item composes without interaction")
 
         onNodeWithTag("donut_chart_root").assertStable()
         onNodeWithTag("donut_chart").assertStable()
         onNodeWithTag("chart_legend").assertStable()
-        // LegendItem and SelectSegmentButton are multi-instance (share qualified-name
-        // counter). Per-instance stability is tested via resetRecompositionCounts in
-        // chart_unselected_legend_items_stable.
     }
 }
 
@@ -158,6 +241,7 @@ private fun DonutChartScreen() {
     var selectedIndex by remember { mutableStateOf<Int?>(null) }
     val data = chartDataSets[dataSetIndex]
 
+    SideEffect { GroundTruth.record("donut_chart_root") }
     Column(Modifier.testTag("donut_chart_root")) {
         DonutChart(data = data, selectedIndex = selectedIndex)
         Spacer(modifier = Modifier.height(16.dp))
@@ -172,6 +256,7 @@ private fun DonutChartScreen() {
 
 @Composable
 private fun DonutChart(data: List<Float>, selectedIndex: Int?) {
+    SideEffect { GroundTruth.record("donut_chart") }
     val total = data.sum()
     val sweepAngles = data.mapIndexed { index, value ->
         animateFloatAsState(
@@ -211,6 +296,7 @@ private fun DonutChart(data: List<Float>, selectedIndex: Int?) {
 
 @Composable
 private fun ChartLegend(data: List<Float>, selectedIndex: Int?) {
+    SideEffect { GroundTruth.record("chart_legend") }
     val total = data.sum()
     Column(Modifier.testTag("chart_legend")) {
         data.forEachIndexed { index, value ->
@@ -231,6 +317,10 @@ private fun LegendItem(
     percentage: Float,
     isSelected: Boolean,
 ) {
+    // One call site (keyless forEachIndexed) emits every legend item, so the tracer aggregates them
+    // under the shared compile-time key on non-Android. Record at the function level to match the
+    // function-level assertions (per-instance counts are Android-only — see demo instrumented tests).
+    SideEffect { GroundTruth.record("LegendItem") }
     Row(
         modifier = Modifier
             .testTag("legend_item_$index")
@@ -244,11 +334,13 @@ private fun LegendItem(
 
 @Composable
 private fun ChangeDataButton(onClick: () -> Unit) {
+    SideEffect { GroundTruth.record("change_data_btn") }
     BasicText("Change Data", Modifier.testTag("change_data_btn").clickable(onClick = onClick))
 }
 
 @Composable
 private fun SelectSegmentButton(index: Int, onClick: () -> Unit) {
+    SideEffect { GroundTruth.record("select_segment_${index}_btn") }
     BasicText(
         "Select $index",
         Modifier.testTag("select_segment_${index}_btn").clickable(onClick = onClick)
@@ -257,5 +349,6 @@ private fun SelectSegmentButton(index: Int, onClick: () -> Unit) {
 
 @Composable
 private fun ClearSelectionButton(onClick: () -> Unit) {
+    SideEffect { GroundTruth.record("clear_selection_btn") }
     BasicText("Clear Selection", Modifier.testTag("clear_selection_btn").clickable(onClick = onClick))
 }

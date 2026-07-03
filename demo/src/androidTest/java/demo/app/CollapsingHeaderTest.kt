@@ -20,24 +20,37 @@ class CollapsingHeaderTest {
     @Test
     fun header_recomposes_on_scroll() {
         composeTestRule.onNodeWithTag("scroll_to_bottom_btn").performClick()
+        composeTestRule.waitForIdle() // settle the scroll/collapse animation before asserting
+        // The header reads the continuously-lerped collapseFraction, so it recomposes once per
+        // settled scroll frame.
+        // KEEP: scroll produces a frame-dependent recomposition count
         composeTestRule.onNodeWithTag("collapsing_header").assertRecompositions(atLeast = 1)
     }
 
     @Test
     fun header_image_recomposes_on_scroll() {
         composeTestRule.onNodeWithTag("scroll_to_bottom_btn").performClick()
+        composeTestRule.waitForIdle() // settle the scroll/collapse animation before asserting
+        // HeaderImage's alpha is lerp(...collapseFraction), so it recomposes once per scroll frame.
+        // KEEP: scroll produces a frame-dependent recomposition count
         composeTestRule.onNodeWithTag("header_image").assertRecompositions(atLeast = 1)
     }
 
     @Test
     fun header_title_recomposes_on_scroll() {
         composeTestRule.onNodeWithTag("scroll_to_bottom_btn").performClick()
+        composeTestRule.waitForIdle() // settle the scroll/collapse animation before asserting
+        // HeaderTitle's fontSize is lerp(...collapseFraction), so it recomposes once per scroll frame.
+        // KEEP: scroll produces a frame-dependent recomposition count
         composeTestRule.onNodeWithTag("header_title").assertRecompositions(atLeast = 1)
     }
 
     @Test
     fun scroll_content_items_stable_during_scroll() {
         composeTestRule.onNodeWithTag("scroll_to_bottom_btn").performClick()
+        composeTestRule.waitForIdle() // settle the scroll/collapse animation before asserting
+        // Items don't read collapseFraction and their params are unchanged by scrolling, so the node
+        // stays stable through the scroll (exact zero) — deterministic, keep assertStable().
         composeTestRule.onNodeWithTag("scroll_content_item_0").assertStable()
     }
 
@@ -48,6 +61,9 @@ class CollapsingHeaderTest {
         composeTestRule.resetRecompositionCounts()
 
         composeTestRule.onNodeWithTag("scroll_to_top_btn").performClick()
+        composeTestRule.waitForIdle() // settle the scroll-back/expand animation before asserting
+        // Scrolling back reverses collapseFraction, recomposing the header once per scroll frame.
+        // KEEP: scroll produces a frame-dependent recomposition count
         composeTestRule.onNodeWithTag("collapsing_header").assertRecompositions(atLeast = 1)
     }
 

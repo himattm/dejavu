@@ -25,8 +25,10 @@ class RecompositionRegressionTest {
     fun wellBehavedItem_recomposesOncePerStateChange() {
         // Click select once -- product_a depends on `selectedCount > 0` (false -> true)
         composeTestRule.onNodeWithTag("select_button").performClick()
+        composeTestRule.waitForIdle()
 
         // TotalDisplay should recompose exactly once (its count param changed once)
+        // 1: one select click changes selectedCount 0->1; TotalDisplay's Int param changes once.
         composeTestRule.onNodeWithTag("total_display").assertRecompositions(exactly = 1)
     }
 
@@ -34,6 +36,7 @@ class RecompositionRegressionTest {
     fun stableComponent_doesNotRecomposeOnUnrelatedChange() {
         // Click refresh -- this changes refreshCount but NOT selectedCount
         composeTestRule.onNodeWithTag("refresh_button").performClick()
+        composeTestRule.waitForIdle()
 
         // TotalDisplay depends only on selectedCount, not refreshCount.
         // When ProductListScreen recomposes (due to refreshCount change),
@@ -48,9 +51,11 @@ class RecompositionRegressionTest {
         repeat(3) {
             composeTestRule.onNodeWithTag("select_button").performClick()
         }
+        composeTestRule.waitForIdle()
 
-        // TotalDisplay should recompose at least once per click (at least 3 times)
-        composeTestRule.onNodeWithTag("total_display").assertRecompositions(atLeast = 3)
+        // TotalDisplay recomposes once per selectedCount change (0->1->2->3).
+        // 3: three select clicks each change TotalDisplay's Int count param once.
+        composeTestRule.onNodeWithTag("total_display").assertRecompositions(exactly = 3)
     }
 
     // ============================================================
@@ -71,9 +76,11 @@ class RecompositionRegressionTest {
         repeat(3) {
             composeTestRule.onNodeWithTag("select_button").performClick()
         }
+        composeTestRule.waitForIdle()
 
         // ISSUE: 3 recompositions for 3 clicks -- one per Int change
-        composeTestRule.onNodeWithTag("product_header").assertRecompositions(atLeast = 3)
+        // 3: ProductHeader reads selectedCount as Int; it changes 0->1->2->3 = 3 changes.
+        composeTestRule.onNodeWithTag("product_header").assertRecompositions(exactly = 3)
 
         // FIX: If ProductHeader took `hasSelection: Boolean` instead of
         // `selectedCount: Int`, it would only recompose ONCE (false->true).
@@ -88,8 +95,10 @@ class RecompositionRegressionTest {
         repeat(3) {
             composeTestRule.onNodeWithTag("select_button").performClick()
         }
+        composeTestRule.waitForIdle()
 
         // Only 1 recomposition: the boolean flip from false to true
+        // 1: hasSelection = selectedCount > 0 flips false->true once (first click); later clicks keep it true.
         composeTestRule.onNodeWithTag("optimized_header").assertRecompositions(exactly = 1)
     }
 
@@ -114,9 +123,12 @@ class RecompositionRegressionTest {
         // instance != the old instance (reference inequality), so
         // CartBanner recomposes even though the cart content is unchanged.
         composeTestRule.onNodeWithTag("refresh_button").performClick()
+        composeTestRule.waitForIdle()
 
         // ISSUE: CartBanner recomposes despite no logical change to the cart
-        composeTestRule.onNodeWithTag("cart_banner").assertRecompositions(atLeast = 1)
+        // 1: one refresh click recomposes ProductListScreen, creating a new (unstable) CartSummary
+        //    instance -> CartBanner recomposes once even though cart content is unchanged.
+        composeTestRule.onNodeWithTag("cart_banner").assertRecompositions(exactly = 1)
 
         // FIX: If CartSummary were a `data class`, equals() would compare
         // fields structurally. CartSummary(0, "$0.0") == CartSummary(0, "$0.0")
@@ -137,6 +149,7 @@ class RecompositionRegressionTest {
         // the inline lambda { refreshCount++ } passed to ProductFooter.
         // With strong skipping, the lambda is auto-memoized.
         composeTestRule.onNodeWithTag("select_button").performClick()
+        composeTestRule.waitForIdle()
 
         // Strong skipping auto-memoizes lambdas -- footer stays stable.
         // If strong skipping were disabled (e.g., via compiler flag),
@@ -158,12 +171,14 @@ class RecompositionRegressionTest {
         repeat(3) {
             composeTestRule.onNodeWithTag("refresh_button").performClick()
         }
+        composeTestRule.waitForIdle()
 
         // CURRENT BEHAVIOR (issue): CartBanner recomposes on EVERY parent
         // recomposition because CartSummary is unstable. That's 5 total
         // recompositions (2 from selects + 3 from refreshes).
-        // Budget: at most 5 -- bounded at 1:1 with parent recompositions.
-        composeTestRule.onNodeWithTag("cart_banner").assertRecompositions(atMost = 5)
+        // 5: each of the 5 clicks recomposes ProductListScreen -> new unstable CartSummary
+        //    instance -> CartBanner recomposes once per parent recomposition (2 select + 3 refresh).
+        composeTestRule.onNodeWithTag("cart_banner").assertRecompositions(exactly = 5)
 
         // FIX: With `data class CartSummary`, only the 2 select clicks
         // would cause recomposition (the content actually changes).
@@ -178,20 +193,25 @@ class RecompositionRegressionTest {
     fun combinedInteractions_detectsAccumulatedIssues() {
         // Do multiple different interactions
         composeTestRule.onNodeWithTag("select_button").performClick()
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("refresh_button").performClick()
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("select_button").performClick()
+        composeTestRule.waitForIdle()
 
         // Header recomposes on each select click (selectedCount changes)
         // but NOT on refresh (selectedCount stays the same, Compose skips).
-        // 2 select clicks = 2 recompositions.
+        // 2: ProductHeader's Int param changes on the 2 select clicks (0->1, 1->2); refresh leaves it unchanged.
         composeTestRule.onNodeWithTag("product_header").assertRecompositions(exactly = 2)
 
         // Optimized header: first select flips false->true (1 recomp),
         // refresh is skipped, second select changes nothing for the boolean
         // (still true). So only 1 recomposition.
+        // 1: hasSelection flips false->true on the first select; refresh and second select keep it true.
         composeTestRule.onNodeWithTag("optimized_header").assertRecompositions(exactly = 1)
 
         // TotalDisplay only recomposes on select changes (2 times)
+        // 2: TotalDisplay's Int count param changes on the 2 selects; refresh leaves it unchanged.
         composeTestRule.onNodeWithTag("total_display").assertRecompositions(exactly = 2)
 
         // Footer stays stable due to strong skipping mode memoizing the lambda
@@ -199,9 +219,9 @@ class RecompositionRegressionTest {
 
         // ISSUE: CartBanner recomposes on ALL 3 interactions (2 selects + 1 refresh)
         // because each parent recomposition creates a new CartSummary instance.
-        // FIX: With `data class CartSummary`, only the 2 selects would cause
-        // recomposition. The fixed assertion would be: assertRecomposesExactly(2)
-        composeTestRule.onNodeWithTag("cart_banner").assertRecompositions(atLeast = 3)
+        // 3: all 3 clicks recompose ProductListScreen -> new unstable CartSummary each time
+        //    (2 select + 1 refresh) -> CartBanner recomposes once per parent recomposition.
+        composeTestRule.onNodeWithTag("cart_banner").assertRecompositions(exactly = 3)
     }
 
     // ============================================================
@@ -215,11 +235,14 @@ class RecompositionRegressionTest {
         repeat(5) {
             composeTestRule.onNodeWithTag("select_button").performClick()
         }
+        composeTestRule.waitForIdle()
 
-        // ISSUE (ProductHeader): at least 5 recompositions -- one per Int change
-        composeTestRule.onNodeWithTag("product_header").assertRecompositions(atLeast = 5)
+        // ISSUE (ProductHeader): one recomposition per Int change
+        // 5: ProductHeader reads selectedCount as Int; it changes 0->1->2->3->4->5 = 5 changes.
+        composeTestRule.onNodeWithTag("product_header").assertRecompositions(exactly = 5)
 
         // FIXED (OptimizedProductHeader): 1 recomposition -- the boolean flip
+        // 1: hasSelection = selectedCount > 0 flips false->true once (first click); later clicks keep it true.
         composeTestRule.onNodeWithTag("optimized_header").assertRecompositions(exactly = 1)
 
         // This contrast clearly shows the 5:1 ratio of wasted recompositions

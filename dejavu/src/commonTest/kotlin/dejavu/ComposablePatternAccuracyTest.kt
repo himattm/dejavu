@@ -51,7 +51,7 @@ class ComposablePatternAccuracyTest {
     @BeforeTest
     fun setUp() {
         enableDejavuForTest()
-        groundTruth.clear()
+        patternGroundTruth.clear()
     }
 
     @AfterTest
@@ -63,9 +63,9 @@ class ComposablePatternAccuracyTest {
 
     /** Asserts that Dejavu count matches SideEffect ground truth for a function. */
     private fun assertAccuracy(qualifiedName: String, label: String = qualifiedName) {
-        val gt = groundTruth.recompositions(qualifiedName)
+        val gt = patternGroundTruth.recompositions(qualifiedName)
         val dv = DejavuTracer.getRecompositionCount(qualifiedName)
-        assertEquals(gt, dv, "[$label] groundTruth=$gt, dejavu=$dv")
+        assertEquals(gt, dv, "[$label] patternGroundTruth=$gt, dejavu=$dv")
     }
 
     /**
@@ -86,9 +86,9 @@ class ComposablePatternAccuracyTest {
         } else {
             DejavuTracer.getRecompositionCount(mappedFunction)
         }
-        val gt = groundTruth.recompositions(qualifiedName)
+        val gt = patternGroundTruth.recompositions(qualifiedName)
         assertEquals(gt, count,
-            "[$label] per-tag: groundTruth=$gt, dejavu=$count (function=$mappedFunction)")
+            "[$label] per-tag: patternGroundTruth=$gt, dejavu=$count (function=$mappedFunction)")
     }
 
     // ── 1. Simple Counter (with per-tag tracking) ─────────────
@@ -242,7 +242,7 @@ class ComposablePatternAccuracyTest {
 
         assertAccuracy("dejavu.DynamicLocalReader", "DynamicReader")
         // Unrelated composable should not recompose from CompositionLocal change
-        val unrelatedGt = groundTruth.recompositions("dejavu.DynamicLocalUnrelated")
+        val unrelatedGt = patternGroundTruth.recompositions("dejavu.DynamicLocalUnrelated")
         val unrelatedDv = DejavuTracer.getRecompositionCount("dejavu.DynamicLocalUnrelated")
         assertEquals(unrelatedGt, unrelatedDv, "Unrelated should match ground truth")
         assertEquals(0, unrelatedDv, "Unrelated should have 0 recompositions from dynamic local change")
@@ -404,8 +404,8 @@ class ComposablePatternAccuracyTest {
         // Per-tag counts should be independent and match per-instance ground truth
         val countA = DejavuTracer.getPerTagRecompositionCount(tagA) ?: 0
         val countB = DejavuTracer.getPerTagRecompositionCount(tagB) ?: 0
-        val gtA = groundTruth.recompositions("dejavu.MultiDisplay_a")
-        val gtB = groundTruth.recompositions("dejavu.MultiDisplay_b")
+        val gtA = patternGroundTruth.recompositions("dejavu.MultiDisplay_a")
+        val gtB = patternGroundTruth.recompositions("dejavu.MultiDisplay_b")
 
         assertEquals(gtA, countA,
             "Instance A per-tag count ($countA) should match ground truth ($gtA)")
@@ -423,7 +423,7 @@ class ComposablePatternAccuracyTest {
 // Ground Truth Tracking
 // ══════════════════════════════════════════════════════════════
 
-private object groundTruth {
+private object patternGroundTruth {
     private val counts = mutableMapOf<String, Int>()
 
     fun record(name: String) {
@@ -443,7 +443,7 @@ private object groundTruth {
 @Composable
 private fun PatternCounter() {
     var count by remember { mutableIntStateOf(0) }
-    SideEffect { groundTruth.record("dejavu.PatternCounter") }
+    SideEffect { patternGroundTruth.record("dejavu.PatternCounter") }
     Column {
         CounterDisplay(count)
         BasicText("Inc", Modifier.testTag("counter_inc").clickable { count++ })
@@ -453,7 +453,7 @@ private fun PatternCounter() {
 
 @Composable
 private fun CounterDisplay(value: Int) {
-    SideEffect { groundTruth.record("dejavu.CounterDisplay") }
+    SideEffect { patternGroundTruth.record("dejavu.CounterDisplay") }
     BasicText("Count: $value", Modifier.testTag("counter_display"))
 }
 
@@ -465,7 +465,7 @@ private fun CounterDisplay(value: Int) {
 private fun PatternDerivedState() {
     var count by remember { mutableIntStateOf(0) }
     val isEven by remember { derivedStateOf { count % 2 == 0 } }
-    SideEffect { groundTruth.record("dejavu.PatternDerivedState") }
+    SideEffect { patternGroundTruth.record("dejavu.PatternDerivedState") }
     Column {
         DerivedReader(isEven)
         BasicText("Inc", Modifier.testTag("derived_inc").clickable { count++ })
@@ -474,7 +474,7 @@ private fun PatternDerivedState() {
 
 @Composable
 private fun DerivedReader(isEven: Boolean) {
-    SideEffect { groundTruth.record("dejavu.DerivedReader") }
+    SideEffect { patternGroundTruth.record("dejavu.DerivedReader") }
     BasicText("Even: $isEven", Modifier.testTag("derived_reader"))
 }
 
@@ -485,7 +485,7 @@ private fun DerivedReader(isEven: Boolean) {
 @Composable
 private fun PatternDeepNesting() {
     var count by remember { mutableIntStateOf(0) }
-    SideEffect { groundTruth.record("dejavu.PatternDeepNesting") }
+    SideEffect { patternGroundTruth.record("dejavu.PatternDeepNesting") }
     Column {
         DeepLevel1(count)
         BasicText("Inc", Modifier.testTag("deep_inc").clickable { count++ })
@@ -494,19 +494,19 @@ private fun PatternDeepNesting() {
 
 @Composable
 private fun DeepLevel1(value: Int) {
-    SideEffect { groundTruth.record("dejavu.DeepLevel1") }
+    SideEffect { patternGroundTruth.record("dejavu.DeepLevel1") }
     Column { DeepLevel2(value) }
 }
 
 @Composable
 private fun DeepLevel2(value: Int) {
-    SideEffect { groundTruth.record("dejavu.DeepLevel2") }
+    SideEffect { patternGroundTruth.record("dejavu.DeepLevel2") }
     Column { DeepLevel3(value) }
 }
 
 @Composable
 private fun DeepLevel3(value: Int) {
-    SideEffect { groundTruth.record("dejavu.DeepLevel3") }
+    SideEffect { patternGroundTruth.record("dejavu.DeepLevel3") }
     BasicText("Deep: $value", Modifier.testTag("deep_leaf"))
 }
 
@@ -529,19 +529,19 @@ private fun PatternSharedState() {
 
 @Composable
 private fun SharedReaderA(value: Int) {
-    SideEffect { groundTruth.record("dejavu.SharedReaderA") }
+    SideEffect { patternGroundTruth.record("dejavu.SharedReaderA") }
     BasicText("A: $value", Modifier.testTag("shared_a"))
 }
 
 @Composable
 private fun SharedReaderB(value: Int) {
-    SideEffect { groundTruth.record("dejavu.SharedReaderB") }
+    SideEffect { patternGroundTruth.record("dejavu.SharedReaderB") }
     BasicText("B: $value", Modifier.testTag("shared_b"))
 }
 
 @Composable
 private fun SharedDualReader(a: Int, b: Int) {
-    SideEffect { groundTruth.record("dejavu.SharedDualReader") }
+    SideEffect { patternGroundTruth.record("dejavu.SharedDualReader") }
     BasicText("A+B: ${a + b}", Modifier.testTag("shared_dual"))
 }
 
@@ -567,13 +567,13 @@ private fun PatternLazyList() {
 
 @Composable
 private fun LazyListHeader(selected: Int?) {
-    SideEffect { groundTruth.record("dejavu.LazyListHeader") }
+    SideEffect { patternGroundTruth.record("dejavu.LazyListHeader") }
     BasicText("Selected: ${selected ?: "none"}", Modifier.testTag("lazy_header"))
 }
 
 @Composable
 private fun LazyListFooter(selected: Int?) {
-    SideEffect { groundTruth.record("dejavu.LazyListFooter") }
+    SideEffect { patternGroundTruth.record("dejavu.LazyListFooter") }
     BasicText("Has selection: ${selected != null}", Modifier.testTag("lazy_footer"))
 }
 
@@ -598,7 +598,7 @@ private fun PatternLazyRow() {
 
 @Composable
 private fun LazyRowHeader(selected: Int?) {
-    SideEffect { groundTruth.record("dejavu.LazyRowHeader") }
+    SideEffect { patternGroundTruth.record("dejavu.LazyRowHeader") }
     BasicText("Row selected: ${selected ?: "none"}", Modifier.testTag("row_header"))
 }
 
@@ -623,14 +623,14 @@ private fun PatternStaticLocal() {
 @Composable
 private fun StaticLocalReaderA() {
     val value = LocalStaticValue.current
-    SideEffect { groundTruth.record("dejavu.StaticLocalReaderA") }
+    SideEffect { patternGroundTruth.record("dejavu.StaticLocalReaderA") }
     BasicText("Static A: $value", Modifier.testTag("static_a"))
 }
 
 @Composable
 private fun StaticLocalReaderB() {
     val value = LocalStaticValue.current
-    SideEffect { groundTruth.record("dejavu.StaticLocalReaderB") }
+    SideEffect { patternGroundTruth.record("dejavu.StaticLocalReaderB") }
     BasicText("Static B: $value", Modifier.testTag("static_b"))
 }
 
@@ -655,13 +655,13 @@ private fun PatternDynamicLocal() {
 @Composable
 private fun DynamicLocalReader() {
     val value = LocalDynamicValue.current
-    SideEffect { groundTruth.record("dejavu.DynamicLocalReader") }
+    SideEffect { patternGroundTruth.record("dejavu.DynamicLocalReader") }
     BasicText("Dynamic: $value", Modifier.testTag("dynamic_reader"))
 }
 
 @Composable
 private fun DynamicLocalUnrelated() {
-    SideEffect { groundTruth.record("dejavu.DynamicLocalUnrelated") }
+    SideEffect { patternGroundTruth.record("dejavu.DynamicLocalUnrelated") }
     BasicText("Unrelated", Modifier.testTag("dynamic_unrelated"))
 }
 
@@ -672,7 +672,7 @@ private fun DynamicLocalUnrelated() {
 @Composable
 private fun PatternKeyIdentity() {
     var keyValue by remember { mutableIntStateOf(0) }
-    SideEffect { groundTruth.record("dejavu.PatternKeyIdentity") }
+    SideEffect { patternGroundTruth.record("dejavu.PatternKeyIdentity") }
     Column {
         key(keyValue) {
             KeyedChild(keyValue)
@@ -683,7 +683,7 @@ private fun PatternKeyIdentity() {
 
 @Composable
 private fun KeyedChild(keyValue: Int) {
-    SideEffect { groundTruth.record("dejavu.KeyedChild") }
+    SideEffect { patternGroundTruth.record("dejavu.KeyedChild") }
     BasicText("Keyed: $keyValue", Modifier.testTag("keyed_child"))
 }
 
@@ -694,7 +694,7 @@ private fun KeyedChild(keyValue: Int) {
 @Composable
 private fun PatternChildIsolation() {
     var parentCount by remember { mutableIntStateOf(0) }
-    SideEffect { groundTruth.record("dejavu.PatternChildIsolation") }
+    SideEffect { patternGroundTruth.record("dejavu.PatternChildIsolation") }
     Column {
         BasicText("Parent: $parentCount")
         StableChild("fixed")
@@ -704,7 +704,7 @@ private fun PatternChildIsolation() {
 
 @Composable
 private fun StableChild(label: String) {
-    SideEffect { groundTruth.record("dejavu.StableChild") }
+    SideEffect { patternGroundTruth.record("dejavu.StableChild") }
     BasicText("Child: $label", Modifier.testTag("stable_child"))
 }
 
@@ -723,7 +723,7 @@ private fun PatternSameValueWrite() {
 
 @Composable
 private fun SameValueReader(value: Int) {
-    SideEffect { groundTruth.record("dejavu.SameValueReader") }
+    SideEffect { patternGroundTruth.record("dejavu.SameValueReader") }
     BasicText("Value: $value", Modifier.testTag("same_reader"))
 }
 
@@ -734,7 +734,7 @@ private fun SameValueReader(value: Int) {
 @Composable
 private fun PatternConditionalComposition() {
     var showA by remember { mutableStateOf(true) }
-    SideEffect { groundTruth.record("dejavu.PatternConditionalComposition") }
+    SideEffect { patternGroundTruth.record("dejavu.PatternConditionalComposition") }
     Column {
         if (showA) {
             BasicText("Branch A", Modifier.testTag("branch_a"))
@@ -766,7 +766,7 @@ private fun PatternListMutations() {
 
 @Composable
 private fun ListMutationHeader(count: Int) {
-    SideEffect { groundTruth.record("dejavu.ListMutationHeader") }
+    SideEffect { patternGroundTruth.record("dejavu.ListMutationHeader") }
     BasicText("Items: $count", Modifier.testTag("mutation_header"))
 }
 
@@ -777,7 +777,7 @@ private fun ListMutationHeader(count: Int) {
 @Composable
 private fun PatternLaunchedEffectRestart() {
     var effectKey by remember { mutableIntStateOf(0) }
-    SideEffect { groundTruth.record("dejavu.PatternLaunchedEffectRestart") }
+    SideEffect { patternGroundTruth.record("dejavu.PatternLaunchedEffectRestart") }
     LaunchedEffect(effectKey) {
         // Effect restarts when key changes — no-op body
     }
@@ -810,14 +810,14 @@ private fun PatternNestedLocalOverride() {
 @Composable
 private fun OuterLocalReader() {
     val value = LocalNested.current
-    SideEffect { groundTruth.record("dejavu.OuterLocalReader") }
+    SideEffect { patternGroundTruth.record("dejavu.OuterLocalReader") }
     BasicText("Outer: $value", Modifier.testTag("outer_reader"))
 }
 
 @Composable
 private fun InnerLocalReader() {
     val value = LocalNested.current
-    SideEffect { groundTruth.record("dejavu.InnerLocalReader") }
+    SideEffect { patternGroundTruth.record("dejavu.InnerLocalReader") }
     BasicText("Inner: $value", Modifier.testTag("inner_reader"))
 }
 
@@ -840,6 +840,6 @@ private fun PatternMultiInstance() {
 
 @Composable
 private fun MultiDisplay(value: Int, modifier: Modifier = Modifier, instanceId: String = "") {
-    SideEffect { groundTruth.record("dejavu.MultiDisplay_$instanceId") }
+    SideEffect { patternGroundTruth.record("dejavu.MultiDisplay_$instanceId") }
     BasicText("Value: $value", modifier)
 }

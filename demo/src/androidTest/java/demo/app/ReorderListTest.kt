@@ -23,21 +23,29 @@ class ReorderListTest {
     fun reorder_swap_affects_first_two_items() {
         composeTestRule.onNodeWithTag("swap_first_two_btn").performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag("reorderable_item_0").assertRecompositions(atLeast = 1)
-        composeTestRule.onNodeWithTag("reorderable_item_1").assertRecompositions(atLeast = 1)
+        // Swapping items[0] and items[1] re-emits the loop with index 0↔1. Items are content-keyed
+        // (key = item string), so the two swapped compositions persist but their `index` param flips,
+        // changing the tag each now carries: after the swap reorderable_item_0 is the formerly-index-1
+        // composition and reorderable_item_1 the formerly-index-0 one. Per-tag tracking (Android-only)
+        // resolves the count by the tag currently present, so each of the two changed slots = 1.
+        // 1: index param changed once for the composition now carrying this tag.
+        composeTestRule.onNodeWithTag("reorderable_item_0").assertRecompositions(exactly = 1)
+        // 1: index param changed once for the composition now carrying this tag.
+        composeTestRule.onNodeWithTag("reorderable_item_1").assertRecompositions(exactly = 1)
     }
 
     @Test
     fun reorder_swap_other_items_stable() {
         composeTestRule.onNodeWithTag("swap_first_two_btn").performClick()
         composeTestRule.waitForIdle()
-        // mutableStateListOf structural mutations propagate dirty bits to all
-        // lazy list items, so non-swapped items may recompose. Verify they
-        // exist and weren't excessively recomposed rather than asserting zero.
-        composeTestRule.onNodeWithTag("reorderable_item_2").assertRecompositions(atMost = 2)
-        composeTestRule.onNodeWithTag("reorderable_item_3").assertRecompositions(atMost = 2)
-        composeTestRule.onNodeWithTag("reorderable_item_4").assertRecompositions(atMost = 2)
-        composeTestRule.onNodeWithTag("reorderable_item_5").assertRecompositions(atMost = 2)
+        // Only items 0 and 1 change index; items 2..5 keep their content key AND their index param,
+        // so their compositions skip. Content-keyed lazy items do not over-recompose from a structural
+        // swap (the keyed item identities are preserved), so each non-swapped slot is exactly stable.
+        // 0: index and text unchanged for these slots — they skip.
+        composeTestRule.onNodeWithTag("reorderable_item_2").assertStable()
+        composeTestRule.onNodeWithTag("reorderable_item_3").assertStable()
+        composeTestRule.onNodeWithTag("reorderable_item_4").assertStable()
+        composeTestRule.onNodeWithTag("reorderable_item_5").assertStable()
     }
 
     @Test
@@ -52,7 +60,9 @@ class ReorderListTest {
         )
         composeTestRule.onNodeWithTag("shuffle_btn").performClick()
         composeTestRule.waitForIdle()
-        // Shuffle mutates the list structurally, so all items recompose
+        // KEEP: shuffle is a non-deterministic permutation. Items are content-keyed and the item only
+        // recomposes when its `index` param changes, so whether the slot at reorderable_item_0 changed
+        // index depends on where the shuffle landed its content — the per-item count is not fixed.
         composeTestRule.onNodeWithTag("reorderable_item_0").assertRecompositions(atLeast = 1)
     }
 
@@ -60,7 +70,11 @@ class ReorderListTest {
     fun reorder_order_label_recomposes_on_mutation() {
         composeTestRule.onNodeWithTag("swap_first_two_btn").performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag("list_order_label").assertRecompositions(atLeast = 1)
+        // The swap changes items.joinToString(", "), so the label's String param changes once and it
+        // recomposes once. list_order_label is single-instance (one call site, unique key) so its
+        // per-tag count resolves exactly on every platform.
+        // 1: the joined order string changes exactly once on a single swap.
+        composeTestRule.onNodeWithTag("list_order_label").assertRecompositions(exactly = 1)
     }
 
     @Test
@@ -71,7 +85,12 @@ class ReorderListTest {
         composeTestRule.resetRecompositionCounts()
 
         composeTestRule.onNodeWithTag("reset_order_btn").performClick()
-        composeTestRule.onNodeWithTag("list_order_label").assertRecompositions(atLeast = 1)
+        composeTestRule.waitForIdle()
+        // Reset restores the original order string after a shuffle, changing the label's param once.
+        // 1: the joined order string changes once when the list returns to its original order.
+        // FLAG: non-deterministic edge case — if the prior shuffle happened to land on the original
+        // order (1/720), the reset would be a same-value write and the label would skip (count 0).
+        composeTestRule.onNodeWithTag("list_order_label").assertRecompositions(exactly = 1)
     }
 
     @Test
