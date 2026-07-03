@@ -51,7 +51,7 @@ fun SwipeListScreen() {
       }
     }
     LazyColumn(modifier = Modifier.weight(1f)) {
-      itemsIndexed(items, key = { index, _ -> index }) { index, item ->
+      itemsIndexed(items, key = { _, item -> item }) { index, item ->
         SwipeableItem(
           index = index,
           text = item,
