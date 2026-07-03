@@ -28,7 +28,7 @@ Dejavu is a test-only library that turns recomposition behavior into assertions.
 - **Rich diagnostics** — source location, recomposition timeline, parameter diffs, causality analysis
 - **Per-instance tracking** — multiple instances of the same composable get independent counters
 
-Supports Compose 1.10+ (BOM 2026.01.01 → 2026.05.00); the baseline is Compose 1.11 (BOM 2026.05.00).
+Supports Compose 1.10+ (BOM 2026.01.01 → 2026.06.00); the baseline is Compose 1.11 (BOM 2026.06.00).
 For older Compose (1.6–1.9), use Dejavu 0.3.x. The test harness uses the Compose testing v2
 APIs (which default to `StandardTestDispatcher`). Instrumented BOM gates run the supported BOM
 range, and the `compose-experimental` module (a staging area for experimental-API

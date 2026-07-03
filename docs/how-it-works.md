@@ -20,10 +20,10 @@ use Dejavu 0.3.x. Requires Kotlin 2.1+ with the Compose compiler plugin.
 |---|---|---|---|
 | 2026.01.01 | 1.10.x | 2.1.x+ | Minimum |
 | 2026.03.01 | 1.10.x | 2.1.x+ | Tested |
-| 2026.05.00 | 1.11.x | 2.3.x+ | Baseline |
+| 2026.06.00 | 1.11.x | 2.3.x+ | Baseline |
 
-The baseline is Compose 1.11 (BOM 2026.05.00); the floor is Compose 1.10 (BOM 2026.01.01). CI runs a
-`compose-compat` matrix that compiles and unit-tests across 2026.01.01, 2026.03.01, and 2026.05.00,
+The baseline is Compose 1.11 (BOM 2026.06.00); the floor is Compose 1.10 (BOM 2026.01.01). CI runs a
+`compose-compat` matrix that compiles and unit-tests across 2026.01.01, 2026.03.01, and 2026.06.00,
 and the Android instrumented gates run the same three BOMs. `CompositionObserver` support is
 unconditional — there is no degraded / observer-excluded build path.
 
@@ -39,7 +39,7 @@ was required.
 
 The `compose-experimental` module — a staging area for recomposition coverage of experimental /
 newest-Compose APIs that can't live in `:dejavu`'s commonTest (which compiles against the full
-supported Compose BOM range, 2026.01.01 → 2026.05.00) — exercises Dejavu against Compose 1.11's new composables and
+supported Compose BOM range, 2026.01.01 → 2026.06.00) — exercises Dejavu against Compose 1.11's new composables and
 runtime paths: the experimental `Grid` and `FlexBox` layouts, `derivedMediaQuery` / `mediaQuery`
 adaptive breakpoints, the Styles API (`androidx.compose.foundation.style`), `movableContentOf`, and
 the experimental LinkBuffer composer runtime path (`ComposeRuntimeFlags.isLinkBufferComposerEnabled`).

@@ -188,7 +188,7 @@ All tracking runs in the app process on the main thread, directly accessible to 
 
 ## Compatibility
 
-Supported Compose range: **1.10.x–1.11.x (BOM 2026.01.01 → 2026.05.00)**.
+Supported Compose range: **1.10.x–1.11.x (BOM 2026.01.01 → 2026.06.00)**.
 
 **Minimum supported Compose: 1.10 (BOM 2026.01.01).** Compose 1.10 is the first version with the `CompositionObserver` API that Dejavu's causality diagnostics rely on. For older Compose (1.6–1.9), use Dejavu 0.3.x. Requires Kotlin 2.1+ with the Compose compiler plugin.
 
@@ -196,7 +196,7 @@ Supported Compose range: **1.10.x–1.11.x (BOM 2026.01.01 → 2026.05.00)**.
 |---|---|---|---|
 | 2026.01.01 | 1.10.x | 2.1.x+ | Minimum |
 | 2026.03.01 | 1.10.x | 2.1.x+ | Tested |
-| 2026.05.00 | 1.11.x | 2.3.x+ | Baseline |
+| 2026.06.00 | 1.11.x | 2.3.x+ | Baseline |
 
 ## Kotlin Multiplatform
 
