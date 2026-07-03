@@ -40,12 +40,16 @@ import androidx.compose.ui.unit.dp
 // totalPrice) is identical, Compose sees a different reference
 // and recomposes CartBanner.
 //
-// FIX: Make CartSummary a data class so equals() is structural.
+// In ordinary app code the fix would be to make CartSummary a data class
+// so equals() is structural. This demo intentionally does NOT apply that
+// fix: Dejavu's sample and regression tests need a stable, reproducible
+// recomposition problem to prove the library can detect this class of issue.
+// Do not "optimize" this sample by converting CartSummary to a data class.
 // ============================================================
 
-// ISSUE: Unstable class — uses identity-based equality (Object.equals),
-// causing recomposition even when the logical content is the same.
-// Making this a `data class` would fix the problem.
+// INTENTIONAL: regular class with identity-based equality (Object.equals).
+// Keeping this unstable is part of the demo/test fixture; changing it to a
+// `data class` removes the behavior Dejavu is meant to detect here.
 class CartSummary(val itemCount: Int, val totalPrice: String)
 
 @Composable
