@@ -10,7 +10,7 @@
 
 [![CI](https://github.com/himattm/dejavu/actions/workflows/ci.yml/badge.svg)](https://github.com/himattm/dejavu/actions/workflows/ci.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/me.mmckenna.dejavu/dejavu)](https://central.sonatype.com/artifact/me.mmckenna.dejavu/dejavu)
-[![Compose](https://img.shields.io/badge/Compose-1.6.x–1.10.x-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/develop/ui/compose)
+[![Compose](https://img.shields.io/badge/Compose-1.10.x–1.11.x-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/develop/ui/compose)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ###### Featured In
@@ -44,7 +44,7 @@ Dejavu is a test-only library that turns recomposition behavior into assertions.
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    androidTestImplementation("me.mmckenna.dejavu:dejavu:0.3.1")
+    androidTestImplementation("me.mmckenna.dejavu:dejavu:0.4.0")
 }
 ```
 
@@ -157,6 +157,12 @@ composeTestRule.onNodeWithTag("tag")
 // Reset all counts to zero mid-test (Android)
 composeTestRule.resetRecompositionCounts()
 
+// Reset all counts to zero mid-test (KMP: JVM, iOS, WasmJs)
+// Resets recomposition counts while preserving composition history.
+// Use inside runRecompositionTrackingUiTest after initial composition,
+// before the interaction whose budget is being asserted.
+resetRecompositionCounts()
+
 // Get the current recomposition count for a tag (Android)
 val count: Int = composeTestRule.getRecompositionCount("tag")
 
@@ -182,15 +188,15 @@ All tracking runs in the app process on the main thread, directly accessible to 
 
 ## Compatibility
 
-**Minimum:** compose-runtime 1.2.0 (CompositionTracer API). Requires Kotlin 2.0+ with the Compose compiler plugin.
+Supported Compose range: **1.10.x–1.11.x (BOM 2026.01.01 → 2026.06.00)**.
+
+**Minimum supported Compose: 1.10 (BOM 2026.01.01).** Compose 1.10 is the first version with the `CompositionObserver` API that Dejavu's causality diagnostics rely on. For older Compose (1.6–1.9), use Dejavu 0.3.x. Requires Kotlin 2.1+ with the Compose compiler plugin.
 
 | Compose BOM | Compose | Kotlin | Status |
 |---|---|---|---|
-| 2024.06.00 | 1.6.x | 2.0.x | Tested |
-| 2024.09.00 | 1.7.x | 2.0.x | Tested |
-| 2025.01.01 | 1.8.x | 2.0.x | Tested |
-| 2026.01.01 | 1.10.x | 2.1.x+ | Tested |
-| 2026.03.01 | 1.10.x | 2.1.x+ | Baseline |
+| 2026.01.01 | 1.10.x | 2.1.x+ | Minimum |
+| 2026.03.01 | 1.10.x | 2.1.x+ | Tested |
+| 2026.06.00 | 1.11.x | 2.3.x+ | Baseline |
 
 ## Kotlin Multiplatform
 
@@ -200,7 +206,7 @@ Dejavu supports Kotlin Multiplatform with the following targets:
 |--------|--------|-------|
 | Android | Full support | Tag mapping via `ui-tooling-data` Group tree |
 | Desktop (JVM) | Full support | Tag mapping via `CompositionGroup` + `sourceInfo` |
-| iOS (arm64, simulatorArm64, x64) | Supported | Same as JVM; `LazyVerticalGrid` has upstream Compose runtime bug |
+| iOS (arm64, simulatorArm64) | Supported | Same as JVM; Compose Multiplatform 1.11 no longer supports `iosX64` |
 | WasmJs (browser) | Supported | Exception propagation limited in test runner |
 
 ### KMP Test Setup
@@ -221,9 +227,23 @@ It handles all Dejavu lifecycle management automatically -- enabling the tracer,
 and cleaning up after each test. `setTrackedContent` wraps `setContent` with the inspection tables
 and sub-composition layout required for tag-to-function mapping.
 
+### Compose 1.11 Coverage
+
+Dejavu is validated against Compose 1.11's new composables and runtime paths via the
+`compose-experimental` module — a staging area for recomposition coverage of experimental /
+newest-Compose APIs that can't yet live in `:dejavu`'s commonTest (which compiles against the full
+Compose BOM range back to 1.6). It exercises recomposition tracking on JVM, iOS, Wasm, and
+Android instrumented for:
+
+- the experimental non-lazy `Grid` and `FlexBox` layouts,
+- `derivedMediaQuery` / `mediaQuery` adaptive breakpoints,
+- the Styles API (`androidx.compose.foundation.style`),
+- `movableContentOf`, and
+- the experimental LinkBuffer composer runtime path (`ComposeRuntimeFlags.isLinkBufferComposerEnabled`).
+
 ### Known Gaps
 
-- **iOS/WasmJs: `LazyVerticalGrid` crash** — The Compose runtime's internal slot table hash implementation crashes on iOS/Native and WasmJs when `LazyVerticalGrid` is in the composition. This is an upstream Compose bug, not a Dejavu issue. `LazyColumn`, `LazyRow`, and all other composables work correctly when `LazyVerticalGrid` is not present.
+- **iOS/WasmJs: `LazyVerticalGrid` crash** — The Compose runtime's internal slot table hash implementation crashes on iOS/Native and WasmJs when `LazyVerticalGrid` is in the composition. This is an upstream Compose bug, not a Dejavu issue. `LazyColumn`, `LazyRow`, and all other composables work correctly when `LazyVerticalGrid` is not present. Note that Compose 1.11's new non-lazy `Grid` is unaffected — it is exercised on iOS and WasmJs by the `compose-experimental` module (see [Compose 1.11 Coverage](#compose-111-coverage) above).
 - **WasmJs: Exception propagation** — The Wasm test runner intercepts exceptions at a higher level than the test code, preventing try-catch from capturing `AssertionError` messages. Assertion *behavior* (pass/fail) works correctly; only error message inspection is affected. Parameter validation exceptions (`IllegalArgumentException`) are caught correctly when structured inside `runComposeUiTest`.
 
 ## Known Limitations

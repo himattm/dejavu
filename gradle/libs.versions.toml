@@ -7,8 +7,8 @@ junitVersion = "1.3.0"
 espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.11.0"
 activityCompose = "1.13.0"
-composeBom = "2026.03.01"
-composeMultiplatform = "1.10.3"
+composeBom = "2026.06.00"
+composeMultiplatform = "1.11.1"
 coroutinesAndroid = "1.11.0"
 atomicfu = "0.33.0"
 binary-compatibility-validator = "0.17.0"
@@ -48,4 +48,3 @@ compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMu
 binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "binary-compatibility-validator" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktech-maven-publish" }
-

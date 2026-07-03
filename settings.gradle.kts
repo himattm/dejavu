@@ -24,4 +24,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Dejavu"
-include(":dejavu", ":demo", ":demo-shared", ":demo-desktop", ":demo-wasm")
+include(":dejavu", ":demo", ":demo-shared", ":demo-desktop", ":demo-wasm", ":compose-experimental")

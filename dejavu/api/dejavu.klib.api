@@ -1,5 +1,5 @@
 // Klib ABI Dump
-// Targets: [iosArm64, iosSimulatorArm64, iosX64, wasmJs]
+// Targets: [iosArm64, iosSimulatorArm64, wasmJs]
 // Rendering settings:
 // - Signature version: 2
 // - Show manifest properties: true
@@ -13,6 +13,7 @@ final object dejavu/Dejavu { // dejavu/Dejavu|null[0]
 
 final val dejavu/dejavu_Dejavu$stableprop // dejavu/dejavu_Dejavu$stableprop|#static{}dejavu_Dejavu$stableprop[0]
 
+final fun (androidx.compose.ui.test/ComposeUiTest).dejavu/resetRecompositionCounts() // dejavu/resetRecompositionCounts|resetRecompositionCounts@androidx.compose.ui.test.ComposeUiTest(){}[0]
 final fun (androidx.compose.ui.test/ComposeUiTest).dejavu/setTrackedContent(kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>) // dejavu/setTrackedContent|setTrackedContent@androidx.compose.ui.test.ComposeUiTest(kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}[0]
 final fun (androidx.compose.ui.test/SemanticsNodeInteraction).dejavu/assertRecompositions(kotlin/Int? = ..., kotlin/Int? = ..., kotlin/Int? = ...): androidx.compose.ui.test/SemanticsNodeInteraction // dejavu/assertRecompositions|assertRecompositions@androidx.compose.ui.test.SemanticsNodeInteraction(kotlin.Int?;kotlin.Int?;kotlin.Int?){}[0]
 final fun (androidx.compose.ui.test/SemanticsNodeInteraction).dejavu/assertStable(): androidx.compose.ui.test/SemanticsNodeInteraction // dejavu/assertStable|assertStable@androidx.compose.ui.test.SemanticsNodeInteraction(){}[0]

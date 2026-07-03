@@ -27,6 +27,14 @@ Minimum verification after any code change:
 - `wasmJsMain` — WasmJs actuals (JS Date.now(), console.log/warn)
 - `commonTest` — unit tests + compose UI integration tests (SideEffect accuracy)
 
+### `compose-experimental` module
+
+Separate Gradle module (`:compose-experimental`) that stages recomposition tests for experimental /
+newest-Compose APIs. They live here, not in `:dejavu`'s commonTest, because commonTest compiles
+against the full Compose BOM range (back to 1.6) in the `compose-compat` sweep where these APIs don't
+exist. Convention: when an API graduates to stable and the `:dejavu` BOM floor includes it, promote
+its test into `dejavu/src/commonTest` and delete it here. See `compose-experimental/README.md`.
+
 ## Key Architecture
 
 - `DejavuTracer` implements `CompositionTracer` — intercepts every `traceEventStart`/`traceEventEnd`

@@ -2,9 +2,10 @@ package dejavu.internal
 
 /**
  * Interface for composition observer features. Main code calls this
- * directly — no reflection needed. The real implementation lives in
- * src/observerAndroid/ and is loaded via Class.forName when the Compose
- * observer API is available.
+ * directly — no reflection needed. The real implementation is
+ * [DejavuCompositionObserver], which relies on the Compose
+ * `CompositionObserver` API (available since Compose 1.10 / BOM
+ * 2026.01.01, Dejavu's minimum supported Compose version).
  */
 internal interface ObserverDelegate {
     val isAvailable: Boolean

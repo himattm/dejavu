@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-02
+
 ### Added
 - Bundled four Claude Code skills in `.claude/skills/` to help AI agents adopt Dejavu, author tests, triage failures, and run an iterative recomposition-optimization loop:
   - `dejavu-onboarding` — adds Dejavu to a project from scratch (gradle dependency, first `Modifier.testTag`, smallest passing test).
@@ -14,6 +16,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `dejavu-error-triage` — one-shot diagnosis of a single `UnexpectedRecompositionsError` block.
   - `dejavu-perf-loop` — closed-loop optimization using Dejavu as the validator.
 - Packaged the same skills as a Claude Code plugin (`dejavu`) installable via `/plugin marketplace add himattm/dejavu` + `/plugin install dejavu@dejavu`. Plugin manifest at `.claude-plugin/plugin.json`, marketplace at `.claude-plugin/marketplace.json`, with `skills/` symlinked into `.claude/skills/` for a single source of truth.
+- New `compose-experimental` module (a staging area for experimental-API recomposition coverage) with tests for Compose 1.11's new APIs, running on JVM, iOS, Wasm, and Android instrumented: experimental `Grid`, experimental `FlexBox`, the experimental LinkBuffer composer runtime path (`ComposeRuntimeFlags.isLinkBufferComposerEnabled`), `movableContentOf`, `derivedMediaQuery`/`mediaQuery` (adaptive breakpoints), and the Styles API (`androidx.compose.foundation.style`).
+- Public `ComposeUiTest.resetRecompositionCounts()` for KMP recomposition tests — resets recomposition counts mid-test while preserving composition history.
+
+### Changed
+- **Minimum supported Compose is now 1.10 (BOM 2026.01.01).** For Compose 1.6–1.9, use Dejavu 0.3.x.
+- Migrate the test harness to the Compose testing **v2** APIs (`androidx.compose.ui.test.v2.runComposeUiTest`, `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule`), which default to `StandardTestDispatcher` (v1 used `UnconfinedTestDispatcher`). This completes the testing-v2 half of #63. Validated that recomposition counts are unchanged on JVM under the new dispatcher — no rebaselining was required.
+- Bump Compose Multiplatform from 1.10.3 to 1.11.1.
+- Bump Compose BOM baseline from 2026.03.01 to 2026.06.00.
+- Drop `iosX64` from supported targets because Compose Multiplatform 1.11 no longer supports Apple x64 targets. iOS coverage remains via `iosArm64` (compile) and `iosSimulatorArm64` (tests).
+- Promote the LinkBuffer composer-path and `movableContentOf` regression tests into the cross-platform `compose-experimental` common test set (JVM, iOS, Wasm) alongside Android instrumented coverage.
+- CI: the `compose-compat` BOM matrix and the Android instrumented BOM gates now cover only supported runtimes at or above the floor — 2026.01.01, 2026.03.01, and 2026.06.00.
+
+### Removed
+- Removed the pre-1.10 degraded compatibility path (`-PexcludeCompositionObserver` / `src/observerAndroid` split); `CompositionObserver` support is now unconditional.
 
 ## [0.3.1] - 2026-04-15
 

@@ -76,11 +76,7 @@ internal object Runtime {
     this.logToLogcat = logToLogcat
     appRef = app
 
-    // Load the real observer delegate if Compose observer API is available
-    observer = try {
-        Class.forName("dejavu.internal.DejavuCompositionObserver")
-            .getDeclaredField("INSTANCE").get(null) as ObserverDelegate
-    } catch (_: Throwable) { NoOpObserver }
+    observer = DejavuCompositionObserver
     if (logToLogcat) Log.d(TAG, "Dejavu enabled — streaming recomposition events (filter: \"Dejavu\")")
 
     // Enable debug inspector info so InspectableValue.inspectableElements is populated
