@@ -1,3 +1,3 @@
 ## 2024-05-06 - Fixing Unstable Class Parameter issue in Compose
-**Learning:** Found that non-data classes can cause Compose recomposition regressions. By changing it to a data class, Compose leverages structural equality checks and prevents unnecessary recompositions when a parent recomposes and creates a new object with the same logic.
-**Action:** Always favor data classes over normal classes for Compose state variables to maintain stability and avoid wasteful recompositions.
+**Learning:** Found that non-data classes can cause Compose recomposition regressions. By changing it to a data class, Compose leverages structural equality checks and prevents unnecessary recompositions when a parent recomposes and creates a new object with the same logic. However, in this project (Dejavu), CartSummary is INTENTIONALLY NOT a data class - it is a demo fixture that must stay unstable so Dejavu’s recomposition-regression tests have something to catch.
+**Action:** Do not optimize CartSummary or other intentional "bad" patterns in demo fixtures that are meant to show failures for tests to catch.
